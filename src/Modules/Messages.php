@@ -33,7 +33,7 @@ class Messages {
 	 * @return void
 	 */
 	public function initialize(): void {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		add_action( 'a8csp/atlantis/admin_menu_registered', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'save_message' ) );
 
 		// Only run table creation on plugin activation or when forced

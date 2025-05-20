@@ -2,6 +2,8 @@
 
 namespace A8C\SpecialProjects\Atlantis;
 
+use A8C\SpecialProjects\Atlantis\Modules\Messages;
+
 use WP_List_Table;
 
 defined( 'ABSPATH' ) || exit;

@@ -110,11 +110,11 @@ class Plugin {
 	 * @return  void
 	 */
 	protected function initialize(): void {
-		$this->modules = new Modules();
-		$this->modules->initialize();
-
 		$this->settings = new Settings();
 		$this->settings->initialize();
+
+		$this->modules = new Modules();
+		$this->modules->initialize();
 	}
 
 	// endregion
