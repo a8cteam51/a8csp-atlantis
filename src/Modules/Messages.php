@@ -192,6 +192,9 @@ class Messages {
 			);
 		}
 
+		$locations        = $this->get_admin_locations();
+		$current_location = $message ? $message->message_location : '';
+
 		// Load the template
 		include A8CSP_ATLANTIS_DIR_PATH . 'templates/admin/message-form.php';
 	}
@@ -319,6 +322,69 @@ class Messages {
 				array_merge( array( $status ), $message_ids )
 			)
 		);
+	}
+
+	/**
+	 * Get available admin page locations.
+	 *
+	 * @return array Array of admin page locations with labels.
+	 */
+	private function get_admin_locations(): array {
+		global $menu, $submenu;
+
+		$locations = array();
+
+		// Top-level menu items
+		foreach ( $menu as $menu_item ) {
+			if ( ! empty( $menu_item[0] ) && ! empty( $menu_item[2] ) ) {
+				$menu_slug  = $menu_item[2];
+				$menu_title = strip_tags( $menu_item[0] );
+
+				// Keep the .php extension for exact matching
+				$locations[ $menu_slug ] = $menu_title;
+
+				// Submenu items
+				if ( isset( $submenu[ $menu_slug ] ) ) {
+					foreach ( $submenu[ $menu_slug ] as $submenu_item ) {
+						if ( ! empty( $submenu_item[0] ) && ! empty( $submenu_item[2] ) ) {
+							$submenu_slug  = $submenu_item[2];
+							$submenu_title = strip_tags( $submenu_item[0] );
+
+							// Skip if it's the same as the parent menu
+							if ( $submenu_slug === $menu_slug ) {
+								continue;
+							}
+
+							$screen_id = $submenu_slug;
+
+							$locations[ $screen_id ] = $menu_title . ' &rsaquo; ' . $submenu_title;
+						}
+					}
+				}
+			}
+		}
+
+		// Custom post type screens
+		$post_types = get_post_types( array( 'show_in_menu' => true ), 'objects' );
+		foreach ( $post_types as $post_type ) {
+			if ( ! in_array( $post_type->name, array( 'post', 'page' ), true ) ) {
+				$screen_id               = 'edit.php?post_type=' . $post_type->name;
+				$locations[ $screen_id ] = $post_type->label;
+			}
+		}
+
+		// Taxonomy screens
+		$taxonomies = get_taxonomies( array( 'show_ui' => true ), 'objects' );
+		foreach ( $taxonomies as $taxonomy ) {
+			$screen_id               = 'edit-tags.php?taxonomy=' . $taxonomy->name;
+			$locations[ $screen_id ] = sprintf(
+				/* translators: %s: Taxonomy label */
+				__( '%s Categories', 'atlantis' ),
+				$taxonomy->label
+			);
+		}
+
+		return $locations;
 	}
 
 	/**

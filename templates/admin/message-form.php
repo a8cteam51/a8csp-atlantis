@@ -68,9 +68,19 @@ wp_enqueue_editor();
 				</td>
 			</tr>
 			<tr>
-				<th scope="row"><label for="message_location"><?php echo esc_html__( 'Location', 'atlantis' ); ?></label></th>
+			<th scope="row"><label for="message_location"><?php echo esc_html__( 'Location', 'atlantis' ); ?></label></th>
 				<td>
-					<input type="text" name="message_location" id="message_location" class="regular-text" value="<?php echo esc_attr( $message ? $message->message_location : '' ); ?>" required>
+					<select name="message_location" id="message_location" class="regular-text" required>
+						<option value=""><?php echo esc_html__( 'Select Location', 'atlantis' ); ?></option>
+						<?php foreach ( $locations as $value => $label ) : ?>
+							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current_location, $value ); ?>>
+								<?php echo esc_html( $label ); ?>
+							</option>
+						<?php endforeach; ?>
+					</select>
+					<p class="description">
+						<?php echo esc_html__( 'Select the admin page where this message should be displayed.', 'atlantis' ); ?>
+					</p>
 				</td>
 			</tr>
 		</table>

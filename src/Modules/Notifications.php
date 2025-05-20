@@ -56,8 +56,20 @@ class Notifications {
 	 * @return string Current location identifier.
 	 */
 	private function get_current_location(): string {
-		$screen = get_current_screen();
-		return 'admin-' . $screen->id;
+		// Use global $pagenow for the base admin page (e.g., plugins.php, edit.php)
+		global $pagenow;
+
+		// For custom post types and taxonomies, add query string as in get_admin_locations
+		if ( isset( $_GET['post_type'] ) && ! empty( $_GET['post_type'] ) ) {
+			return $pagenow . '?post_type=' . sanitize_key( $_GET['post_type'] );
+		}
+
+		if ( isset( $_GET['taxonomy'] ) && ! empty( $_GET['taxonomy'] ) ) {
+			return $pagenow . '?taxonomy=' . sanitize_key( $_GET['taxonomy'] );
+		}
+
+		// Default: just return the page slug (e.g., plugins.php)
+		return $pagenow;
 	}
 
 	/**
