@@ -20,12 +20,6 @@ abstract class Module {
 	 * @return  void
 	 */
 	public function maybe_initialize(): void {
-		$is_active = $this->is_active();
-		if ( is_wp_error( $is_active ) ) {
-			a8csp_atlantis_output_requirements_error( $is_active );
-			return;
-		}
-
 		$module_meets_requirements = $this->module_requirements_check();
 		if ( is_wp_error( $module_meets_requirements ) ) {
 			a8csp_atlantis_output_requirements_error( $module_meets_requirements );
