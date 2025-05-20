@@ -11,6 +11,18 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 class Plugin {
+	// region FIELDS AND CONSTANTS
+
+	/**
+	 * The settings component.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public Settings $settings;
+
+	// endregion
+
 	// region MAGIC METHODS
 
 	/**
@@ -90,6 +102,8 @@ class Plugin {
 	 * @return  void
 	 */
 	protected function initialize(): void {
+		$this->settings = new Settings();
+		$this->settings->initialize();
 	}
 
 	// endregion
