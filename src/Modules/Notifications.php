@@ -83,6 +83,10 @@ class Notifications {
 			return $pagenow . '?taxonomy=' . sanitize_key( $_GET['taxonomy'] );
 		}
 
+		if ( isset( $_GET['page'] ) && ! empty( $_GET['page'] ) ) {
+			return sanitize_key( $_GET['page'] );
+		}
+
 		// Default: just return the page slug (e.g., plugins.php)
 		return $pagenow;
 	}
