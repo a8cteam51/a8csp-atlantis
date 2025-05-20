@@ -10,37 +10,17 @@ defined( 'ABSPATH' ) || exit;
  * @since   1.0.0
  * @version 1.0.0
  */
-class Colophon {
-	// region METHODS
-
+class Colophon extends Module {
 	/**
-	 * Returns true if all the module's dependencies are met.
+	 * Checks module-specific requirements and returns true if they all pass.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
 	 * @return  true|\WP_Error
 	 */
-	public function is_active(): bool|\WP_Error {
-		return true; // TODO: Check for option from settings.
-	}
-
-	/**
-	 * Initializes the module if it is active.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return  void
-	 */
-	public function maybe_initialize(): void {
-		$is_active = $this->is_active();
-		if ( is_wp_error( $is_active ) ) {
-			a8csp_atlantis_output_requirements_error( $is_active );
-			return;
-		}
-
-		$this->initialize();
+	protected function module_requirements_check(): bool|\WP_Error {
+		return true; // TODO: Implement module-specific requirements check.
 	}
 
 	/**
@@ -54,6 +34,4 @@ class Colophon {
 	protected function initialize(): void {
 		// TODO: Initialize module components and/or direct hooks.
 	}
-
-	// endregion
 }
