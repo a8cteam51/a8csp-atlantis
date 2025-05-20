@@ -43,7 +43,7 @@
 
   "autoload": {
     "psr-4": {
-      "A8C\\SpecialProjects\\Scaffold\\": "src/"
+      "A8C\\SpecialProjects\\Atlantis\\": "src/"
     },
     "classmap": [
       "models/"

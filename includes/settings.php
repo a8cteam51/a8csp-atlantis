@@ -1,6 +1,5 @@
 <?php declare( strict_types=1 );
 
-<?php
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 function atlantis_register_settings() {

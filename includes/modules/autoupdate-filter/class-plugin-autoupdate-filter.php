@@ -36,7 +36,7 @@ class Plugin_Autoupdate_Filter {
 			error_log( "Plugin Autoupdate Filter: Unable to retrieve the autoupdate settings ({$error_message})" ); // phpcs:disable WordPress.PHP.DevelopmentFunctions
 			add_action(
 				'admin_notices',
-				function() use ( $error_message ) {
+				function () use ( $error_message ) {
 					echo '<div class="notice notice-error"><p><strong> Plugin Autoupdate Filter:</strong> Unable to get autoupdate settings (' . esc_html( $error_message ) . ').</p></div>';
 				}
 			);
