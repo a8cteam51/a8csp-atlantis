@@ -41,6 +41,11 @@ class Settings {
 	 * @return  void
 	 */
 	public function register_admin_menu(): void {
+
+		if ( ! a8csp_atlantis_is_user_automattician() ) {
+			return;
+		}
+
 		add_menu_page(
 			__( 'Atlantis', 'a8csp-atlantis' ),
 			__( 'Atlantis', 'a8csp-atlantis' ),
