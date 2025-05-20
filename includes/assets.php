@@ -26,7 +26,7 @@ function atlantis_get_asset_meta( string $asset_path, ?array $extra_dependencies
 		'version'      => (string) filemtime( $asset_path ),
 	);
 	if ( '' === $asset_meta['version'] ) {
-		$asset_meta['version'] = atlantis_get_plugin_version();
+		$asset_meta['version'] = a8csp_atlantis_get_plugin_version();
 	}
 
 	$asset_pathinfo              = pathinfo( $asset_path );

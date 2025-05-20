@@ -7,7 +7,7 @@
 	<rule ref="WordPress.WP.I18n">
 		<properties>
 			<property name="text_domain" type="array">
-				<element value="atlantis"/>
+				<element value="a8csp-atlantis"/>
 			</property>
 		</properties>
 	</rule>
@@ -17,8 +17,8 @@
 		<properties>
 			<property name="prefixes" type="array">
 				<element value="a8csp_"/>
-				<element value="atlantis_"/>
-				<element value="A8C\SpecialProjects\atlantis"/>
+				<element value="a8csp_atlantis_"/>
+				<element value="A8C\SpecialProjects\Atlantis"/>
 			</property>
 		</properties>
 	</rule>

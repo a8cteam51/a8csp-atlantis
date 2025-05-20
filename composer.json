@@ -1,5 +1,5 @@
 {
-  "name": "a8cteam51/atlantis",
+  "name": "a8cteam51/a8csp-atlantis",
   "type": "wordpress-plugin",
 
   "description": "",
@@ -35,8 +35,6 @@
 
     "wp-cli/i18n-command": "^2",
     "lucatume/wp-browser": "^4",
-
-    "wpackagist-plugin/woocommerce": "9.5.*",
 
     "roave/security-advisories": "dev-latest"
   },

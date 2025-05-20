@@ -1,6 +1,6 @@
 <?php declare( strict_types=1 );
 
-use A8C\SpecialProjects\atlantis\Plugin;
+use A8C\SpecialProjects\Atlantis\Plugin;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -14,7 +14,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @return  Plugin
  */
-function atlantis_get_plugin_instance(): Plugin {
+function a8csp_atlantis_get_plugin_instance(): Plugin {
 	return Plugin::get_instance();
 }
 
@@ -22,7 +22,7 @@ function atlantis_get_plugin_instance(): Plugin {
 
 // region OTHERS
 
-$atlantis_files = glob( constant( 'ATLANTIS_DIR_PATH' ) . 'includes/*.php' );
+$atlantis_files = glob( constant( 'A8CSP_ATLANTIS_DIR_PATH' ) . 'includes/*.php' );
 if ( false !== $atlantis_files ) {
 	foreach ( $atlantis_files as $atlantis_file ) {
 		if ( 1 === preg_match( '#/includes/_#i', $atlantis_file ) ) {
