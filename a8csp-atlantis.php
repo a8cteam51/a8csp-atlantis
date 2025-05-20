@@ -64,4 +64,3 @@ if ( is_wp_error( A8CSP_ATLANTIS_REQUIREMENTS ) ) {
 	require_once A8CSP_ATLANTIS_DIR_PATH . '/functions.php';
 	add_action( 'plugins_loaded', array( a8csp_atlantis_get_plugin_instance(), 'maybe_initialize' ) );
 }
-

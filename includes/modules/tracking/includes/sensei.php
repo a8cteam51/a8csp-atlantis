@@ -15,7 +15,7 @@ if ( defined( 'WPCOMSP_SENSEI_TRACKING' ) && ! WPCOMSP_SENSEI_TRACKING ) {
  */
 add_filter(
 	'option_sensei-settings',
-	static function( $values ) {
+	static function ( $values ) {
 		if ( is_array( $values ) ) {
 			$values['sensei_usage_tracking_enabled'] = true;
 		}

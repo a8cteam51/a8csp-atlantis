@@ -29,7 +29,6 @@ class Plugin_Autoupdate_Filter {
 		try {
 			$this->settings = $this->get_auto_update_settings();
 		} catch ( Exception $exception ) {
-
 			$error_message  = $exception->getMessage();
 			$this->settings = (object) array( 'disable_all' => true );
 
@@ -52,7 +51,7 @@ class Plugin_Autoupdate_Filter {
 		// Replace automatic update wording on plugin management page in admin
 		add_filter( 'plugin_auto_update_setting_html', array( $this, 'filter_custom_setting_html' ), 11, 3 );
 
-		//Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
+		// Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
 		add_action( 'admin_init', array( $this, 'output_upgrade_message_for_specific_plugins' ) );
 
 		// Always send auto-update emails to T51 concierge email address
@@ -125,8 +124,8 @@ class Plugin_Autoupdate_Filter {
 	/**
 	 * If we have hit the "Disable all autoupdates" toggle switch, or if we can't get the centralized settings, don't autoupdate anything.
 	 *
-	 * @param bool|null   $update Whether to update the plugin or not. This can be bool or null as per the docs
-	 * @param object $item   The plugin update object.
+	 * @param bool|null $update Whether to update the plugin or not. This can be bool or null as per the docs
+	 * @param object    $item   The plugin update object.
 	 *
 	 * @return bool True to update, false to not update.
 	 */
@@ -182,7 +181,7 @@ class Plugin_Autoupdate_Filter {
 				// adds message to update notice box for that plugin on the plugins page
 				add_filter(
 					"in_plugin_update_message-{$plugin_file}",
-					function( $plugin_data, $response ) use ( $plugin_new_version, $formatted_date ) {
+					function ( $plugin_data, $response ) use ( $plugin_new_version, $formatted_date ) {
 						if ( ! empty( $response->package ) ) {
 							echo ' For stability, autoupdates operate on a slight delay. Autoupdate to version ' . esc_html( $plugin_new_version ) . ' is currently estimated to run after ' . esc_html( $formatted_date ) . ' UTC.';
 						}
@@ -270,8 +269,9 @@ class Plugin_Autoupdate_Filter {
 
 	/**
 	 * Filters the recipient email address for plugin update failure notifications.
+	 *
 	 * @param array $email The email details, including 'to', 'subject', 'body', 'headers'.
-	 * @param int $failures The number of failures encountered while upgrading.
+	 * @param int   $failures The number of failures encountered while upgrading.
 	 * @param mixed $update_results The results of all attempted updates.
 	 *
 	 * @return array $email The email details with the 'to' address modified.
@@ -310,7 +310,6 @@ class Plugin_Autoupdate_Filter {
 
 	/**
 	 * Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
-	 *
 	 */
 	public function output_upgrade_message_for_specific_plugins(): void {
 
@@ -343,11 +342,10 @@ class Plugin_Autoupdate_Filter {
 				if ( 'plugins.php' === $pagenow ) {
 					add_action(
 						'admin_notices',
-						function() use ( $slug ) {
+						function () use ( $slug ) {
 							echo '<div class="notice notice-error"><p><strong style="color:red;"> Caution:</strong> Autoupdates have been explicitly deactivated for ', esc_html( $slug ), '. Please contact the WordPress Special Projects team before manually updating.</p></div>';
 						}
 					);
-
 				}
 			}
 		}
@@ -355,7 +353,6 @@ class Plugin_Autoupdate_Filter {
 
 	/**
 	 * Autoupdates disabled admin notice
-	 *
 	 */
 	public function output_auto_updates_disabled_admin_notice(): void {
 		// add notice to the top of the screen
@@ -363,11 +360,10 @@ class Plugin_Autoupdate_Filter {
 		if ( 'plugins.php' === $pagenow && isset( $this->settings->disable_all ) ) {
 			add_action(
 				'admin_notices',
-				function() {
+				function () {
 					echo '<div class="notice notice-error"><p><strong style="color:red;"> Caution:</strong> All automatic updates are deactivated. Please contact the WordPress Special Projects team before manually updating plugins.</p></div>';
 				}
 			);
-
 		}
 	}
 

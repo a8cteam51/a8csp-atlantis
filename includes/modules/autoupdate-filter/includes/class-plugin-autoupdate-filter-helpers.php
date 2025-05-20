@@ -79,10 +79,10 @@ class Plugin_Autoupdate_Filter_Helpers {
 	/**
 	 * Retrieve the date after which a plugin update is allowed or calculate it if not set.
 	 *
-	 * @param   string  $plugin_slug    Slug of the plugin.
-	 * @param   string  $update_version The version to update to.
-	 * @param   int     $delay_days     Number of days to delay the update.
-	 * @param   string  $plugin_file    The relative path to the plugin file.
+	 * @param   string $plugin_slug    Slug of the plugin.
+	 * @param   string $update_version The version to update to.
+	 * @param   int    $delay_days     Number of days to delay the update.
+	 * @param   string $plugin_file    The relative path to the plugin file.
 	 *
 	 * @return  int The Unix timestamp indicating when the plugin can be updated.
 	 */

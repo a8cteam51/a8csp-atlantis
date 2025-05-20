@@ -90,7 +90,6 @@ class Plugin {
 	 * @return  void
 	 */
 	protected function initialize(): void {
-
 	}
 
 	// endregion

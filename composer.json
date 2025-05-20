@@ -70,8 +70,8 @@
       "@i18n:makemo",
       "@i18n:makephp"
     ],
-    "i18n:makepot": "wp i18n make-pot ./ --slug=atlantis",
-    "i18n:updatepo": "wp i18n update-po ./languages/atlantis.pot",
+    "i18n:makepot": "wp i18n make-pot ./ --slug=a8csp-atlantis",
+    "i18n:updatepo": "wp i18n update-po ./languages/a8csp-atlantis.pot",
     "i18n:makemo": "wp i18n make-mo ./languages/",
     "i18n:makephp": "wp i18n make-php ./languages/",
 

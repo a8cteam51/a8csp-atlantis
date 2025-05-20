@@ -1,5 +1,7 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 // Define module path constant if needed
 if ( ! defined( 'ATLANTIS_TRACKING_PATH' ) ) {
@@ -9,7 +11,7 @@ if ( ! defined( 'ATLANTIS_TRACKING_PATH' ) ) {
 // Load plugin translations if needed
 add_action(
 	'init',
-	static function() {
+	static function () {
 		load_plugin_textdomain( 'team51-tracking', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 );

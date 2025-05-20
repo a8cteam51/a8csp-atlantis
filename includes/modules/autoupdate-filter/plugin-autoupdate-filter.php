@@ -1,5 +1,7 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 // Define module path constant if needed
 if ( ! defined( 'ATLANTIS_AUTOUPDATE_FILTER_PATH' ) ) {
