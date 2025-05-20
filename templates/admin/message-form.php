@@ -53,6 +53,7 @@ wp_enqueue_editor();
 						<option value="info" <?php selected( $message ? $message->message_type : '', 'info' ); ?>><?php echo esc_html__( 'Info', 'atlantis' ); ?></option>
 						<option value="warning" <?php selected( $message ? $message->message_type : '', 'warning' ); ?>><?php echo esc_html__( 'Warning', 'atlantis' ); ?></option>
 						<option value="error" <?php selected( $message ? $message->message_type : '', 'error' ); ?>><?php echo esc_html__( 'Error', 'atlantis' ); ?></option>
+						<option value="success" <?php selected( $message ? $message->message_type : '', 'success' ); ?>><?php echo esc_html__( 'Success', 'atlantis' ); ?></option>
 					</select>
 				</td>
 			</tr>
