@@ -119,7 +119,6 @@ class Modules {
 
 		foreach ( $modules as $key => $module ) {
 			if ( ! empty( $enabled[ $key ] ) && isset( $module['class'] ) ) {
-				$class_name = $module['class'];
 				
 				if ( class_exists( $module['class'] ) ) {
 					$instance = new $module['class']();
