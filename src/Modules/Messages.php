@@ -185,7 +185,7 @@ class Messages {
 			global $wpdb;
 			$message = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE id = %d",
+					"SELECT * FROM {$wpdb->prefix}" . self::TABLE_NAME . ' WHERE id = %d',
 					$id
 				)
 			);
@@ -310,7 +310,7 @@ class Messages {
 
 		$placeholders = array_fill( 0, count( $message_ids ), '%d' );
 		$placeholders = implode( ',', $placeholders );
-		
+
 		$wpdb->query(
 			$wpdb->prepare(
 				"UPDATE {$wpdb->prefix}" . self::TABLE_NAME . " SET message_status = %s WHERE id IN ({$placeholders})",
@@ -337,7 +337,7 @@ class Messages {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'atlantis' ) );
 		}
 
-		$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+		$action      = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
 		$message_ids = array_map( 'intval', (array) $_REQUEST['message'] );
 
 		switch ( $action ) {
@@ -372,7 +372,7 @@ class Messages {
 
 		$placeholders = array_fill( 0, count( $message_ids ), '%d' );
 		$placeholders = implode( ',', $placeholders );
-		
+
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE id IN ({$placeholders})",

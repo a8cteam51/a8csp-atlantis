@@ -46,7 +46,7 @@ class Modules {
 	// region METHODS
 
 	/**
-	 * Registers the plugin settings.
+	 * Initializes the modules.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
