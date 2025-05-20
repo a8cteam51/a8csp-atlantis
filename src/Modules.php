@@ -22,7 +22,6 @@ class Modules {
 	 * @version 1.0.0
 	 */
 	public Colophon $colophon;
-
 	/**
 	 * Initialize the Modules functionality.
 	 *
@@ -30,7 +29,9 @@ class Modules {
 	 */
 	public function initialize(): void {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
-		add_action( 'init', array( $this, 'maybe_load_modules' ) );
+
+		$this->colophon = new Colophon();
+		$this->colophon->maybe_initialize();
 	}
 
 	/**
@@ -119,14 +120,26 @@ class Modules {
 
 		foreach ( $modules as $key => $module ) {
 			if ( ! empty( $enabled[ $key ] ) && isset( $module['class'] ) ) {
-				
 				if ( class_exists( $module['class'] ) ) {
 					$instance = new $module['class']();
-					if ( method_exists( $instance, 'maybe_initialize' ) ) {
-						$instance->maybe_initialize();
+					
+					$module_exists = false;
+					foreach ( $this->modules as $existing_module ) {
+						if ( get_class( $existing_module ) === get_class( $instance ) ) {
+							$module_exists = true;
+							break;
+						}
+					}
+
+					if ( ! $module_exists ) {
+						$this->modules[] = $instance;
+						if ( method_exists( $instance, 'maybe_initialize' ) ) {
+							$instance->maybe_initialize();
+						}
 					}
 				}
 			}
 		}
+		print_r($this->modules);
 	}
 }

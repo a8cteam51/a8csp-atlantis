@@ -11,6 +11,19 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 abstract class Module {
+	abstract public function get_name(): string;
+
+	abstract public function get_description(): string;
+
+	public function is_disabled(): false|WP_Error {
+		return false;
+	}
+
+	public function is_active(): bool {
+		$settings = get_option( 'atlantis_enabled_modules', array() );
+		return isset( $settings[ sanitize_title( $this->get_name() ) ] );
+	}
+
 	/**
 	 * Initializes the module if it is active.
 	 *
@@ -20,23 +33,16 @@ abstract class Module {
 	 * @return  void
 	 */
 	public function maybe_initialize(): void {
-		$module_meets_requirements = $this->module_requirements_check();
-		if ( is_wp_error( $module_meets_requirements ) ) {
-			a8csp_atlantis_output_requirements_error( $module_meets_requirements );
+		if ( ! $this->is_active() ) {
 			return;
 		}
 
+		$is_disabled = $this->is_disabled();
+		if ( is_wp_error( $is_disabled ) ) {
+			// TODO: Output error!
+			return;
+		}
+		
 		$this->initialize();
 	}
-
-	/**
-	 * Checks module-specific requirements and returns true if they all pass.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return  true|\WP_Error
-	 */
-	abstract protected function module_requirements_check(): bool|\WP_Error;
-
 } 
