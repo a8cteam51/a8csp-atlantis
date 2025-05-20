@@ -1,6 +1,8 @@
 <?php declare( strict_types=1 );
 
-namespace A8C\SpecialProjects\Atlantis\Modules;
+namespace A8C\SpecialProjects\Atlantis\Modules\Colophon;
+
+use A8C\SpecialProjects\Atlantis\Modules\Module;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -31,7 +33,7 @@ class Colophon extends Module {
 	 *
 	 * @return  void
 	 */
-	protected function initialize(): void {
+	public function initialize(): void {
 		error_log( 'Colophon initialized' );
 		// TODO: Initialize module components and/or direct hooks.
 	}
