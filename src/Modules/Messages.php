@@ -103,16 +103,40 @@ class Messages {
 	}
 
 	/**
+	 * Get count of active messages.
+	 *
+	 * @return int Number of active messages.
+	 */
+	private function get_active_messages_count(): int {
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table_name} WHERE message_status = %s",
+				'active'
+			)
+		);
+	}
+
+	/**
 	 * Add the access logs page to the Media submenu.
 	 *
 	 * @return void
 	 */
 	public function add_admin_menu(): void {
 		if ( a8csp_atlantis_is_user_automattician() ) {
+			$active_count = $this->get_active_messages_count();
+
+			$menu_title = sprintf(
+				/* translators: %s: Number of active messages */
+				__( 'Messages %s', 'atlantis' ),
+				$active_count > 0 ? '<span class="update-plugins count-' . $active_count . '"><span class="plugin-count">' . number_format_i18n( $active_count ) . '</span></span>' : ''
+			);
+
 			add_submenu_page(
 				'a8csp-atlantis',
 				__( 'Atlantis Messages', 'atlantis' ),
-				__( 'Atlantis Messages', 'atlantis' ),
+				$menu_title,
 				'manage_options',
 				'atlantis-messages',
 				array( $this, 'render_page' )
