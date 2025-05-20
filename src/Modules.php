@@ -2,7 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis;
 
-use A8C\SpecialProjects\Atlantis\Modules\Colophon;
+use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -107,7 +107,7 @@ class Modules {
 
 		$modules = array(
 			'colophon'          => array(
-				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon',
+				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon\\Colophon',
 			),
 			'autoupdate-filter' => array(
 				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\AutoupdateFilter',
@@ -119,6 +119,8 @@ class Modules {
 
 		foreach ( $modules as $key => $module ) {
 			if ( ! empty( $enabled[ $key ] ) && isset( $module['class'] ) ) {
+				$class_name = $module['class'];
+				
 				if ( class_exists( $module['class'] ) ) {
 					$instance = new $module['class']();
 					if ( method_exists( $instance, 'maybe_initialize' ) ) {
