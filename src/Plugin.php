@@ -14,6 +14,14 @@ class Plugin {
 	// region FIELDS AND CONSTANTS
 
 	/**
+	 * The modules component.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public Modules $modules;
+
+	/**
 	 * The settings component.
 	 *
 	 * @since   1.0.0
@@ -110,6 +118,9 @@ class Plugin {
 	 * @return  void
 	 */
 	protected function initialize(): void {
+		$this->modules = new Modules();
+		$this->modules->initialize();
+
 		$this->settings = new Settings();
 		$this->settings->initialize();
 
