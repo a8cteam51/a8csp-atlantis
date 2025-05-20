@@ -52,6 +52,7 @@ class Colophon {
 	 * @return  void
 	 */
 	protected function initialize(): void {
+		error_log( 'Colophon initialized' );
 		// TODO: Initialize module components and/or direct hooks.
 	}
 

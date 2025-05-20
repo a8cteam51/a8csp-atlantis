@@ -30,6 +30,7 @@ class Modules {
 	 */
 	public function initialize(): void {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
+		add_action( 'init', array( $this, 'maybe_load_modules' ) );
 	}
 
 	/**
@@ -51,7 +52,7 @@ class Modules {
 	}
 
 	/**
-	 * Render the access logs admin page.
+	 * Render the module activation settings page.
 	 *
 	 * @return void
 	 */
@@ -94,5 +95,37 @@ class Modules {
 				</form>
 			</div>
 		<?php
+	}
+
+	/**
+	 * Maybe load the modules.
+	 *
+	 * @return void
+	 */
+	public function maybe_load_modules(): void {
+		$enabled = get_option( 'atlantis_enabled_modules', array() );
+
+		$modules = array(
+			'colophon'          => array(
+				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon',
+			),
+			'autoupdate-filter' => array(
+				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\AutoupdateFilter',
+			),
+			'tracking'          => array(
+				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking',
+			),
+		);
+
+		foreach ( $modules as $key => $module ) {
+			if ( ! empty( $enabled[ $key ] ) && isset( $module['class'] ) ) {
+				if ( class_exists( $module['class'] ) ) {
+					$instance = new $module['class']();
+					if ( method_exists( $instance, 'maybe_initialize' ) ) {
+						$instance->maybe_initialize();
+					}
+				}
+			}
+		}
 	}
 }
