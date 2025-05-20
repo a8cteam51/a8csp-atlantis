@@ -34,7 +34,6 @@ class Messages {
 	 */
 	public function initialize(): void {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 
 		// Only run table creation on plugin activation or when forced
 		add_action( 'init', array( $this, 'maybe_create_table' ) );
@@ -194,20 +193,5 @@ class Messages {
 			</form>
 		</div>
 		<?php
-	}
-
-	/**
-	 * Enqueue admin scripts and styles for the access logs page.
-	 *
-	 * @param string $hook The current admin page hook.
-	 *
-	 * @return void
-	 */
-	public function enqueue_admin_scripts( string $hook ): void {
-		if ( 'media_page_passport-media-logs' !== $hook ) {
-			return;
-		}
-
-		wp_enqueue_style( 'atlantis-messages-admin', A8CSP_ATLANTIS_DIR_URL . 'assets/admin/css/messages.css', array(), a8csp_atlantis_get_plugin_metadata( 'Version' ) );
 	}
 }
