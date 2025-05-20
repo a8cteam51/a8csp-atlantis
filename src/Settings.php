@@ -22,6 +22,7 @@ class Settings {
 	 * @return  void
 	 */
 	public function initialize(): void {
+		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 		// add_action( 'admin_init', [ $this, 'register_settings' ] );
 		// add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
 	}
@@ -29,6 +30,22 @@ class Settings {
 	// endregion
 
 	// region HOOKS
+
+	public function register_admin_menu(): void {
+		add_menu_page(
+			__( 'Atlantis', 'a8csp-atlantis' ),
+			__( 'Atlantis', 'a8csp-atlantis' ),
+			'manage_options',
+			'a8csp-atlantis',
+			array( $this, 'render_settings_page' ),
+			'dashicons-admin-generic',
+			3
+		);
+	}
+
+	public function render_settings_page(): void {
+
+	}
 
 	/*
 	public function register_settings(): void {
