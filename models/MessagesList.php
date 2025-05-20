@@ -42,6 +42,7 @@ class MessagesList extends WP_List_Table {
 			'message_type'     => __( 'Type', 'atlantis' ),
 			'message_status'   => __( 'Status', 'atlantis' ),
 			'message_location' => __( 'Location', 'atlantis' ),
+			'message_exclude'  => __( 'Exclude', 'atlantis' ),
 			'message_time'     => __( 'Time', 'atlantis' ),
 		);
 	}
@@ -58,6 +59,7 @@ class MessagesList extends WP_List_Table {
 			'message_type'     => array( 'message_type', false ),
 			'message_status'   => array( 'message_status', false ),
 			'message_location' => array( 'message_location', false ),
+			'message_exclude'  => array( 'message_exclude', false ),
 			'message_time'     => array( 'message_time', true ),
 		);
 	}
@@ -140,7 +142,7 @@ class MessagesList extends WP_List_Table {
 		$order   = isset( $_REQUEST['order'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['order'] ) ) : 'DESC';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		$valid_orderby_values = array( 'message_name', 'message_content', 'message_type', 'message_status', 'message_location', 'message_time' );
+		$valid_orderby_values = array( 'message_name', 'message_content', 'message_type', 'message_status', 'message_location', 'message_time', 'message_exclude' );
 		if ( ! in_array( $orderby, $valid_orderby_values, true ) ) {
 			$orderby = 'message_time';
 		}
@@ -157,6 +159,7 @@ class MessagesList extends WP_List_Table {
 			$search_conditions[] = 'message_type LIKE %s';
 			$search_conditions[] = 'message_status LIKE %s';
 			$search_conditions[] = 'message_location LIKE %s';
+			$search_conditions[] = 'message_exclude LIKE %s';
 			$query_args          = array( $search_like, $search_like, $search_like, $search_like, $search_like );
 		}
 
@@ -179,7 +182,7 @@ class MessagesList extends WP_List_Table {
 		}
 
 		// For main query
-		$sql = "SELECT l.id, l.message_name, l.message_content, l.message_type, l.message_status, l.message_location, l.message_time FROM $table_name l";
+		$sql = "SELECT l.id, l.message_name, l.message_content, l.message_type, l.message_status, l.message_location, l.message_exclude, l.message_time FROM $table_name l";
 
 		if ( ! empty( $search_conditions ) ) {
 			$sql        .= ' WHERE ' . implode( ' OR ', $search_conditions );
@@ -271,7 +274,11 @@ class MessagesList extends WP_List_Table {
 					esc_html( $status )
 				);
 			case 'message_location':
-				return esc_html( $item->message_location );
+				$locations = maybe_unserialize( $item->message_location );
+				return esc_html( implode( ', ', $locations ) );
+			case 'message_exclude':
+				$excludes = ! empty( $item->message_exclude ) ? maybe_unserialize( $item->message_exclude ) : array();
+				return ! empty( $excludes ) ? esc_html( implode( ', ', $excludes ) ) : '—';
 			case 'message_time':
 				return esc_html( get_date_from_gmt( $item->message_time ) );
 			default:

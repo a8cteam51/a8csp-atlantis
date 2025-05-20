@@ -32,14 +32,12 @@ class Notifications {
 		// Get current location
 		$current_location = $this->get_current_location();
 
-		// Get active messages for current location
+		// Get active messages
 		$messages = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM %i WHERE message_status = %s AND (message_location = %s OR message_location = %s)',
+				'SELECT * FROM %i WHERE message_status = %s',
 				$table_name,
-				'active',
-				$current_location,
-				'all'
+				'active'
 			)
 		);
 
@@ -47,7 +45,24 @@ class Notifications {
 			return array();
 		}
 
-		return $messages;
+		// Filter messages based on location and exclude rules
+		$filtered_messages = array();
+		foreach ( $messages as $message ) {
+			$locations = maybe_unserialize( $message->message_location );
+			$excludes  = ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
+
+			// Skip if current location is in excludes
+			if ( ! empty( $excludes ) && in_array( $current_location, $excludes, true ) ) {
+				continue;
+			}
+
+			// Include if 'all' is in locations or current location matches
+			if ( in_array( 'all', $locations, true ) || in_array( $current_location, $locations, true ) ) {
+				$filtered_messages[] = $message;
+			}
+		}
+
+		return $filtered_messages;
 	}
 
 	/**

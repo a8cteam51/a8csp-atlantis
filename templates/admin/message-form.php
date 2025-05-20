@@ -68,19 +68,63 @@ wp_enqueue_editor();
 				</td>
 			</tr>
 			<tr>
-			<th scope="row"><label for="message_location"><?php echo esc_html__( 'Location', 'atlantis' ); ?></label></th>
+				<th scope="row"><label for="message_location_include"><?php echo esc_html__( 'Included Locations', 'atlantis' ); ?></label></th>
 				<td>
-					<select name="message_location" id="message_location" class="regular-text" required>
-						<option value=""><?php echo esc_html__( 'Select Location', 'atlantis' ); ?></option>
-						<?php foreach ( $locations as $value => $label ) : ?>
-							<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current_location, $value ); ?>>
-								<?php echo esc_html( $label ); ?>
-							</option>
+					<div id="atlantis-included-locations" class="atlantis-location-list">
+						<?php
+						foreach ( $current_location as $location ) :
+							?>
+							<div class="atlantis-location-item">
+								<span><?php echo esc_html( $locations[ $location ] ?? $location ); ?></span>
+								<button type="button" class="button-link delete-location" data-location="<?php echo esc_attr( $location ); ?>"><?php echo esc_html__( 'Remove', 'atlantis' ); ?></button>
+								<input type="hidden" name="message_location_include[]" value="<?php echo esc_attr( $location ); ?>">
+							</div>
 						<?php endforeach; ?>
+					</div>
+					<select class="atlantis-location-dropdown" data-target="include">
+						<option value=""><?php echo esc_html__( '-- Select Location --', 'atlantis' ); ?></option>
+						<?php
+						foreach ( $locations as $key => $label ) :
+							if ( ! in_array( $key, $current_location, true ) ) :
+								?>
+								<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option>
+								<?php
+							endif;
+						endforeach;
+						?>
 					</select>
-					<p class="description">
-						<?php echo esc_html__( 'Select the admin page where this message should be displayed.', 'atlantis' ); ?>
-					</p>
+					<button type="button" class="button" id="atlantis-add-include-location"><?php echo esc_html__( 'Add More', 'atlantis' ); ?></button>
+					<p class="description"><?php echo esc_html__( 'Select admin pages where this message should be displayed.', 'atlantis' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="message_location_exclude"><?php echo esc_html__( 'Excluded Locations', 'atlantis' ); ?></label></th>
+				<td>
+					<div id="atlantis-excluded-locations" class="atlantis-location-list">
+						<?php
+						foreach ( $current_exclude as $location ) :
+							?>
+							<div class="atlantis-location-item">
+								<span><?php echo esc_html( $locations[ $location ] ?? $location ); ?></span>
+								<button type="button" class="button-link delete-location" data-location="<?php echo esc_attr( $location ); ?>"><?php echo esc_html__( 'Remove', 'atlantis' ); ?></button>
+								<input type="hidden" name="message_location_exclude[]" value="<?php echo esc_attr( $location ); ?>">
+							</div>
+						<?php endforeach; ?>
+					</div>
+					<select class="atlantis-location-dropdown" data-target="exclude">
+						<option value=""><?php echo esc_html__( '-- Select Location --', 'atlantis' ); ?></option>
+						<?php
+						foreach ( $locations as $key => $label ) :
+							if ( ! in_array( $key, $current_exclude, true ) ) :
+								?>
+								<option value="<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $label ); ?></option>
+								<?php
+							endif;
+						endforeach;
+						?>
+					</select>
+					<button type="button" class="button" id="atlantis-add-exclude-location"><?php echo esc_html__( 'Add More', 'atlantis' ); ?></button>
+					<p class="description"><?php echo esc_html__( 'Select admin pages where this message should NOT be displayed.', 'atlantis' ); ?></p>
 				</td>
 			</tr>
 		</table>

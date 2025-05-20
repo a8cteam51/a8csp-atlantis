@@ -1,0 +1,28 @@
+.atlantis-location-list {
+  margin-bottom: 10px;
+}
+
+.atlantis-location-item {
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.atlantis-location-item span {
+  margin-right: 10px;
+}
+
+.atlantis-location-dropdown {
+  margin-left: 10px;
+}
+
+.button-link.delete-location {
+  color: #dc3232;
+  text-decoration: none;
+  padding-left: 10px;
+}
+
+.button-link.delete-location:hover {
+  color: #a00;
+}
+/*# sourceMappingURL=message-form.css.map */

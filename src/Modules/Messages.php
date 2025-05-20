@@ -81,7 +81,8 @@ class Messages {
 			message_content text NOT NULL,
 			message_type varchar(255) NOT NULL,
 			message_status varchar(255) NOT NULL,
-			message_location varchar(255) NOT NULL,
+			message_location text NOT NULL,
+			message_exclude text DEFAULT NULL,
 			message_time datetime DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY message_name (message_name)
@@ -198,6 +199,41 @@ class Messages {
 	}
 
 	/**
+	 * Enqueue message form assets.
+	 *
+	 * @param array $current_location Current included locations.
+	 * @param array $current_exclude  Current excluded locations.
+	 * @return void
+	 */
+	private function enqueue_message_form_assets( $current_location = array(), $current_exclude = array() ): void {
+		wp_enqueue_style(
+			'atlantis-message-form',
+			A8CSP_ATLANTIS_DIR_URL . 'assets/css/build/message-form.css',
+			array(),
+			a8csp_atlantis_get_plugin_metadata( 'Version' )
+		);
+
+		wp_enqueue_script(
+			'atlantis-message-form',
+			A8CSP_ATLANTIS_DIR_URL . 'assets/js/build/message-form.js',
+			array(),
+			a8csp_atlantis_get_plugin_metadata( 'Version' ),
+			true
+		);
+
+		// Pass data to JavaScript
+		wp_localize_script(
+			'atlantis-message-form',
+			'atlantisLocations',
+			array(
+				'locations' => $this->get_admin_locations(),
+				'include'   => $current_location,
+				'exclude'   => $current_exclude,
+			)
+		);
+	}
+
+	/**
 	 * Render the single message view for adding/editing messages.
 	 *
 	 * @param int $id The message ID if editing, 0 for new message.
@@ -217,69 +253,14 @@ class Messages {
 		}
 
 		$locations        = $this->get_admin_locations();
-		$current_location = $message ? $message->message_location : '';
+		$current_location = $message ? maybe_unserialize( $message->message_location ) : array();
+		$current_exclude  = $message && ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
+
+		// Enqueue assets
+		$this->enqueue_message_form_assets( $current_location, $current_exclude );
 
 		// Load the template
 		include A8CSP_ATLANTIS_DIR_PATH . 'templates/admin/message-form.php';
-	}
-
-	/**
-	 * Update an existing message in the database.
-	 *
-	 * @param int    $message_id       The ID of the message to update.
-	 * @param string $message_name     The name of the message.
-	 * @param string $message_content  The content of the message.
-	 * @param string $message_type     The type of the message.
-	 * @param string $message_status   The status of the message.
-	 * @param string $message_location The location of the message.
-	 *
-	 * @return bool|int False on failure, number of rows affected on success.
-	 */
-	private function update_message( int $message_id, string $message_name, string $message_content, string $message_type, string $message_status, string $message_location ) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-
-		return $wpdb->update(
-			$table_name,
-			array(
-				'message_name'     => $message_name,
-				'message_content'  => $message_content,
-				'message_type'     => $message_type,
-				'message_status'   => $message_status,
-				'message_location' => $message_location,
-			),
-			array( 'id' => $message_id ),
-			array( '%s', '%s', '%s', '%s', '%s' ),
-			array( '%d' )
-		);
-	}
-
-	/**
-	 * Insert a new message into the database.
-	 *
-	 * @param string $message_name     The name of the message.
-	 * @param string $message_content  The content of the message.
-	 * @param string $message_type     The type of the message.
-	 * @param string $message_status   The status of the message.
-	 * @param string $message_location The location of the message.
-	 *
-	 * @return bool|int False on failure, number of rows affected on success.
-	 */
-	private function insert_new_message( string $message_name, string $message_content, string $message_type, string $message_status, string $message_location ) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-
-		return $wpdb->insert(
-			$table_name,
-			array(
-				'message_name'     => $message_name,
-				'message_content'  => $message_content,
-				'message_type'     => $message_type,
-				'message_status'   => $message_status,
-				'message_location' => $message_location,
-			),
-			array( '%s', '%s', '%s', '%s', '%s' )
-		);
 	}
 
 	/**
@@ -305,16 +286,52 @@ class Messages {
 		$message_content  = isset( $_POST['message_content'] ) ? wp_kses_post( wp_unslash( $_POST['message_content'] ) ) : '';
 		$message_type     = isset( $_POST['message_type'] ) ? sanitize_text_field( wp_unslash( $_POST['message_type'] ) ) : '';
 		$message_status   = isset( $_POST['message_status'] ) ? sanitize_text_field( wp_unslash( $_POST['message_status'] ) ) : '';
-		$message_location = isset( $_POST['message_location'] ) ? sanitize_text_field( wp_unslash( $_POST['message_location'] ) ) : '';
+		$message_location = isset( $_POST['message_location_include'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['message_location_include'] ) ) : array();
+		$message_exclude  = isset( $_POST['message_location_exclude'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['message_location_exclude'] ) ) : array();
 
 		if ( empty( $message_name ) || empty( $message_content ) || empty( $message_type ) || empty( $message_status ) || empty( $message_location ) ) {
 			wp_die( esc_html__( 'All fields are required.', 'atlantis' ) );
 		}
 
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+		$data = array(
+			'message_name'     => $message_name,
+			'message_content'  => $message_content,
+			'message_type'     => $message_type,
+			'message_status'   => $message_status,
+			'message_location' => maybe_serialize( $message_location ),
+			'message_exclude'  => ! empty( $message_exclude ) ? maybe_serialize( $message_exclude ) : null,
+		);
+
+		$format = array(
+			'%s', // message_name
+			'%s', // message_content
+			'%s', // message_type
+			'%s', // message_status
+			'%s', // message_location
+			'%s', // message_exclude
+		);
+
 		if ( $message_id > 0 ) {
-			$this->update_message( $message_id, $message_name, $message_content, $message_type, $message_status, $message_location );
+			$result = $wpdb->update(
+				$table_name,
+				$data,
+				array( 'id' => $message_id ),
+				$format,
+				array( '%d' )
+			);
 		} else {
-			$this->insert_new_message( $message_name, $message_content, $message_type, $message_status, $message_location );
+			$result = $wpdb->insert(
+				$table_name,
+				$data,
+				$format
+			);
+		}
+
+		if ( false === $result ) {
+			wp_die( esc_html__( 'Error saving message.', 'atlantis' ) );
 		}
 
 		wp_safe_redirect( remove_query_arg( array( 'action', 'id' ) ) );
@@ -356,7 +373,9 @@ class Messages {
 	private function get_admin_locations(): array {
 		global $menu, $submenu;
 
-		$locations = array();
+		$locations = array(
+			'all' => __( 'All Locations', 'atlantis' ),
+		);
 
 		// Top-level menu items
 		foreach ( $menu as $menu_item ) {
@@ -381,7 +400,7 @@ class Messages {
 
 							$screen_id = $submenu_slug;
 
-							$locations[ $screen_id ] = $menu_title . ' &rsaquo; ' . $submenu_title;
+							$locations[ $screen_id ] = $menu_title . ' -> ' . $submenu_title;
 						}
 					}
 				}
