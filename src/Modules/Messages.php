@@ -108,7 +108,7 @@ class Messages {
 	 * @return void
 	 */
 	public function add_admin_menu(): void {
-		if ( current_user_can( 'manage_options' ) ) {
+		if ( a8csp_atlantis_is_user_automattician() ) {
 			add_submenu_page(
 				'a8csp-atlantis',
 				__( 'Atlantis Messages', 'atlantis' ),
@@ -139,7 +139,7 @@ class Messages {
 	 * @return void
 	 */
 	public function render_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! a8csp_atlantis_is_user_automattician() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'atlantis' ) );
 		}
 
@@ -185,7 +185,8 @@ class Messages {
 			global $wpdb;
 			$message = $wpdb->get_row(
 				$wpdb->prepare(
-					"SELECT * FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE id = %d",
+					//phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+					"SELECT * FROM {$wpdb->prefix}" . self::TABLE_NAME . ' WHERE id = %d',
 					$id
 				)
 			);
@@ -268,7 +269,7 @@ class Messages {
 			wp_die( esc_html__( 'Security check failed', 'atlantis' ) );
 		}
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! a8csp_atlantis_is_user_automattician() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'atlantis' ) );
 		}
 
@@ -310,9 +311,10 @@ class Messages {
 
 		$placeholders = array_fill( 0, count( $message_ids ), '%d' );
 		$placeholders = implode( ',', $placeholders );
-		
+
 		$wpdb->query(
 			$wpdb->prepare(
+				//phpcs:ignore
 				"UPDATE {$wpdb->prefix}" . self::TABLE_NAME . " SET message_status = %s WHERE id IN ({$placeholders})",
 				array_merge( array( $status ), $message_ids )
 			)
@@ -337,7 +339,7 @@ class Messages {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'atlantis' ) );
 		}
 
-		$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+		$action      = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
 		$message_ids = array_map( 'intval', (array) $_REQUEST['message'] );
 
 		switch ( $action ) {
@@ -372,7 +374,7 @@ class Messages {
 
 		$placeholders = array_fill( 0, count( $message_ids ), '%d' );
 		$placeholders = implode( ',', $placeholders );
-		
+
 		$wpdb->query(
 			$wpdb->prepare(
 				"DELETE FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE id IN ({$placeholders})",

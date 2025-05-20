@@ -67,7 +67,7 @@ class Notifications {
 	 */
 	public function display_notifications(): void {
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! a8csp_atlantis_is_user_automattician() ) {
 			return;
 		}
 
