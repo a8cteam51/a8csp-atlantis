@@ -35,10 +35,11 @@ class Notifications {
 		// Get active messages for current location
 		$messages = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM %i WHERE message_status = %s AND message_location = %s',
+				'SELECT * FROM %i WHERE message_status = %s AND (message_location = %s OR message_location = %s)',
 				$table_name,
 				'active',
-				$current_location
+				$current_location,
+				'all'
 			)
 		);
 
