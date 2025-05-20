@@ -29,14 +29,6 @@ class Plugin {
 	 */
 	public Settings $settings;
 
-	/**
-	 * The messages component.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public Messages $messages;
-
 	// endregion
 
 	// region MAGIC METHODS
@@ -123,9 +115,6 @@ class Plugin {
 
 		$this->settings = new Settings();
 		$this->settings->initialize();
-
-		$this->messages = new Messages();
-		$this->messages->initialize();
 	}
 
 	// endregion

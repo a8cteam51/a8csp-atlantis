@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis;
 
 use A8C\SpecialProjects\Atlantis\Modules\Colophon;
+use A8C\SpecialProjects\Atlantis\Modules\Messages;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -23,6 +24,14 @@ class Modules {
 	 */
 	public Colophon $colophon;
 
+	/**
+	 * Messages module.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public Messages $messages;
+
 	// endregion
 
 	// region METHODS
@@ -38,6 +47,9 @@ class Modules {
 	public function initialize(): void {
 		$this->colophon = new Colophon();
 		$this->colophon->maybe_initialize();
+
+		$this->messages = new Messages();
+		$this->messages->initialize();
 	}
 
 	// endregion

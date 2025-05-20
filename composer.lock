@@ -8305,7 +8305,7 @@
         "a8cteam51/team51-configs": 20,
         "roave/security-advisories": 20
     },
-    "prefer-stable": true,
+    "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": ">=8.3",
