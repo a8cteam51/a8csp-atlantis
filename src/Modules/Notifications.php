@@ -104,12 +104,12 @@ class Notifications {
 		$type    = $this->get_notice_type( $message->message_type );
 		$content = wp_kses_post( $message->message_content );
 
-		printf(
-			'<div class="notice notice-%s">
-				<p>%s</p>
-			</div>',
-			esc_attr( $type ),
-			wp_kses_post( $content )
+		wp_admin_notice(
+			$content,
+			array(
+				'type'        => $type,
+				'dismissible' => false,
+			)
 		);
 	}
 
