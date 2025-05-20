@@ -36,12 +36,13 @@ class MessagesList extends WP_List_Table {
 	 */
 	public function get_columns(): array {
 		return array(
-			'message_name'     => __( 'Message Name', 'atlantis' ),
-			'message_content'  => __( 'Message Content', 'atlantis' ),
-			'message_type'     => __( 'Message Type', 'atlantis' ),
-			'message_status'   => __( 'Message Status', 'atlantis' ),
-			'message_location' => __( 'Message Location', 'atlantis' ),
-			'message_time'     => __( 'Message Time', 'atlantis' ),
+			'cb'               => '<input type="checkbox" />',
+			'message_name'     => __( 'Name', 'atlantis' ),
+			'message_content'  => __( 'Content', 'atlantis' ),
+			'message_type'     => __( 'Type', 'atlantis' ),
+			'message_status'   => __( 'Status', 'atlantis' ),
+			'message_location' => __( 'Location', 'atlantis' ),
+			'message_time'     => __( 'Time', 'atlantis' ),
 		);
 	}
 
@@ -58,6 +59,32 @@ class MessagesList extends WP_List_Table {
 			'message_status'   => array( 'message_status', false ),
 			'message_location' => array( 'message_location', false ),
 			'message_time'     => array( 'message_time', true ),
+		);
+	}
+
+	/**
+	 * Get bulk actions.
+	 *
+	 * @return array
+	 */
+	public function get_bulk_actions(): array {
+		return array(
+			'delete'     => __( 'Delete', 'atlantis' ),
+			'activate'   => __( 'Activate', 'atlantis' ),
+			'deactivate' => __( 'Deactivate', 'atlantis' ),
+		);
+	}
+
+	/**
+	 * Handle the checkbox column.
+	 *
+	 * @param object $item Item being displayed.
+	 * @return string
+	 */
+	public function column_cb( $item ): string {
+		return sprintf(
+			'<input type="checkbox" name="message[]" value="%s" />',
+			$item->id
 		);
 	}
 
@@ -197,13 +224,52 @@ class MessagesList extends WP_List_Table {
 	public function column_default( $item, $column_name ): string {
 		switch ( $column_name ) {
 			case 'message_name':
-				return esc_html( $item->message_name );
+				$actions = array(
+					'edit'   => sprintf(
+						'<a href="%s">%s</a>',
+						esc_url(
+							add_query_arg(
+								array(
+									'action' => 'edit',
+									'id'     => $item->id,
+								)
+							)
+						),
+						__( 'Edit', 'atlantis' )
+					),
+					'delete' => sprintf(
+						'<a href="%s" class="submitdelete" onclick="return confirm(\'%s\');">%s</a>',
+						esc_url(
+							wp_nonce_url(
+								add_query_arg(
+									array(
+										'action'  => 'delete',
+										'message' => $item->id,
+									)
+								),
+								'bulk-messages'
+							)
+						),
+						esc_js( __( 'Are you sure you want to delete this message?', 'atlantis' ) ),
+						__( 'Delete', 'atlantis' )
+					),
+				);
+				return sprintf(
+					'%1$s %2$s',
+					'<strong>' . esc_html( $item->message_name ) . '</strong>',
+					$this->row_actions( $actions )
+				);
 			case 'message_content':
 				return wp_kses_post( $item->message_content );
 			case 'message_type':
 				return esc_html( $item->message_type );
 			case 'message_status':
-				return esc_html( $item->message_status );
+				$status = 'active' === $item->message_status ? __( 'Active', 'atlantis' ) : __( 'Inactive', 'atlantis' );
+				return sprintf(
+					'<span class="status-%s">%s</span>',
+					esc_attr( $item->message_status ),
+					esc_html( $status )
+				);
 			case 'message_location':
 				return esc_html( $item->message_location );
 			case 'message_time':

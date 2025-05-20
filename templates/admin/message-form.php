@@ -38,7 +38,7 @@ wp_enqueue_editor();
 						'message_content',
 						array(
 							'textarea_name' => 'message_content',
-							'media_buttons' => true,
+							'media_buttons' => false,
 							'textarea_rows' => 10,
 						)
 					);

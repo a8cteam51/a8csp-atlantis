@@ -35,6 +35,7 @@ class Messages {
 	public function initialize(): void {
 		add_action( 'a8csp/atlantis/admin_menu_registered', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'save_message' ) );
+		add_action( 'admin_init', array( $this, 'handle_bulk_actions' ) );
 
 		// Only run table creation on plugin activation or when forced
 		add_action( 'init', array( $this, 'maybe_create_table' ) );
@@ -99,40 +100,6 @@ class Messages {
 		global $wpdb;
 		$table_name = $wpdb->prefix . self::TABLE_NAME;
 		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
-	}
-
-	/**
-	 * Insert a message into the database.
-	 *
-	 * @param int    $message_id       The ID of the message.
-	 * @param string $message_name     The name of the message.
-	 * @param string $message_content  The content of the message.
-	 * @param string $message_type     The type of the message.
-	 * @param string $message_status   The status of the message.
-	 * @param string $message_location The location of the message.
-	 *
-	 * @return bool|int False on failure, number of rows affected on success.
-	 */
-	public function insert_message( int $message_id, string $message_name, string $message_content, string $message_type, string $message_status, string $message_location ) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-
-		if ( ! self::table_exists() ) {
-			$this->create_table();
-		}
-
-		return $wpdb->insert(
-			$table_name,
-			array(
-				'message_id'       => $message_id,
-				'message_name'     => $message_name,
-				'message_content'  => $message_content,
-				'message_type'     => $message_type,
-				'message_status'   => $message_status,
-				'message_location' => $message_location,
-			),
-			array( '%d', '%s', '%s', '%s' )
-		);
 	}
 
 	/**
@@ -216,10 +183,9 @@ class Messages {
 		$message = null;
 		if ( $id > 0 ) {
 			global $wpdb;
-			$table_name = $wpdb->prefix . self::TABLE_NAME;
-			$message    = $wpdb->get_row(
+			$message = $wpdb->get_row(
 				$wpdb->prepare(
-					'SELECT * FROM ' . $table_name . ' WHERE id = %d',
+					"SELECT * FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE id = %d",
 					$id
 				)
 			);
@@ -227,6 +193,65 @@ class Messages {
 
 		// Load the template
 		include A8CSP_ATLANTIS_DIR_PATH . 'templates/admin/message-form.php';
+	}
+
+	/**
+	 * Update an existing message in the database.
+	 *
+	 * @param int    $message_id       The ID of the message to update.
+	 * @param string $message_name     The name of the message.
+	 * @param string $message_content  The content of the message.
+	 * @param string $message_type     The type of the message.
+	 * @param string $message_status   The status of the message.
+	 * @param string $message_location The location of the message.
+	 *
+	 * @return bool|int False on failure, number of rows affected on success.
+	 */
+	private function update_message( int $message_id, string $message_name, string $message_content, string $message_type, string $message_status, string $message_location ) {
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+		return $wpdb->update(
+			$table_name,
+			array(
+				'message_name'     => $message_name,
+				'message_content'  => $message_content,
+				'message_type'     => $message_type,
+				'message_status'   => $message_status,
+				'message_location' => $message_location,
+			),
+			array( 'id' => $message_id ),
+			array( '%s', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+	}
+
+	/**
+	 * Insert a new message into the database.
+	 *
+	 * @param string $message_name     The name of the message.
+	 * @param string $message_content  The content of the message.
+	 * @param string $message_type     The type of the message.
+	 * @param string $message_status   The status of the message.
+	 * @param string $message_location The location of the message.
+	 *
+	 * @return bool|int False on failure, number of rows affected on success.
+	 */
+	private function insert_new_message( string $message_name, string $message_content, string $message_type, string $message_status, string $message_location ) {
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+		return $wpdb->insert(
+			$table_name,
+			array(
+				'message_name'     => $message_name,
+				'message_content'  => $message_content,
+				'message_type'     => $message_type,
+				'message_status'   => $message_status,
+				'message_location' => $message_location,
+			),
+			array( '%s', '%s', '%s', '%s', '%s' )
+		);
 	}
 
 	/**
@@ -258,40 +283,101 @@ class Messages {
 			wp_die( esc_html__( 'All fields are required.', 'atlantis' ) );
 		}
 
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-
 		if ( $message_id > 0 ) {
-			// Update existing message
-			$wpdb->update(
-				$table_name,
-				array(
-					'message_name'     => $message_name,
-					'message_content'  => $message_content,
-					'message_type'     => $message_type,
-					'message_status'   => $message_status,
-					'message_location' => $message_location,
-				),
-				array( 'id' => $message_id ),
-				array( '%s', '%s', '%s', '%s', '%s' ),
-				array( '%d' )
-			);
+			$this->update_message( $message_id, $message_name, $message_content, $message_type, $message_status, $message_location );
 		} else {
-			// Insert new message
-			$wpdb->insert(
-				$table_name,
-				array(
-					'message_name'     => $message_name,
-					'message_content'  => $message_content,
-					'message_type'     => $message_type,
-					'message_status'   => $message_status,
-					'message_location' => $message_location,
-				),
-				array( '%s', '%s', '%s', '%s', '%s' )
-			);
+			$this->insert_new_message( $message_name, $message_content, $message_type, $message_status, $message_location );
 		}
 
 		wp_safe_redirect( remove_query_arg( array( 'action', 'id' ) ) );
 		exit;
+	}
+
+	/**
+	 * Update the status of messages.
+	 *
+	 * @param array  $message_ids Array of message IDs to update.
+	 * @param string $status     New status value.
+	 * @return void
+	 */
+	private function update_messages_status( array $message_ids, string $status ): void {
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+		if ( empty( $message_ids ) ) {
+			return;
+		}
+
+		$placeholders = array_fill( 0, count( $message_ids ), '%d' );
+		$placeholders = implode( ',', $placeholders );
+		
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$wpdb->prefix}" . self::TABLE_NAME . " SET message_status = %s WHERE id IN ({$placeholders})",
+				array_merge( array( $status ), $message_ids )
+			)
+		);
+	}
+
+	/**
+	 * Handle bulk actions for messages.
+	 *
+	 * @return void
+	 */
+	public function handle_bulk_actions(): void {
+		if ( ! isset( $_REQUEST['action'] ) || ! isset( $_REQUEST['message'] ) ) {
+			return;
+		}
+
+		if ( ! check_admin_referer( 'bulk-messages' ) ) {
+			wp_die( esc_html__( 'Security check failed', 'atlantis' ) );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'atlantis' ) );
+		}
+
+		$action = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );
+		$message_ids = array_map( 'intval', (array) $_REQUEST['message'] );
+
+		switch ( $action ) {
+			case 'delete':
+				$this->delete_messages( $message_ids );
+				break;
+			case 'activate':
+				$this->update_messages_status( $message_ids, 'active' );
+				break;
+			case 'deactivate':
+				$this->update_messages_status( $message_ids, 'inactive' );
+				break;
+		}
+
+		wp_safe_redirect( remove_query_arg( array( 'action', 'message', '_wpnonce' ) ) );
+		exit;
+	}
+
+	/**
+	 * Delete messages from the database.
+	 *
+	 * @param array $message_ids Array of message IDs to delete.
+	 * @return void
+	 */
+	private function delete_messages( array $message_ids ): void {
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+		if ( empty( $message_ids ) ) {
+			return;
+		}
+
+		$placeholders = array_fill( 0, count( $message_ids ), '%d' );
+		$placeholders = implode( ',', $placeholders );
+		
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE id IN ({$placeholders})",
+				$message_ids
+			)
+		);
 	}
 }
