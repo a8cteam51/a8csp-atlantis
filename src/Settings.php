@@ -47,7 +47,7 @@ class Settings {
 			'manage_options',
 			'a8csp-atlantis',
 			array( $this, 'render_settings_page' ),
-			'dashicons-admin-generic',
+			'dashicons-plugins-checked',
 			3
 		);
 

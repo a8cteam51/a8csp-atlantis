@@ -81,7 +81,8 @@ class Messages {
 			message_content text NOT NULL,
 			message_type varchar(255) NOT NULL,
 			message_status varchar(255) NOT NULL,
-			message_location varchar(255) NOT NULL,
+			message_location text NOT NULL,
+			message_exclude text DEFAULT NULL,
 			message_time datetime DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY message_name (message_name)
@@ -103,16 +104,40 @@ class Messages {
 	}
 
 	/**
+	 * Get count of active messages.
+	 *
+	 * @return int Number of active messages.
+	 */
+	private function get_active_messages_count(): int {
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table_name} WHERE message_status = %s",
+				'active'
+			)
+		);
+	}
+
+	/**
 	 * Add the access logs page to the Media submenu.
 	 *
 	 * @return void
 	 */
 	public function add_admin_menu(): void {
-		if ( current_user_can( 'manage_options' ) ) {
+		if ( a8csp_atlantis_is_user_automattician() ) {
+			$active_count = $this->get_active_messages_count();
+
+			$menu_title = sprintf(
+				/* translators: %s: Number of active messages */
+				__( 'Messages %s', 'atlantis' ),
+				$active_count > 0 ? '<span class="update-plugins count-' . $active_count . '"><span class="plugin-count">' . number_format_i18n( $active_count ) . '</span></span>' : ''
+			);
+
 			add_submenu_page(
 				'a8csp-atlantis',
 				__( 'Atlantis Messages', 'atlantis' ),
-				__( 'Atlantis Messages', 'atlantis' ),
+				$menu_title,
 				'manage_options',
 				'atlantis-messages',
 				array( $this, 'render_page' )
@@ -139,7 +164,7 @@ class Messages {
 	 * @return void
 	 */
 	public function render_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! a8csp_atlantis_is_user_automattician() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'atlantis' ) );
 		}
 
@@ -174,6 +199,41 @@ class Messages {
 	}
 
 	/**
+	 * Enqueue message form assets.
+	 *
+	 * @param array $current_location Current included locations.
+	 * @param array $current_exclude  Current excluded locations.
+	 * @return void
+	 */
+	private function enqueue_message_form_assets( $current_location = array(), $current_exclude = array() ): void {
+		wp_enqueue_style(
+			'atlantis-message-form',
+			A8CSP_ATLANTIS_DIR_URL . 'assets/css/build/message-form.css',
+			array(),
+			a8csp_atlantis_get_plugin_metadata( 'Version' )
+		);
+
+		wp_enqueue_script(
+			'atlantis-message-form',
+			A8CSP_ATLANTIS_DIR_URL . 'assets/js/build/message-form.js',
+			array(),
+			a8csp_atlantis_get_plugin_metadata( 'Version' ),
+			true
+		);
+
+		// Pass data to JavaScript
+		wp_localize_script(
+			'atlantis-message-form',
+			'atlantisLocations',
+			array(
+				'locations' => $this->get_admin_locations(),
+				'include'   => $current_location,
+				'exclude'   => $current_exclude,
+			)
+		);
+	}
+
+	/**
 	 * Render the single message view for adding/editing messages.
 	 *
 	 * @param int $id The message ID if editing, 0 for new message.
@@ -185,73 +245,22 @@ class Messages {
 			global $wpdb;
 			$message = $wpdb->get_row(
 				$wpdb->prepare(
+					//phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 					"SELECT * FROM {$wpdb->prefix}" . self::TABLE_NAME . ' WHERE id = %d',
 					$id
 				)
 			);
 		}
 
+		$locations        = $this->get_admin_locations();
+		$current_location = $message ? maybe_unserialize( $message->message_location ) : array();
+		$current_exclude  = $message && ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
+
+		// Enqueue assets
+		$this->enqueue_message_form_assets( $current_location, $current_exclude );
+
 		// Load the template
 		include A8CSP_ATLANTIS_DIR_PATH . 'templates/admin/message-form.php';
-	}
-
-	/**
-	 * Update an existing message in the database.
-	 *
-	 * @param int    $message_id       The ID of the message to update.
-	 * @param string $message_name     The name of the message.
-	 * @param string $message_content  The content of the message.
-	 * @param string $message_type     The type of the message.
-	 * @param string $message_status   The status of the message.
-	 * @param string $message_location The location of the message.
-	 *
-	 * @return bool|int False on failure, number of rows affected on success.
-	 */
-	private function update_message( int $message_id, string $message_name, string $message_content, string $message_type, string $message_status, string $message_location ) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-
-		return $wpdb->update(
-			$table_name,
-			array(
-				'message_name'     => $message_name,
-				'message_content'  => $message_content,
-				'message_type'     => $message_type,
-				'message_status'   => $message_status,
-				'message_location' => $message_location,
-			),
-			array( 'id' => $message_id ),
-			array( '%s', '%s', '%s', '%s', '%s' ),
-			array( '%d' )
-		);
-	}
-
-	/**
-	 * Insert a new message into the database.
-	 *
-	 * @param string $message_name     The name of the message.
-	 * @param string $message_content  The content of the message.
-	 * @param string $message_type     The type of the message.
-	 * @param string $message_status   The status of the message.
-	 * @param string $message_location The location of the message.
-	 *
-	 * @return bool|int False on failure, number of rows affected on success.
-	 */
-	private function insert_new_message( string $message_name, string $message_content, string $message_type, string $message_status, string $message_location ) {
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-
-		return $wpdb->insert(
-			$table_name,
-			array(
-				'message_name'     => $message_name,
-				'message_content'  => $message_content,
-				'message_type'     => $message_type,
-				'message_status'   => $message_status,
-				'message_location' => $message_location,
-			),
-			array( '%s', '%s', '%s', '%s', '%s' )
-		);
 	}
 
 	/**
@@ -268,7 +277,7 @@ class Messages {
 			wp_die( esc_html__( 'Security check failed', 'atlantis' ) );
 		}
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! a8csp_atlantis_is_user_automattician() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'atlantis' ) );
 		}
 
@@ -277,16 +286,52 @@ class Messages {
 		$message_content  = isset( $_POST['message_content'] ) ? wp_kses_post( wp_unslash( $_POST['message_content'] ) ) : '';
 		$message_type     = isset( $_POST['message_type'] ) ? sanitize_text_field( wp_unslash( $_POST['message_type'] ) ) : '';
 		$message_status   = isset( $_POST['message_status'] ) ? sanitize_text_field( wp_unslash( $_POST['message_status'] ) ) : '';
-		$message_location = isset( $_POST['message_location'] ) ? sanitize_text_field( wp_unslash( $_POST['message_location'] ) ) : '';
+		$message_location = isset( $_POST['message_location_include'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['message_location_include'] ) ) : array();
+		$message_exclude  = isset( $_POST['message_location_exclude'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['message_location_exclude'] ) ) : array();
 
 		if ( empty( $message_name ) || empty( $message_content ) || empty( $message_type ) || empty( $message_status ) || empty( $message_location ) ) {
 			wp_die( esc_html__( 'All fields are required.', 'atlantis' ) );
 		}
 
+		global $wpdb;
+		$table_name = $wpdb->prefix . self::TABLE_NAME;
+
+		$data = array(
+			'message_name'     => $message_name,
+			'message_content'  => $message_content,
+			'message_type'     => $message_type,
+			'message_status'   => $message_status,
+			'message_location' => maybe_serialize( $message_location ),
+			'message_exclude'  => ! empty( $message_exclude ) ? maybe_serialize( $message_exclude ) : null,
+		);
+
+		$format = array(
+			'%s', // message_name
+			'%s', // message_content
+			'%s', // message_type
+			'%s', // message_status
+			'%s', // message_location
+			'%s', // message_exclude
+		);
+
 		if ( $message_id > 0 ) {
-			$this->update_message( $message_id, $message_name, $message_content, $message_type, $message_status, $message_location );
+			$result = $wpdb->update(
+				$table_name,
+				$data,
+				array( 'id' => $message_id ),
+				$format,
+				array( '%d' )
+			);
 		} else {
-			$this->insert_new_message( $message_name, $message_content, $message_type, $message_status, $message_location );
+			$result = $wpdb->insert(
+				$table_name,
+				$data,
+				$format
+			);
+		}
+
+		if ( false === $result ) {
+			wp_die( esc_html__( 'Error saving message.', 'atlantis' ) );
 		}
 
 		wp_safe_redirect( remove_query_arg( array( 'action', 'id' ) ) );
@@ -313,10 +358,76 @@ class Messages {
 
 		$wpdb->query(
 			$wpdb->prepare(
+				//phpcs:ignore
 				"UPDATE {$wpdb->prefix}" . self::TABLE_NAME . " SET message_status = %s WHERE id IN ({$placeholders})",
 				array_merge( array( $status ), $message_ids )
 			)
 		);
+	}
+
+	/**
+	 * Get available admin page locations.
+	 *
+	 * @return array Array of admin page locations with labels.
+	 */
+	private function get_admin_locations(): array {
+		global $menu, $submenu;
+
+		$locations = array(
+			'all' => __( 'All Locations', 'atlantis' ),
+		);
+
+		// Top-level menu items
+		foreach ( $menu as $menu_item ) {
+			if ( ! empty( $menu_item[0] ) && ! empty( $menu_item[2] ) ) {
+				$menu_slug  = $menu_item[2];
+				$menu_title = strip_tags( $menu_item[0] );
+
+				// Keep the .php extension for exact matching
+				$locations[ $menu_slug ] = $menu_title;
+
+				// Submenu items
+				if ( isset( $submenu[ $menu_slug ] ) ) {
+					foreach ( $submenu[ $menu_slug ] as $submenu_item ) {
+						if ( ! empty( $submenu_item[0] ) && ! empty( $submenu_item[2] ) ) {
+							$submenu_slug  = $submenu_item[2];
+							$submenu_title = strip_tags( $submenu_item[0] );
+
+							// Skip if it's the same as the parent menu
+							if ( $submenu_slug === $menu_slug ) {
+								continue;
+							}
+
+							$screen_id = $submenu_slug;
+
+							$locations[ $screen_id ] = $menu_title . ' -> ' . $submenu_title;
+						}
+					}
+				}
+			}
+		}
+
+		// Custom post type screens
+		$post_types = get_post_types( array( 'show_in_menu' => true ), 'objects' );
+		foreach ( $post_types as $post_type ) {
+			if ( ! in_array( $post_type->name, array( 'post', 'page' ), true ) ) {
+				$screen_id               = 'edit.php?post_type=' . $post_type->name;
+				$locations[ $screen_id ] = $post_type->label;
+			}
+		}
+
+		// Taxonomy screens
+		$taxonomies = get_taxonomies( array( 'show_ui' => true ), 'objects' );
+		foreach ( $taxonomies as $taxonomy ) {
+			$screen_id               = 'edit-tags.php?taxonomy=' . $taxonomy->name;
+			$locations[ $screen_id ] = sprintf(
+				/* translators: %s: Taxonomy label */
+				__( '%s Categories', 'atlantis' ),
+				$taxonomy->label
+			);
+		}
+
+		return $locations;
 	}
 
 	/**

@@ -32,13 +32,12 @@ class Notifications {
 		// Get current location
 		$current_location = $this->get_current_location();
 
-		// Get active messages for current location
+		// Get active messages
 		$messages = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT * FROM %i WHERE message_status = %s AND message_location = %s',
+				'SELECT * FROM %i WHERE message_status = %s',
 				$table_name,
-				'active',
-				$current_location
+				'active'
 			)
 		);
 
@@ -46,7 +45,24 @@ class Notifications {
 			return array();
 		}
 
-		return $messages;
+		// Filter messages based on location and exclude rules
+		$filtered_messages = array();
+		foreach ( $messages as $message ) {
+			$locations = maybe_unserialize( $message->message_location );
+			$excludes  = ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
+
+			// Skip if current location is in excludes
+			if ( ! empty( $excludes ) && in_array( $current_location, $excludes, true ) ) {
+				continue;
+			}
+
+			// Include if 'all' is in locations or current location matches
+			if ( in_array( 'all', $locations, true ) || in_array( $current_location, $locations, true ) ) {
+				$filtered_messages[] = $message;
+			}
+		}
+
+		return $filtered_messages;
 	}
 
 	/**
@@ -55,8 +71,20 @@ class Notifications {
 	 * @return string Current location identifier.
 	 */
 	private function get_current_location(): string {
-		$screen = get_current_screen();
-		return 'admin-' . $screen->id;
+		// Use global $pagenow for the base admin page (e.g., plugins.php, edit.php)
+		global $pagenow;
+
+		// For custom post types and taxonomies, add query string as in get_admin_locations
+		if ( isset( $_GET['post_type'] ) && ! empty( $_GET['post_type'] ) ) {
+			return $pagenow . '?post_type=' . sanitize_key( $_GET['post_type'] );
+		}
+
+		if ( isset( $_GET['taxonomy'] ) && ! empty( $_GET['taxonomy'] ) ) {
+			return $pagenow . '?taxonomy=' . sanitize_key( $_GET['taxonomy'] );
+		}
+
+		// Default: just return the page slug (e.g., plugins.php)
+		return $pagenow;
 	}
 
 	/**
@@ -66,7 +94,7 @@ class Notifications {
 	 */
 	public function display_notifications(): void {
 
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! a8csp_atlantis_is_user_automattician() ) {
 			return;
 		}
 
@@ -91,12 +119,12 @@ class Notifications {
 		$type    = $this->get_notice_type( $message->message_type );
 		$content = wp_kses_post( $message->message_content );
 
-		printf(
-			'<div class="notice notice-%s">
-				<p>%s</p>
-			</div>',
-			esc_attr( $type ),
-			wp_kses_post( $content )
+		wp_admin_notice(
+			$content,
+			array(
+				'type'        => $type,
+				'dismissible' => false,
+			)
 		);
 	}
 
