@@ -4,6 +4,7 @@ namespace A8C\SpecialProjects\Atlantis;
 
 use A8C\SpecialProjects\Atlantis\Modules\Colophon;
 use A8C\SpecialProjects\Atlantis\Modules\Messages;
+use A8C\SpecialProjects\Atlantis\Modules\Notifications;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -32,6 +33,14 @@ class Modules {
 	 */
 	public Messages $messages;
 
+	/**
+	 * Notifications module.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public Notifications $notifications;
+
 	// endregion
 
 	// region METHODS
@@ -50,6 +59,9 @@ class Modules {
 
 		$this->messages = new Messages();
 		$this->messages->initialize();
+
+		$this->notifications = new Notifications();
+		$this->notifications->initialize();
 	}
 
 	// endregion
