@@ -2,7 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis;
 
-use A8C\SpecialProjects\Atlantis\Modules\Colophon;
+use A8C\SpecialProjects\Atlantis\Modules;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,7 +21,7 @@ class Modules {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public Colophon $colophon;
+	// public Colophon $colophon;
 
 	/**
 	 * Initialize the Modules functionality.
@@ -120,8 +120,10 @@ class Modules {
 		foreach ( $modules as $key => $module ) {
 			if ( ! empty( $enabled[ $key ] ) && isset( $module['class'] ) ) {
 				if ( class_exists( $module['class'] ) ) {
+					error_log( 'Loading module: ' . $module['class'] );
 					$instance = new $module['class']();
 					if ( method_exists( $instance, 'maybe_initialize' ) ) {
+						error_log( 'Initializing module: ' . $module['class'] );
 						$instance->maybe_initialize();
 					}
 				}

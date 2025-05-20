@@ -33,6 +33,6 @@ class Colophon extends Module {
 	 */
 	protected function initialize(): void {
 		error_log( 'Colophon initialized' );
-		// TODO: Initialize module components and/or direct hooks.
+		require_once __DIR__ . '/colophon-module.php';
 	}
 }
