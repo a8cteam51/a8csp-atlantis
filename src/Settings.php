@@ -56,5 +56,8 @@ class Settings {
 		do_action( 'a8csp/atlantis/admin_menu_registered' );
 	}
 
+	public function render_settings_page(): void {
+	}
+
 	// endregion
 }

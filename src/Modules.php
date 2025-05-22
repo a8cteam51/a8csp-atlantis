@@ -50,10 +50,11 @@ class Modules {
 	 * @return void
 	 */
 	public function initialize(): void {
-		$this->setup_modules();
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'plugins_loaded', array( $this, 'maybe_load_modules' ), 20 );
+
+		$this->setup_modules();
 
 		$this->messages = new Messages();
 		$this->messages->initialize();
