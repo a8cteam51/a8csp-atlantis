@@ -34,7 +34,6 @@ define( 'A8CSP_ATLANTIS_BASENAME', plugin_basename( __FILE__ ) );
 define( 'A8CSP_ATLANTIS_DIR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'A8CSP_ATLANTIS_DIR_URL', plugin_dir_url( __FILE__ ) );
 
-
 // Load the rest of the bootstrap functions.
 require_once A8CSP_ATLANTIS_DIR_PATH . '/functions-bootstrap.php';
 
