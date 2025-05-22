@@ -12,11 +12,12 @@
  *
  * @wordpress-plugin
  * Plugin Name:             A8CSP Atlantis
- * Plugin URI:              https://specialprojects.automattic.com
- * Description:             Lorem Ipsum (to be replaced with a proper description).
- * Version:                 1.0.0
+ * Plugin URI:              https://github.com/a8cteam51/a8csp-atlantis
+ * Update URI:              https://github.com/a8cteam51/a8csp-atlantis
+ * Description:             Atlantis.
+ * Version:                 0.9.0
  * Requires at least:       6.8
- * Tested up to:            6.8
+ * Tested up to:            6.8.1
  * Requires PHP:            8.3
  * Author:                  Automattic Special Projects
  * Author URI:              https://specialprojects.automattic.com
