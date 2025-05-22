@@ -38,7 +38,6 @@ class Updater {
 
 		// already completed update check elsewhere
 		if ( ! empty( $update ) ) {
-			error_log('Already completed update check elsewhere');
 			return $update;
 		}
 
@@ -49,8 +48,6 @@ class Updater {
 				// No user agent suggested.
 			)
 		);
-
-		error_log(print_r($response, true));
 
 		if ( is_wp_error( $response ) ) {
 			return;
