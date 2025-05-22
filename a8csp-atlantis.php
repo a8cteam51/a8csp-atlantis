@@ -62,11 +62,12 @@ add_action(
 			return $update;
 		}
 
-		$latest_release_info = json_decode( wp_remote_retrieve_body( $latest_release_info ), true );
-		if ( version_compare( $plugin_data['Version'], $latest_release_info['tag_name'], '<' ) ) {
+		$latest_release_info    = json_decode( wp_remote_retrieve_body( $latest_release_info ), true );
+		$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
+		if ( version_compare( $plugin_data['Version'], $latest_release_version, '<' ) ) {
 			$update = array(
 				'slug'    => $plugin_data['TextDomain'],
-				'version' => $latest_release_info['tag_name'],
+				'version' => $latest_release_version,
 				'url'     => $latest_release_info['html_url'],
 				'package' => $latest_release_info['assets'][0]['browser_download_url'],
 			);
