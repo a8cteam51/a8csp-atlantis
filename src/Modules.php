@@ -17,6 +17,15 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 class Modules {
+
+	/**
+	 * Modules dir path.
+	 *
+	 * @since 1.0.0
+	 * @version 1.0.0
+	 */
+	private string $modules_dir = '';
+
 	/**
 	 * Available modules.
 	 *
@@ -50,6 +59,8 @@ class Modules {
 	 * @return void
 	 */
 	public function initialize(): void {
+		$this->modules_dir =  dirname( __FILE__ ) . '/Modules';
+
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'plugins_loaded', array( $this, 'maybe_load_modules' ), 20 );
@@ -74,22 +85,25 @@ class Modules {
 	 * @return  void
 	 */
 	private function setup_modules(): void {
-		$this->modules = array(
-			'colophon' => array(
-				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon\\Colophon',
-				'instance' => null,
-			),
-			/*
-			'autoupdate-filter' => array(
-				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\AutoupdateFilter',
-				'instance' => null,
-			),
-			*/
-			'tracking' => array(
-				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking\\Tracking',
-				'instance' => null,
-			),
+		$modules     = array();
+		$dirs        = array_filter(
+			glob( $this->modules_dir . '/*', GLOB_ONLYDIR ),
+			function( $dir ) {
+				$module_name = basename( $dir );
+				$class_file  = $dir . '/' . $module_name . '.php';
+				return file_exists( $class_file );
+			}
 		);
+
+		foreach ( $dirs as $dir ) {
+			$module_name = basename( $dir );
+			$modules[ $module_name ] = array(
+				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\' . $module_name . '\\' . $module_name,
+				'instance' => null,
+			);
+		}
+
+		$this->modules = $modules;
 	}
 
 	/**
