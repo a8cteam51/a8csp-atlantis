@@ -3,7 +3,6 @@
 namespace A8C\SpecialProjects\Atlantis\Modules\Colophon;
 
 use A8C\SpecialProjects\Atlantis\Modules\Module;
-use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
