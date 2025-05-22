@@ -5,6 +5,8 @@ namespace A8C\SpecialProjects\Atlantis;
 use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
 use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
 use A8C\SpecialProjects\Atlantis\Modules\Module;
+use A8C\SpecialProjects\Atlantis\Modules\Messages;
+use A8C\SpecialProjects\Atlantis\Modules\Notifications;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -35,6 +37,12 @@ class Modules {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'plugins_loaded', array( $this, 'maybe_load_modules' ), 20 );
+
+		$this->messages = new Messages();
+		$this->messages->initialize();
+
+		$this->notifications = new Notifications();
+		$this->notifications->initialize();
 	}
 
 	/**
