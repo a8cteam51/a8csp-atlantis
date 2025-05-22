@@ -15,6 +15,8 @@ defined( 'ABSPATH' ) || exit;
 abstract class Module {
 	abstract public function get_name(): string;
 
+	abstract public function initialize(): void;
+
 	abstract public function get_description(): string;
 
 	public function is_disabled(): false|\WP_Error {
