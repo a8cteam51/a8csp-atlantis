@@ -1,4 +1,4 @@
-<?php declare( strict_types=1 );
+<?php declare( strict_types=1 ); // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 
 namespace A8C\SpecialProjects\Atlantis\Modules\Colophon;
 
@@ -34,7 +34,6 @@ class Colophon extends Module {
 	 * @return  void
 	 */
 	public function initialize(): void {
-		error_log( 'Colophon initialized' );
-		require_once __DIR__ . '/colophon-module.php';
+		require __DIR__ . '/colophon-module.php';
 	}
 }
