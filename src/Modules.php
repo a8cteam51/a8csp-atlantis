@@ -113,13 +113,13 @@ class Modules {
 				<?php settings_fields( 'atlantis_settings_group' ); ?>
 				<table class="form-table">
 					<?php
-					foreach ( $this->modules as $key => $module ) :
-						$instance    = new $module['class']();
-						$is_disabled = $instance->is_disabled();
+					foreach ( $this->modules as $module ) :
+						$is_disabled = $module->is_disabled();
 						$is_wp_error = is_wp_error( $is_disabled );
+						$key         = $module->get_settings_key();
 						?>
 						<tr>
-							<th scope="row"><?php echo esc_html( $instance->get_name() ); ?></th>
+							<th scope="row"><?php echo esc_html( $module->get_name() ); ?></th>
 							<td>
 								<input
 									type="checkbox"
