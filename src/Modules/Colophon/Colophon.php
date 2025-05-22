@@ -1,4 +1,4 @@
-<?php declare( strict_types=1 ); // phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
+<?php declare( strict_types=1 );
 
 namespace A8C\SpecialProjects\Atlantis\Modules\Colophon;
 
