@@ -265,6 +265,29 @@ class Messages extends Module {
 	}
 
 	/**
+	 * Fetch a single message from the database.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @param int $id The message ID.
+	 *
+	 * @return object|null The message object or null if not found.
+	 */
+	private function fetch_single_message( int $id ): object|null {
+		global $wpdb;
+		$message = $wpdb->get_row(
+			$wpdb->prepare(
+				//phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				'SELECT * FROM ' . MessagesSchema::get_table_name() . ' WHERE id = %d',
+				$id
+			)
+		);
+
+		return $message;
+	}
+
+	/**
 	 * Render the single message view for adding/editing messages.
 	 *
 	 * @since   1.0.0
@@ -277,14 +300,7 @@ class Messages extends Module {
 	private function render_single_message( int $id = 0 ): void {
 		$message = null;
 		if ( $id > 0 ) {
-			global $wpdb;
-			$message = $wpdb->get_row(
-				$wpdb->prepare(
-					//phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					'SELECT * FROM ' . MessagesSchema::get_table_name() . ' WHERE id = %d',
-					$id
-				)
-			);
+			$message = $this->fetch_single_message( $id );
 		}
 
 		$locations        = $this->get_admin_locations();
