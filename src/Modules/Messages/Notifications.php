@@ -81,6 +81,14 @@ class Notifications {
 			}
 		}
 
+		// Decrypt message content for each message
+		foreach ( $filtered_messages as $filtered_message ) {
+			$decrypted_content = a8csp_atlantis_decrypt_data( $filtered_message->message_content );
+			if ( ! is_wp_error( $decrypted_content ) ) {
+				$filtered_message->message_content = $decrypted_content;
+			}
+		}
+
 		return $filtered_messages;
 	}
 

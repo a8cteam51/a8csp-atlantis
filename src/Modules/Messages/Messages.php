@@ -336,7 +336,7 @@ class Messages extends Module {
 
 		$data = array(
 			'message_name'     => $message_name,
-			'message_content'  => $message_content,
+			'message_content'  => a8csp_atlantis_encrypt_data( $message_content ),
 			'message_type'     => $message_type,
 			'message_status'   => $message_status,
 			'message_location' => maybe_serialize( $message_location ),

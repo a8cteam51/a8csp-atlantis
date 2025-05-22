@@ -157,7 +157,7 @@ class MessagesList extends WP_List_Table {
 			$search_conditions[] = 'message_status LIKE %s';
 			$search_conditions[] = 'message_location LIKE %s';
 			$search_conditions[] = 'message_exclude LIKE %s';
-			$query_args          = array( $search_like, $search_like, $search_like, $search_like, $search_like );
+			$query_args          = array( $search_like, $search_like, $search_like, $search_like, $search_like, $search_like );
 		}
 
 		$where_clause = ! empty( $search_conditions ) ? ' WHERE ' . implode( ' OR ', $search_conditions ) : '';
@@ -259,6 +259,10 @@ class MessagesList extends WP_List_Table {
 					$this->row_actions( $actions )
 				);
 			case 'message_content':
+				$decrypted_content = a8csp_atlantis_decrypt_data( $item->message_content );
+				if ( ! is_wp_error( $decrypted_content ) ) {
+					return wp_kses_post( $decrypted_content );
+				}
 				return wp_kses_post( $item->message_content );
 			case 'message_type':
 				return esc_html( $item->message_type );
