@@ -8,8 +8,7 @@ use A8C\SpecialProjects\Atlantis\MessagesSchema;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class AccessLog
- * Handles logging and displaying access records for protected media files.
+ * Handles logging and displaying messages.
  *
  * @package A8C\SpecialProjects\Atlantis
  */
@@ -23,7 +22,7 @@ class Messages {
 	private $list_table;
 
 	/**
-	 * Initialize the access log functionality.
+	 * Initialize the messages functionality.
 	 *
 	 * @return void
 	 */
@@ -74,7 +73,7 @@ class Messages {
 	}
 
 	/**
-	 * Add the access logs page to the Media submenu.
+	 * Add the messages page to the Atlantis submenu.
 	 *
 	 * @return void
 	 */
@@ -113,7 +112,7 @@ class Messages {
 	}
 
 	/**
-	 * Render the access logs admin page.
+	 * Render the messages admin page.
 	 *
 	 * @return void
 	 */
