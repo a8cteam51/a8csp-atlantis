@@ -31,8 +31,14 @@ jobs:
           npm ci --force
           npm run build
 
-      - name: Zip Folder
-        run: zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" "node_modules/*" ".gitignore" ".editorconfig" ".phpcs.xml" "composer.json" "composer.lock" "package.json" "package-lock.json" "codeception.dist.yml" "postcss.config.js" ".*"
+      - name: Prepare Release Directory
+        run: |
+          mkdir a8csp-atlantis
+          cp -r a8csp-atlantis.php functions.php functions-bootstrap.php index.php LICENSE src includes assets blocks languages models templates vendor a8csp-atlantis/
+
+      - name: Zip Release
+        run: |
+          zip -r ${{ github.event.repository.name }}.zip ./a8csp-atlantis
 
       - name: Release
         uses: softprops/action-gh-release@v1
