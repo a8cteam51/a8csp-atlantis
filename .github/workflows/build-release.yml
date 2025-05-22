@@ -28,6 +28,7 @@ jobs:
       - name: Install dependencies
         run: |
           composer run-script packages-install -- --no-dev
+          composer run-script generate-autoloader
           npm ci --force
           npm run build
 
