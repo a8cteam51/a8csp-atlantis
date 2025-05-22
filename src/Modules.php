@@ -33,6 +33,7 @@ class Modules {
 	public function initialize(): void {
 		$this->setup_modules();
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'plugins_loaded', array( $this, 'maybe_load_modules' ), 20 );
 	}
 
@@ -79,6 +80,15 @@ class Modules {
 				array( $this, 'render_page' )
 			);
 		}
+	}
+
+	/**
+	 * Register the settings for the modules.
+	 *
+	 * @return void
+	 */
+	public function register_settings(): void {
+		register_setting( 'atlantis_settings_group', 'atlantis_enabled_modules' );
 	}
 
 	/**

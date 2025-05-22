@@ -23,8 +23,6 @@ class Settings {
 	 */
 	public function initialize(): void {
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
-		// add_action( 'admin_init', [ $this, 'register_settings' ] );
-		// add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
 	}
 
 	// endregion
@@ -42,15 +40,6 @@ class Settings {
 			3
 		);
 	}
-
-	public function render_settings_page(): void {
-
-	}
-
-	/*
-	public function register_settings(): void {
-
-	}*/
 
 	// endregion
 }
