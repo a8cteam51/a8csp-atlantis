@@ -108,9 +108,39 @@ class Notifications {
 			return;
 		}
 
+		$screen = get_current_screen();
+		if ( $screen && $screen->is_block_editor ) {
+			foreach ( $messages as $message ) {
+				$this->render_editor_notification( $message );
+			}
+
+			return;
+		}
+
 		foreach ( $messages as $message ) {
 			$this->render_notification( $message );
 		}
+	}
+
+	/**
+	 * Render a notification for the block editor.
+	 *
+	 * @param object $message Message object.
+	 * @return void
+	 */
+	private function render_editor_notification( $message ): void {
+		$type    = $this->get_notice_type( $message->message_type );
+		$content = wp_kses_post( $message->message_content );
+
+		// For block editor, we'll use JavaScript to render the notification
+		wp_add_inline_script(
+			'wp-edit-post',
+			sprintf(
+				'wp.data.dispatch("core/notices").createNotice("%s", %s, { isDismissible: false });',
+				$type,
+				wp_json_encode( $content )
+			)
+		);
 	}
 
 	/**
@@ -123,6 +153,7 @@ class Notifications {
 		$type    = $this->get_notice_type( $message->message_type );
 		$content = wp_kses_post( $message->message_content );
 
+		// For regular admin pages, use the standard admin notice
 		wp_admin_notice(
 			$content,
 			array(

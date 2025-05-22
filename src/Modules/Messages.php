@@ -381,7 +381,7 @@ class Messages {
 		foreach ( $menu as $menu_item ) {
 			if ( ! empty( $menu_item[0] ) && ! empty( $menu_item[2] ) ) {
 				$menu_slug  = $menu_item[2];
-				$menu_title = strip_tags( $menu_item[0] );
+				$menu_title = wp_strip_all_tags( $menu_item[0] );
 
 				// Keep the .php extension for exact matching
 				$locations[ $menu_slug ] = $menu_title;
@@ -391,7 +391,7 @@ class Messages {
 					foreach ( $submenu[ $menu_slug ] as $submenu_item ) {
 						if ( ! empty( $submenu_item[0] ) && ! empty( $submenu_item[2] ) ) {
 							$submenu_slug  = $submenu_item[2];
-							$submenu_title = strip_tags( $submenu_item[0] );
+							$submenu_title = wp_strip_all_tags( $submenu_item[0] );
 
 							// Skip if it's the same as the parent menu
 							if ( $submenu_slug === $menu_slug ) {

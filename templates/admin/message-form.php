@@ -93,7 +93,7 @@ wp_enqueue_editor();
 						endforeach;
 						?>
 					</select>
-					<button type="button" class="button" id="atlantis-add-include-location"><?php echo esc_html__( 'Add More', 'atlantis' ); ?></button>
+					<button type="button" class="button" id="atlantis-add-include-location"><?php echo esc_html__( 'Add', 'atlantis' ); ?></button>
 					<p class="description"><?php echo esc_html__( 'Select admin pages where this message should be displayed.', 'atlantis' ); ?></p>
 				</td>
 			</tr>
@@ -123,7 +123,7 @@ wp_enqueue_editor();
 						endforeach;
 						?>
 					</select>
-					<button type="button" class="button" id="atlantis-add-exclude-location"><?php echo esc_html__( 'Add More', 'atlantis' ); ?></button>
+					<button type="button" class="button" id="atlantis-add-exclude-location"><?php echo esc_html__( 'Add', 'atlantis' ); ?></button>
 					<p class="description"><?php echo esc_html__( 'Select admin pages where this message should NOT be displayed.', 'atlantis' ); ?></p>
 				</td>
 			</tr>
