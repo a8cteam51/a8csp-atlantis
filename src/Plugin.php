@@ -37,14 +37,6 @@ class Plugin {
 	 */
 	public Settings $settings;
 
-	/**
-	 * The updater component.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public Updater $updater;
-
 	// endregion
 
 	// region MAGIC METHODS
@@ -134,9 +126,6 @@ class Plugin {
 
 		$this->settings = new Settings();
 		$this->settings->initialize();
-
-		$this->updater = new Updater();
-		$this->updater->initialize();
 	}
 
 	// endregion

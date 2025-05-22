@@ -50,6 +50,37 @@ add_action(
 	}
 );
 
+// Instruct WordPress to fetch update information from GitHub.
+add_action(
+	'update_plugins_github.com',
+	static function ( $update, array $plugin_data, string $plugin_file ) {
+		if ( A8CSP_ATLANTIS_BASENAME !== $plugin_file || ! empty( $update ) ) {
+			return $update;
+		}
+
+		$latest_release_info = wp_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
+		if ( is_wp_error( $latest_release_info ) || 200 !== wp_remote_retrieve_response_code( $latest_release_info ) ) {
+			return $update;
+		}
+
+		$latest_release_info = json_decode( wp_remote_retrieve_body( $latest_release_info ), true );
+		if ( version_compare( $plugin_data['Version'], $latest_release_info['tag_name'], '<' ) ) {
+			$update = array(
+				'slug'    => $plugin_data['TextDomain'],
+				'version' => $latest_release_info['tag_name'],
+				'url'     => $latest_release_info['html_url'],
+				'package' => $latest_release_info['assets'][0]['browser_download_url'],
+			);
+		} else {
+			$update = false;
+		}
+
+		return $update;
+	},
+	10,
+	3
+);
+
 // Load the autoloader.
 if ( ! is_file( A8CSP_ATLANTIS_DIR_PATH . '/vendor/autoload.php' ) ) {
 	a8csp_atlantis_output_requirements_error( new WP_Error( 'missing_autoloader' ) );
