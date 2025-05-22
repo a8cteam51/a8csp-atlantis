@@ -1,7 +1,6 @@
-<?php
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+<?php declare( strict_types=1 );
+
+defined( 'ABSPATH' ) || exit;
 
 if ( ! function_exists( 'team51_credits' ) ) :
 
@@ -87,7 +86,6 @@ if ( ! function_exists( 'team51_credits' ) ) :
 			$credit_links //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, this cant be escaped as it runs through a filter
 		);
 	}
-	add_action( 'team51_credits', 'team51_credits', 10, 1 );
 endif;
 
 if ( ! function_exists( 'team51_credits_shortcode' ) ) :
@@ -116,12 +114,6 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 		team51_credits( $atts );
 		return ob_get_clean();
 	}
-	add_action(
-		'init',
-		function () {
-			add_shortcode( 'team51-credits', 'team51_credits_shortcode' );
-		}
-	);
 endif;
 
 if ( ! function_exists( 'team51_current_year_shortcode' ) ) :
@@ -147,10 +139,4 @@ if ( ! function_exists( 'team51_current_year_shortcode' ) ) :
 		$current_year = gmdate( $atts['format'] );
 		return esc_html( $current_year );
 	}
-	add_action(
-		'init',
-		function () {
-			add_shortcode( 'team51-current-year', 'team51_current_year_shortcode' );
-		}
-	);
 endif;
