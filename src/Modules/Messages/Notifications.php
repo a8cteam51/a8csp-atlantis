@@ -1,6 +1,6 @@
 <?php
 
-namespace A8C\SpecialProjects\Atlantis\Modules;
+namespace A8C\SpecialProjects\Atlantis\Modules\Messages;
 
 use A8C\SpecialProjects\Atlantis\MessagesSchema;
 

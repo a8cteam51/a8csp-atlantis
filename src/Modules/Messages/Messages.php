@@ -1,10 +1,10 @@
 <?php
 
-namespace A8C\SpecialProjects\Atlantis\Modules;
+namespace A8C\SpecialProjects\Atlantis\Modules\Messages;
 
 use A8C\SpecialProjects\Atlantis\MessagesList;
 use A8C\SpecialProjects\Atlantis\MessagesSchema;
-
+use A8C\SpecialProjects\Atlantis\Modules\Module;
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -12,21 +12,41 @@ defined( 'ABSPATH' ) || exit;
  *
  * @package A8C\SpecialProjects\Atlantis
  */
-class Messages {
+class Messages extends Module {
 
 	/**
 	 * List table instance
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @var MessagesList
 	 */
 	private $list_table;
 
 	/**
+	 * Notifications instance
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @var Notifications
+	 */
+	public Notifications $notifications;
+
+	/**
 	 * Initialize the messages functionality.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return void
 	 */
 	public function initialize(): void {
+
+		$this->notifications = new Notifications();
+		$this->notifications->initialize();
+
 		add_action( 'a8csp/atlantis/admin_menu_registered', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_init', array( $this, 'save_message' ) );
 		add_action( 'admin_init', array( $this, 'handle_bulk_actions' ) );
@@ -36,7 +56,46 @@ class Messages {
 	}
 
 	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return string
+	 */
+	public function get_name(): string {
+		return 'messages';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return string
+	 */
+	public function get_description(): string {
+		return __( 'Handles admin messages and notifications.', 'atlantis' );
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return bool
+	 */
+	public function is_active(): bool {
+		return true;
+	}
+
+	/**
 	 * Check if table needs to be created and create it if necessary.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return void
 	 */
@@ -49,6 +108,9 @@ class Messages {
 	/**
 	 * Create the messages database table if it doesn't exist.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @return void
 	 */
 	public function create_table(): void {
@@ -57,6 +119,9 @@ class Messages {
 
 	/**
 	 * Get count of active messages.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return int Number of active messages.
 	 */
@@ -74,6 +139,9 @@ class Messages {
 
 	/**
 	 * Add the messages page to the Atlantis submenu.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return void
 	 */
@@ -101,6 +169,9 @@ class Messages {
 	/**
 	 * Get the list table instance.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @return MessagesList The list table instance.
 	 */
 	private function get_list_table(): MessagesList {
@@ -113,6 +184,9 @@ class Messages {
 
 	/**
 	 * Render the messages admin page.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return void
 	 */
@@ -154,8 +228,12 @@ class Messages {
 	/**
 	 * Enqueue message form assets.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @param array $current_location Current included locations.
 	 * @param array $current_exclude  Current excluded locations.
+	 *
 	 * @return void
 	 */
 	private function enqueue_message_form_assets( $current_location = array(), $current_exclude = array() ): void {
@@ -189,7 +267,11 @@ class Messages {
 	/**
 	 * Render the single message view for adding/editing messages.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @param int $id The message ID if editing, 0 for new message.
+	 *
 	 * @return void
 	 */
 	private function render_single_message( int $id = 0 ): void {
@@ -218,6 +300,9 @@ class Messages {
 
 	/**
 	 * Handle saving messages.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return void
 	 */
@@ -294,8 +379,12 @@ class Messages {
 	/**
 	 * Update the status of messages.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @param array  $message_ids Array of message IDs to update.
 	 * @param string $status     New status value.
+	 *
 	 * @return void
 	 */
 	private function update_messages_status( array $message_ids, string $status ): void {
@@ -319,6 +408,9 @@ class Messages {
 
 	/**
 	 * Get available admin page locations.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return array Array of admin page locations with labels.
 	 */
@@ -385,6 +477,9 @@ class Messages {
 	/**
 	 * Handle bulk actions for messages.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @return void
 	 */
 	public function handle_bulk_actions(): void {
@@ -422,7 +517,11 @@ class Messages {
 	/**
 	 * Delete messages from the database.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @param array $message_ids Array of message IDs to delete.
+	 *
 	 * @return void
 	 */
 	private function delete_messages( array $message_ids ): void {

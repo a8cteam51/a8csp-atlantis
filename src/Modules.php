@@ -5,8 +5,8 @@ namespace A8C\SpecialProjects\Atlantis;
 use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
 use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
 use A8C\SpecialProjects\Atlantis\Modules\Module;
-use A8C\SpecialProjects\Atlantis\Modules\Messages;
-use A8C\SpecialProjects\Atlantis\Modules\Notifications;
+use A8C\SpecialProjects\Atlantis\Modules\Messages\Messages;
+
 
 defined( 'ABSPATH' ) || exit;
 
@@ -36,15 +36,6 @@ class Modules {
 	public Messages $messages;
 
 	/**
-	 * Notifications module.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public Notifications $notifications;
-
-
-	/**
 	 * Initialize the Modules functionality.
 	 *
 	 * @return void
@@ -55,9 +46,6 @@ class Modules {
 
 		$this->messages = new Messages();
 		$this->messages->initialize();
-
-		$this->notifications = new Notifications();
-		$this->notifications->initialize();
 
 		$this->modules['colophon'] = new Colophon();
 		$this->modules['colophon']->maybe_initialize();
