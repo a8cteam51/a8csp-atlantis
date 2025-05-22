@@ -170,11 +170,11 @@ class Notifications {
 		$type    = $this->get_notice_type( $message->message_type );
 		$content = wp_kses_post( $message->message_content );
 
-		// For block editor, we'll use JavaScript to render the notification
+		// For block editor, we'll use JavaScript to render the notification with HTML support
 		wp_add_inline_script(
 			'wp-edit-post',
 			sprintf(
-				'wp.data.dispatch("core/notices").createNotice("%s", %s, { isDismissible: false });',
+				'wp.data.dispatch("core/notices").createNotice("%s", %s, { isDismissible: false, __unstableHTML: true });',
 				$type,
 				wp_json_encode( $content )
 			)
