@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis;
 
 use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
+use A8C\SpecialProjects\Atlantis\Modules\Module;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,25 +14,50 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 class Modules {
-	// region FIELDS AND CONSTANTS
-
 	/**
-	 * Colophon module.
+	 * Available modules.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @var array<string, array{class: string, instance: ?Module}>
 	 */
-	public Colophon $colophon;
+	private array $modules = array();
+
 	/**
 	 * Initialize the Modules functionality.
 	 *
 	 * @return void
 	 */
 	public function initialize(): void {
+		$this->setup_modules();
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
+		add_action( 'init', array( $this, 'maybe_load_modules' ) );
+	}
 
-		$this->colophon = new Colophon();
-		$this->colophon->maybe_initialize();
+	/**
+	 * Setup available modules.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  void
+	 */
+	private function setup_modules(): void {
+		$this->modules = array(
+			'colophon'          => array(
+				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon\\Colophon',
+				'instance' => null,
+			),
+			'autoupdate-filter' => array(
+				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\AutoupdateFilter',
+				'instance' => null,
+			),
+			'tracking'          => array(
+				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking',
+				'instance' => null,
+			),
+		);
 	}
 
 	/**
@@ -61,40 +87,42 @@ class Modules {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'atlantis' ) );
 		}
+
+		$enabled = get_option( 'atlantis_enabled_modules', array() );
 		?>
 		<div class="wrap">
-				<h1>Team51 Atlantis Settings</h1>
-				<form method="post" action="options.php">
-					<?php
-					settings_fields( 'atlantis_settings_group' );
-					$enabled = get_option( 'atlantis_enabled_modules', array() );
-					?>
-					<table class="form-table">
+			<h1>Team51 Atlantis Settings</h1>
+			<form method="post" action="options.php">
+				<?php settings_fields( 'atlantis_settings_group' ); ?>
+				<table class="form-table">
+					<?php foreach ( $this->modules as $key => $module ) : 
+						$instance = new $module['class']();
+						$is_disabled = $instance->is_disabled();
+						$is_wp_error = is_wp_error( $is_disabled );
+						?>
 						<tr>
-							<th scope="row">Autoupdate Filter</th>
+							<th scope="row"><?php echo esc_html( $instance->get_name() ); ?></th>
 							<td>
-								<input type="checkbox" name="atlantis_enabled_modules[autoupdate-filter]" value="1" <?php checked( ! empty( $enabled['autoupdate-filter'] ) ); ?> />
+								<input 
+									type="checkbox" 
+									name="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]" 
+									value="1" 
+									<?php checked( ! empty( $enabled[ $key ] ) ); ?>
+									<?php disabled( $is_wp_error ); ?>
+								/>
 								Enable
+								<?php if ( $is_wp_error ) : ?>
+									<p class="description">
+										<?php echo esc_html( $is_disabled->get_error_message() ); ?>
+									</p>
+								<?php endif; ?>
 							</td>
 						</tr>
-						<tr>
-							<th scope="row">Tracking</th>
-							<td>
-								<input type="checkbox" name="atlantis_enabled_modules[tracking]" value="1" <?php checked( ! empty( $enabled['tracking'] ) ); ?> />
-								Enable
-							</td>
-						</tr>
-						<tr>
-							<th scope="row">Colophon</th>
-							<td>
-								<input type="checkbox" name="atlantis_enabled_modules[colophon]" value="1" <?php checked( ! empty( $enabled['colophon'] ) ); ?> />
-								Enable
-							</td>
-						</tr>
-					</table>
-					<?php submit_button(); ?>
-				</form>
-			</div>
+					<?php endforeach; ?>
+				</table>
+				<?php submit_button(); ?>
+			</form>
+		</div>
 		<?php
 	}
 
@@ -104,42 +132,14 @@ class Modules {
 	 * @return void
 	 */
 	public function maybe_load_modules(): void {
-		$enabled = get_option( 'atlantis_enabled_modules', array() );
-
-		$modules = array(
-			'colophon'          => array(
-				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon\\Colophon',
-			),
-			'autoupdate-filter' => array(
-				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\AutoupdateFilter',
-			),
-			'tracking'          => array(
-				'class' => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking',
-			),
-		);
-
-		foreach ( $modules as $key => $module ) {
-			if ( ! empty( $enabled[ $key ] ) && isset( $module['class'] ) ) {
-				if ( class_exists( $module['class'] ) ) {
-					$instance = new $module['class']();
-					
-					$module_exists = false;
-					foreach ( $this->modules as $existing_module ) {
-						if ( get_class( $existing_module ) === get_class( $instance ) ) {
-							$module_exists = true;
-							break;
-						}
-					}
-
-					if ( ! $module_exists ) {
-						$this->modules[] = $instance;
-						if ( method_exists( $instance, 'maybe_initialize' ) ) {
-							$instance->maybe_initialize();
-						}
-					}
-				}
+		foreach ( $this->modules as $key => $module ) {
+			if ( ! class_exists( $module['class'] ) ) {
+				continue;
 			}
+
+			$instance = new $module['class']();
+			$this->modules[ $key ]['instance'] = $instance;
+			$instance->maybe_initialize();
 		}
-		print_r($this->modules);
 	}
 }

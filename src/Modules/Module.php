@@ -2,6 +2,8 @@
 
 namespace A8C\SpecialProjects\Atlantis\Modules;
 
+use \WP_Error;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -15,7 +17,7 @@ abstract class Module {
 
 	abstract public function get_description(): string;
 
-	public function is_disabled(): false|WP_Error {
+	public function is_disabled(): false|\WP_Error {
 		return false;
 	}
 
@@ -39,10 +41,16 @@ abstract class Module {
 
 		$is_disabled = $this->is_disabled();
 		if ( is_wp_error( $is_disabled ) ) {
-			// TODO: Output error!
+			add_action( 'admin_notices', function() use ( $is_disabled ) {
+				printf(
+					'<div class="notice notice-error"><p><strong>%s</strong>: %s</p></div>',
+					esc_html( $this->get_name() ),
+					esc_html( $is_disabled->get_error_message() )
+				);
+			} );
 			return;
 		}
-		
+
 		$this->initialize();
 	}
 } 
