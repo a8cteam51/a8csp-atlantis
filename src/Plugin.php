@@ -14,6 +14,14 @@ class Plugin {
 	// region FIELDS AND CONSTANTS
 
 	/**
+	 * The encryption component.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public Encryption $encryption;
+
+	/**
 	 * The modules component.
 	 *
 	 * @since   1.0.0
@@ -28,14 +36,6 @@ class Plugin {
 	 * @version 1.0.0
 	 */
 	public Settings $settings;
-
-	/**
-	 * The messages component.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public Messages $messages;
 
 	// endregion
 
@@ -118,14 +118,14 @@ class Plugin {
 	 * @return  void
 	 */
 	protected function initialize(): void {
+		$this->encryption = new Encryption();
+		$this->encryption->initialize();
+
 		$this->modules = new Modules();
 		$this->modules->initialize();
 
 		$this->settings = new Settings();
 		$this->settings->initialize();
-
-		$this->messages = new Messages();
-		$this->messages->initialize();
 	}
 
 	// endregion

@@ -2,6 +2,8 @@
 
 namespace A8C\SpecialProjects\Atlantis;
 
+use A8C\SpecialProjects\Atlantis\Modules\Messages;
+
 use WP_List_Table;
 
 defined( 'ABSPATH' ) || exit;
@@ -34,12 +36,14 @@ class MessagesList extends WP_List_Table {
 	 */
 	public function get_columns(): array {
 		return array(
-			'message_name'     => __( 'Message Name', 'atlantis' ),
-			'message_content'  => __( 'Message Content', 'atlantis' ),
-			'message_type'     => __( 'Message Type', 'atlantis' ),
-			'message_status'   => __( 'Message Status', 'atlantis' ),
-			'message_location' => __( 'Message Location', 'atlantis' ),
-			'message_time'     => __( 'Message Time', 'atlantis' ),
+			'cb'               => '<input type="checkbox" />',
+			'message_name'     => __( 'Name', 'atlantis' ),
+			'message_content'  => __( 'Content', 'atlantis' ),
+			'message_type'     => __( 'Type', 'atlantis' ),
+			'message_status'   => __( 'Status', 'atlantis' ),
+			'message_location' => __( 'Location', 'atlantis' ),
+			'message_exclude'  => __( 'Exclude', 'atlantis' ),
+			'message_time'     => __( 'Time', 'atlantis' ),
 		);
 	}
 
@@ -55,7 +59,34 @@ class MessagesList extends WP_List_Table {
 			'message_type'     => array( 'message_type', false ),
 			'message_status'   => array( 'message_status', false ),
 			'message_location' => array( 'message_location', false ),
+			'message_exclude'  => array( 'message_exclude', false ),
 			'message_time'     => array( 'message_time', true ),
+		);
+	}
+
+	/**
+	 * Get bulk actions.
+	 *
+	 * @return array
+	 */
+	public function get_bulk_actions(): array {
+		return array(
+			'delete'     => __( 'Delete', 'atlantis' ),
+			'activate'   => __( 'Activate', 'atlantis' ),
+			'deactivate' => __( 'Deactivate', 'atlantis' ),
+		);
+	}
+
+	/**
+	 * Handle the checkbox column.
+	 *
+	 * @param object $item Item being displayed.
+	 * @return string
+	 */
+	public function column_cb( $item ): string {
+		return sprintf(
+			'<input type="checkbox" name="message[]" value="%s" />',
+			$item->id
 		);
 	}
 
@@ -111,7 +142,7 @@ class MessagesList extends WP_List_Table {
 		$order   = isset( $_REQUEST['order'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['order'] ) ) : 'DESC';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		$valid_orderby_values = array( 'message_name', 'message_content', 'message_type', 'message_status', 'message_location', 'message_time' );
+		$valid_orderby_values = array( 'message_name', 'message_content', 'message_type', 'message_status', 'message_location', 'message_time', 'message_exclude' );
 		if ( ! in_array( $orderby, $valid_orderby_values, true ) ) {
 			$orderby = 'message_time';
 		}
@@ -128,6 +159,7 @@ class MessagesList extends WP_List_Table {
 			$search_conditions[] = 'message_type LIKE %s';
 			$search_conditions[] = 'message_status LIKE %s';
 			$search_conditions[] = 'message_location LIKE %s';
+			$search_conditions[] = 'message_exclude LIKE %s';
 			$query_args          = array( $search_like, $search_like, $search_like, $search_like, $search_like );
 		}
 
@@ -150,7 +182,7 @@ class MessagesList extends WP_List_Table {
 		}
 
 		// For main query
-		$sql = "SELECT l.id, l.message_name, l.message_content, l.message_type, l.message_status, l.message_location, l.message_time FROM $table_name l";
+		$sql = "SELECT l.id, l.message_name, l.message_content, l.message_type, l.message_status, l.message_location, l.message_exclude, l.message_time FROM $table_name l";
 
 		if ( ! empty( $search_conditions ) ) {
 			$sql        .= ' WHERE ' . implode( ' OR ', $search_conditions );
@@ -195,15 +227,58 @@ class MessagesList extends WP_List_Table {
 	public function column_default( $item, $column_name ): string {
 		switch ( $column_name ) {
 			case 'message_name':
-				return esc_html( $item->message_name );
+				$actions = array(
+					'edit'   => sprintf(
+						'<a href="%s">%s</a>',
+						esc_url(
+							add_query_arg(
+								array(
+									'action' => 'edit',
+									'id'     => $item->id,
+								)
+							)
+						),
+						__( 'Edit', 'atlantis' )
+					),
+					'delete' => sprintf(
+						'<a href="%s" class="submitdelete" onclick="return confirm(\'%s\');">%s</a>',
+						esc_url(
+							wp_nonce_url(
+								add_query_arg(
+									array(
+										'action'  => 'delete',
+										'message' => $item->id,
+									)
+								),
+								'bulk-messages'
+							)
+						),
+						esc_js( __( 'Are you sure you want to delete this message?', 'atlantis' ) ),
+						__( 'Delete', 'atlantis' )
+					),
+				);
+				return sprintf(
+					'%1$s %2$s',
+					'<strong>' . esc_html( $item->message_name ) . '</strong>',
+					$this->row_actions( $actions )
+				);
 			case 'message_content':
 				return wp_kses_post( $item->message_content );
 			case 'message_type':
 				return esc_html( $item->message_type );
 			case 'message_status':
-				return esc_html( $item->message_status );
+				$status = 'active' === $item->message_status ? __( 'Active', 'atlantis' ) : __( 'Inactive', 'atlantis' );
+				return sprintf(
+					'<span class="status-%s">%s</span>',
+					esc_attr( $item->message_status ),
+					esc_html( $status )
+				);
 			case 'message_location':
-				return esc_html( $item->message_location );
+				$locations = maybe_unserialize( $item->message_location );
+				return esc_html( implode( ', ', $locations ) );
+			case 'message_exclude':
+				$excludes = ! empty( $item->message_exclude ) ? maybe_unserialize( $item->message_exclude ) : array();
+				return ! empty( $excludes ) ? esc_html( implode( ', ', $excludes ) ) : '—';
 			case 'message_time':
 				return esc_html( get_date_from_gmt( $item->message_time ) );
 			default:

@@ -28,6 +28,23 @@ class Modules {
 	private array $modules = array();
 
 	/**
+	 * Messages module.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public Messages $messages;
+
+	/**
+	 * Notifications module.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public Notifications $notifications;
+
+
+	/**
 	 * Initialize the Modules functionality.
 	 *
 	 * @return void
@@ -45,8 +62,10 @@ class Modules {
 		$this->notifications->initialize();
 	}
 
+	// region METHODS
+
 	/**
-	 * Setup available modules.
+	 * Initializes the modules.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
