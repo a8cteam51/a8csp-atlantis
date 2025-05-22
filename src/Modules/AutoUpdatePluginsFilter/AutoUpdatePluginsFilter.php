@@ -1,29 +1,77 @@
-<?php
-/**
- * Plugin Autoupdate Filter class
- *
- * @package Plugin_Autoupdate_Filter
- */
+<?php declare( strict_types=1 );
 
+namespace A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter;
+
+use A8C\SpecialProjects\Atlantis\Modules\Module;
 use AutomateWoo\Error;
+use Exception;
+use RuntimeException;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
-}
+defined( 'ABSPATH' ) || exit;
 
-require_once 'includes/class-plugin-autoupdate-filter-helpers.php';
+require_once __DIR__ . '/class-plugin-autoupdate-filter-helpers.php';
 
-class Plugin_Autoupdate_Filter {
-
+/**
+ * AutoUpdatePluginsFilter Module class.
+ *
+ * @since   1.0.0
+ * @version 1.0.0
+ */
+class AutoUpdatePluginsFilter extends Module {
 	/**
-	 * @var stdClass Holds the settings
+	 * The settings object.
+	 *
+	 * @var \stdClass Holds the settings
 	 */
 	private $settings;
 
+
 	/**
-	 * Initialize WordPress hooks
+	 * Gets the module name.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  string  The module name.
 	 */
-	public function init(): void {
+	public function get_name(): string {
+		return 'Auto Update Filter';
+	}
+
+
+	/**
+	 * Gets the module description.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  string  The module description.
+	 */
+	public function get_description(): string {
+		return 'Manages the update process of the site plugins';
+	}
+
+	/**
+	 * Checks module-specific requirements and returns true if they all pass.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  true|\WP_Error
+	 */
+	protected function module_requirements_check(): bool|\WP_Error {
+		return true; // TODO: Implement module-specific requirements check.
+	}
+
+	/**
+	 * Initializes the module components.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  void
+	 */
+	protected function initialize(): void {
 
 		// get the centralized settings from opsoasis
 		try {
@@ -32,7 +80,6 @@ class Plugin_Autoupdate_Filter {
 			$error_message  = $exception->getMessage();
 			$this->settings = (object) array( 'disable_all' => true );
 
-			error_log( "Plugin Autoupdate Filter: Unable to retrieve the autoupdate settings ({$error_message})" ); // phpcs:disable WordPress.PHP.DevelopmentFunctions
 			add_action(
 				'admin_notices',
 				function () use ( $error_message ) {
@@ -77,8 +124,11 @@ class Plugin_Autoupdate_Filter {
 
 	/**
 	 * Load settings from the centralized settings page
+	 *
+	 * @return \stdClass The settings object.
+	 * @throws RuntimeException If the settings cannot be loaded.
 	 */
-	private function get_auto_update_settings(): stdClass {
+	private function get_auto_update_settings(): \stdClass {
 
 		// Try getting the settings from the transient first
 		$transient_key = 'wpcpmsp_auto_update_settings';
@@ -107,7 +157,7 @@ class Plugin_Autoupdate_Filter {
 
 			// if the settings are empty, we still need to return an object
 			if ( ! is_object( $decoded_body ) ) {
-				$object              = new stdClass();
+				$object              = new \stdClass();
 				$object->placeholder = $decoded_body;
 				$decoded_body        = $object;
 			}
@@ -124,14 +174,21 @@ class Plugin_Autoupdate_Filter {
 	/**
 	 * If we have hit the "Disable all autoupdates" toggle switch, or if we can't get the centralized settings, don't autoupdate anything.
 	 *
-	 * @param bool|null $update Whether to update the plugin or not. This can be bool or null as per the docs
+	 * @param bool|null $update Whether to update the plugin or not. This can be bool or null as per the docs.
 	 * @param object    $item   The plugin update object.
 	 *
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_maybe_disable_all_autoupdates( $update, $item ): bool {
+		$plugin_file    = isset( $item->plugin ) ? $item->plugin : 'unknown';
+		$plugin_slug    = isset( $item->slug ) ? $item->slug : 'unknown';
+		$plugin_version = isset( $item->new_version ) ? $item->new_version : 'unknown';
 
-		if ( isset( $this->settings->disable_all ) || null === $update ) {
+		if ( isset( $this->settings->disable_all ) ) {
+			return false;
+		}
+
+		if ( null === $update ) {
 			return false;
 		}
 
@@ -147,6 +204,10 @@ class Plugin_Autoupdate_Filter {
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_enforce_delay( $update, $item ): bool {
+		$plugin_file    = isset( $item->plugin ) ? $item->plugin : 'unknown';
+		$plugin_slug    = isset( $item->slug ) ? $item->slug : 'unknown';
+		$plugin_version = isset( $item->new_version ) ? $item->new_version : 'unknown';
+
 		// protect against non-bool being returned from this function
 		if ( null === $update ) {
 			$update = false;
@@ -170,8 +231,11 @@ class Plugin_Autoupdate_Filter {
 		if ( false === $has_delay_passed ) {
 			$option_key = 'plugin_update_delays';
 			$delays     = get_option( $option_key, array() );
+
 			if ( isset( $delays[ $plugin_file ][ $plugin_new_version ] ) && is_numeric( $delays[ $plugin_file ][ $plugin_new_version ] ) && ( ! empty( $plugin_file ) && is_plugin_active( $plugin_file ) ) ) {
-				$delay_date = $delays[ $plugin_file ][ $plugin_new_version ];
+				$delay_date     = $delays[ $plugin_file ][ $plugin_new_version ];
+				$current_time   = time();
+				$time_remaining = $delay_date - $current_time;
 
 				// Get the site's date and time format settings.
 				$datetime_format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
@@ -205,6 +269,10 @@ class Plugin_Autoupdate_Filter {
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_auto_update_specific_times( $update, $item ): bool {
+		$plugin_file    = isset( $item->plugin ) ? $item->plugin : 'unknown';
+		$plugin_slug    = isset( $item->slug ) ? $item->slug : 'unknown';
+		$plugin_version = isset( $item->new_version ) ? $item->new_version : 'unknown';
+
 		$holidays = array(
 			'christmas' => array(
 				'start' => gmdate( 'Y' ) . '-12-23 00:00:00',
@@ -244,11 +312,24 @@ class Plugin_Autoupdate_Filter {
 		$day  = gmdate( 'D' );  // Current day of the week
 
 		// If outside business hours, disable auto-updates
-		if ( $hour < $hours['start'] || $hour > $hours['end'] || in_array( $day, $days_off, true ) || ( 'Fri' === $day && $hour > $hours['friday_end'] ) ) {
+		$current_time = gmdate( 'Y-m-d H:i:s' );
+
+		if ( $hour < $hours['start'] ) {
 			return false;
 		}
 
-		// Otherwise, plugins will autoupdate regardless of settings in wp-admin
+		if ( $hour > $hours['end'] ) {
+			return false;
+		}
+
+		if ( in_array( $day, $days_off, true ) ) {
+			return false;
+		}
+
+		if ( 'Fri' === $day && $hour > $hours['friday_end'] ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -291,7 +372,6 @@ class Plugin_Autoupdate_Filter {
 	 * @return string Customized HTML for automatic update settings.
 	 */
 	public function filter_custom_setting_html( $html, $plugin_file, $plugin_data ): string {
-
 		// check if updates are explicitly blocked for this plugin
 		if ( function_exists( 'disable_autoupdate_specific_plugins' ) ) {
 
@@ -312,7 +392,6 @@ class Plugin_Autoupdate_Filter {
 	 * Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
 	 */
 	public function output_upgrade_message_for_specific_plugins(): void {
-
 		// check if updates are explicitly blocked for this plugin
 		// don't show if we are already disabling all updates
 		if ( ! function_exists( 'disable_autoupdate_specific_plugins' ) || isset( $this->settings->disable_all ) ) {
@@ -386,5 +465,3 @@ class Plugin_Autoupdate_Filter {
 		}
 	}
 }
-
-add_action( 'init', array( new Plugin_Autoupdate_Filter(), 'init' ) );

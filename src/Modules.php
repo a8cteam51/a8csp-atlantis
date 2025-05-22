@@ -4,6 +4,7 @@ namespace A8C\SpecialProjects\Atlantis;
 
 use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
 use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
+use A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter\AutoUpdatePluginsFilter;
 use A8C\SpecialProjects\Atlantis\Modules\Module;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\Messages;
 
@@ -52,6 +53,9 @@ class Modules {
 
 		$this->modules['tracking'] = new Tracking();
 		$this->modules['tracking']->maybe_initialize();
+
+		$this->modules['auto-update-plugins-filter'] = new AutoUpdatePluginsFilter();
+		$this->modules['auto-update-plugins-filter']->maybe_initialize();
 	}
 
 	// region METHODS
