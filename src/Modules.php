@@ -52,45 +52,21 @@ class Modules {
 	public function initialize(): void {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
-		add_action( 'plugins_loaded', array( $this, 'maybe_load_modules' ), 20 );
-
-		$this->setup_modules();
 
 		$this->messages = new Messages();
 		$this->messages->initialize();
 
 		$this->notifications = new Notifications();
 		$this->notifications->initialize();
+
+		$this->modules['colophon'] = new Colophon();
+		$this->modules['colophon']->maybe_initialize();
+
+		$this->modules['tracking'] = new Tracking();
+		$this->modules['tracking']->maybe_initialize();
 	}
 
 	// region METHODS
-
-	/**
-	 * Initializes the modules.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return  void
-	 */
-	private function setup_modules(): void {
-		$this->modules = array(
-			'colophon' => array(
-				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon\\Colophon',
-				'instance' => null,
-			),
-			/*
-			'autoupdate-filter' => array(
-				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\AutoupdateFilter',
-				'instance' => null,
-			),
-			*/
-			'tracking' => array(
-				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking\\Tracking',
-				'instance' => null,
-			),
-		);
-	}
 
 	/**
 	 * Add the Modules page to the Atlantis menu.
@@ -145,11 +121,11 @@ class Modules {
 						<tr>
 							<th scope="row"><?php echo esc_html( $instance->get_name() ); ?></th>
 							<td>
-								<input 
-									type="checkbox" 
-									name="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]" 
-									id="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]" 
-									value="1" 
+								<input
+									type="checkbox"
+									name="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]"
+									id="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]"
+									value="1"
 									<?php checked( ! empty( $enabled[ $key ] ) ); ?>
 									<?php disabled( $is_wp_error ); ?>
 								/>
@@ -169,22 +145,5 @@ class Modules {
 			</form>
 		</div>
 		<?php
-	}
-
-	/**
-	 * Maybe load the modules.
-	 *
-	 * @return void
-	 */
-	public function maybe_load_modules(): void {
-		foreach ( $this->modules as $key => $module ) {
-			if ( ! class_exists( $module['class'] ) ) {
-				continue;
-			}
-
-			$instance                          = new $module['class']();
-			$this->modules[ $key ]['instance'] = $instance;
-			$instance->maybe_initialize();
-		}
 	}
 }

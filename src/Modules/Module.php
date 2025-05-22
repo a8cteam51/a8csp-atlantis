@@ -17,13 +17,17 @@ abstract class Module {
 
 	abstract public function get_description(): string;
 
+	public function get_settings_key(): string {
+		return sanitize_title( $this->get_name() );
+	}
+
 	public function is_disabled(): false|\WP_Error {
 		return false;
 	}
 
 	public function is_active(): bool {
 		$settings = get_option( 'atlantis_enabled_modules', array() );
-		return isset( $settings[ sanitize_title( $this->get_name() ) ] );
+		return isset( $settings[ $this->get_settings_key() ] ) && $settings[ $this->get_settings_key() ];
 	}
 
 	/**
