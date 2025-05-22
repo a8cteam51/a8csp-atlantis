@@ -11,26 +11,24 @@
     };
 
     MessageForm.prototype.setupAddButtons = function() {
-        const addButtons = document.querySelectorAll('#atlantis-add-include-location, #atlantis-add-exclude-location');
+        const locationDropdowns = document.querySelectorAll('.atlantis-location-dropdown');
         
-        addButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
+        locationDropdowns.forEach(dropdown => {
+            dropdown.addEventListener('change', (e) => {
                 e.preventDefault();
                 
-                const select = button.previousElementSibling;
-                
-                if (!select || !select.classList.contains('atlantis-location-dropdown')) {
+                if (!dropdown || !dropdown.classList.contains('atlantis-location-dropdown')) {
                     return;
                 }
 
-                const target = select.dataset.target;
-                
+                const target = dropdown.dataset.target;
+
                 if (!target) {
                     return;
                 }
 
-                const value = select.value;
-                
+                const value = dropdown.value;
+
                 if (!value) {
                     return;
                 }
@@ -42,7 +40,7 @@
                     return;
                 }
 
-                const selectedOption = select.options[select.selectedIndex];
+                const selectedOption = dropdown.options[dropdown.selectedIndex];
                 if (!selectedOption) {
                     return;
                 }
@@ -66,7 +64,7 @@
                         option.remove();
                     }
                 });
-                select.value = '';
+                dropdown.value = '';
 
                 // Setup remove button for the new item
                 this.setupRemoveButtons();

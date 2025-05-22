@@ -49,7 +49,6 @@ wp_enqueue_editor();
 				<th scope="row"><label for="message_type"><?php echo esc_html__( 'Message Type', 'atlantis' ); ?></label></th>
 				<td>
 					<select name="message_type" id="message_type" required>
-						<option value=""><?php echo esc_html__( 'Select Type', 'atlantis' ); ?></option>
 						<option value="info" <?php selected( $message ? $message->message_type : '', 'info' ); ?>><?php echo esc_html__( 'Info', 'atlantis' ); ?></option>
 						<option value="warning" <?php selected( $message ? $message->message_type : '', 'warning' ); ?>><?php echo esc_html__( 'Warning', 'atlantis' ); ?></option>
 						<option value="error" <?php selected( $message ? $message->message_type : '', 'error' ); ?>><?php echo esc_html__( 'Error', 'atlantis' ); ?></option>
@@ -61,7 +60,6 @@ wp_enqueue_editor();
 				<th scope="row"><label for="message_status"><?php echo esc_html__( 'Status', 'atlantis' ); ?></label></th>
 				<td>
 					<select name="message_status" id="message_status" required>
-						<option value=""><?php echo esc_html__( 'Select Status', 'atlantis' ); ?></option>
 						<option value="active" <?php selected( $message ? $message->message_status : '', 'active' ); ?>><?php echo esc_html__( 'Active', 'atlantis' ); ?></option>
 						<option value="inactive" <?php selected( $message ? $message->message_status : '', 'inactive' ); ?>><?php echo esc_html__( 'Inactive', 'atlantis' ); ?></option>
 					</select>
@@ -93,8 +91,7 @@ wp_enqueue_editor();
 						endforeach;
 						?>
 					</select>
-					<button type="button" class="button" id="atlantis-add-include-location"><?php echo esc_html__( 'Add', 'atlantis' ); ?></button>
-					<p class="description"><?php echo esc_html__( 'Select admin pages where this message should be displayed.', 'atlantis' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'Select one or more Admin pages where this notice should be displayed.', 'atlantis' ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -123,8 +120,7 @@ wp_enqueue_editor();
 						endforeach;
 						?>
 					</select>
-					<button type="button" class="button" id="atlantis-add-exclude-location"><?php echo esc_html__( 'Add', 'atlantis' ); ?></button>
-					<p class="description"><?php echo esc_html__( 'Select admin pages where this message should NOT be displayed.', 'atlantis' ); ?></p>
+					<p class="description"><?php echo esc_html__( 'Select one or more Admin pages where this notice should NOT be displayed.', 'atlantis' ); ?></p>
 				</td>
 			</tr>
 		</table>

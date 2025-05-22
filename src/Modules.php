@@ -148,11 +148,14 @@ class Modules {
 								<input 
 									type="checkbox" 
 									name="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]" 
+									id="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]" 
 									value="1" 
 									<?php checked( ! empty( $enabled[ $key ] ) ); ?>
 									<?php disabled( $is_wp_error ); ?>
 								/>
-								Enable
+								<label for="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]">
+									Enable
+								</label>
 								<?php if ( $is_wp_error ) : ?>
 									<p class="description">
 										<?php echo esc_html( $is_disabled->get_error_message() ); ?>
