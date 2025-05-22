@@ -13,8 +13,12 @@ defined( 'ABSPATH' ) || exit;
  * @package A8C\SpecialProjects\Atlantis
  */
 class Notifications {
+
 	/**
 	 * Initialize the notifications functionality.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
 	 * @return void
 	 */
@@ -25,11 +29,16 @@ class Notifications {
 	/**
 	 * Get active messages for current location.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @return array Array of active messages.
 	 */
 	private function get_active_messages(): array {
 		global $wpdb;
 		$table_name = MessagesSchema::get_table_name();
+
+		$is_block_editor = $this->is_block_editor();
 
 		// Get current location
 		$current_location = $this->get_current_location();
@@ -58,8 +67,16 @@ class Notifications {
 				continue;
 			}
 
+			if ( $is_block_editor && ! empty( $excludes ) && in_array( 'all_post_editors', $excludes, true ) ) {
+				continue;
+			}
+
 			// Include if 'all' is in locations or current location matches
 			if ( in_array( 'all', $locations, true ) || in_array( $current_location, $locations, true ) ) {
+				$filtered_messages[] = $message;
+			}
+
+			if ( $is_block_editor && in_array( 'all_post_editors', $locations, true ) ) {
 				$filtered_messages[] = $message;
 			}
 		}
@@ -96,6 +113,9 @@ class Notifications {
 	/**
 	 * Display notifications as admin notices.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @return void
 	 */
 	public function display_notifications(): void {
@@ -110,8 +130,7 @@ class Notifications {
 			return;
 		}
 
-		$screen = get_current_screen();
-		if ( $screen && $screen->is_block_editor ) {
+		if ( $this->is_block_editor() ) {
 			foreach ( $messages as $message ) {
 				$this->render_editor_notification( $message );
 			}
@@ -125,9 +144,26 @@ class Notifications {
 	}
 
 	/**
+	 * Check if the current screen is the block editor.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return bool True if the current screen is the block editor, false otherwise.
+	 */
+	private function is_block_editor(): bool {
+		$screen = get_current_screen();
+		return $screen && $screen->is_block_editor;
+	}
+
+	/**
 	 * Render a notification for the block editor.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @param object $message Message object.
+	 *
 	 * @return void
 	 */
 	private function render_editor_notification( $message ): void {
@@ -148,7 +184,11 @@ class Notifications {
 	/**
 	 * Render a single notification as an admin notice.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @param object $message Message object.
+	 *
 	 * @return void
 	 */
 	private function render_notification( $message ): void {
@@ -168,7 +208,11 @@ class Notifications {
 	/**
 	 * Convert message type to WordPress notice type.
 	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
 	 * @param string $message_type Message type from database.
+	 *
 	 * @return string WordPress notice type.
 	 */
 	private function get_notice_type( string $message_type ): string {

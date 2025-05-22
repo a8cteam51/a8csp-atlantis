@@ -418,7 +418,8 @@ class Messages extends Module {
 		global $menu, $submenu;
 
 		$locations = array(
-			'all' => __( 'All Locations', 'atlantis' ),
+			'all'              => __( 'All Locations', 'atlantis' ),
+			'all_post_editors' => __( 'All Post Editors', 'atlantis' ),
 		);
 
 		// Top-level menu items
