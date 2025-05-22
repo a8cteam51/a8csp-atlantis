@@ -48,17 +48,7 @@ class Colophon extends Module {
 	 * @return  false|\WP_Error  False if the module should be enabled, WP_Error if it should be disabled.
 	 */
 	public function is_disabled(): false|\WP_Error {
-		// return false;
-		return new \WP_Error(
-			'colophon_disabled',
-			'The Colophon module can\'t be enabled in the current environment.',
-			array(
-				'status' => 403,
-				'data'   => array(
-					'reason' => 'module_disabled',
-				),
-			)
-		);
+		return false;
 	}
 
 	/**
@@ -70,8 +60,18 @@ class Colophon extends Module {
 	 * @return  void
 	 */
 	public function initialize(): void {
-		error_log( 'Colophon initialized' );
-		
-		// TODO: Initialize module components and/or direct hooks.
+		add_action( 'team51_credits', 'team51_credits', 10, 1 );
+		add_action(
+			'init',
+			function () {
+				add_shortcode( 'team51-credits', 'team51_credits_shortcode' );
+			}
+		);
+		add_action(
+			'init',
+			function () {
+				add_shortcode( 'team51-current-year', 'team51_current_year_shortcode' );
+			}
+		);
 	}
 }

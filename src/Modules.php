@@ -33,7 +33,7 @@ class Modules {
 	public function initialize(): void {
 		$this->setup_modules();
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
-		add_action( 'init', array( $this, 'maybe_load_modules' ) );
+		add_action( 'plugins_loaded', array( $this, 'maybe_load_modules' ), 20 );
 	}
 
 	/**
