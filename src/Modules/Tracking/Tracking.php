@@ -2,7 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis\Modules\Tracking;
 
-use A8C\SpecialProjects\Atlantis\Modules\Module;
+use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * @since   1.0.0
  * @version 1.0.0
  */
-class Tracking extends Module {
+class Tracking extends AbstractModule {
 	// region INHERITED METHODS
 
 	/**

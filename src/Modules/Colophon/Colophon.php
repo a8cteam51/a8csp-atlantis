@@ -2,7 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis\Modules\Colophon;
 
-use A8C\SpecialProjects\Atlantis\Modules\Module;
+use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * @since   1.0.0
  * @version 1.0.0
  */
-class Colophon extends Module {
+class Colophon extends AbstractModule {
 	// region INHERITED METHODS
 
 	/**

@@ -4,7 +4,7 @@ namespace A8C\SpecialProjects\Atlantis\Modules\Messages;
 
 use A8C\SpecialProjects\Atlantis\MessagesList;
 use A8C\SpecialProjects\Atlantis\MessagesSchema;
-use A8C\SpecialProjects\Atlantis\Modules\Module;
+use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  *
  * @package A8C\SpecialProjects\Atlantis
  */
-class Messages extends Module {
+class Messages extends AbstractModule {
 
 	/**
 	 * List table instance
@@ -210,7 +210,7 @@ class Messages extends Module {
 		<div class="wrap">
 			<h1 class="wp-heading-inline"><?php echo esc_html__( 'Atlantis Messages', 'atlantis' ); ?></h1>
 			<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'new' ) ) ); ?>" class="page-title-action"><?php echo esc_html__( 'Add New', 'atlantis' ); ?></a>
-			
+
 			<hr class="wp-header-end">
 
 			<form id="atlantis-messages-filter" method="get">

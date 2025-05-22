@@ -2,7 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter;
 
-use A8C\SpecialProjects\Atlantis\Modules\Module;
+use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 use AutomateWoo\Error;
 use Exception;
 use RuntimeException;
@@ -17,7 +17,7 @@ require_once __DIR__ . '/class-plugin-autoupdate-filter-helpers.php';
  * @since   1.0.0
  * @version 1.0.0
  */
-class AutoUpdatePluginsFilter extends Module {
+class AutoUpdatePluginsFilter extends AbstractModule {
 	/**
 	 * The settings object.
 	 *

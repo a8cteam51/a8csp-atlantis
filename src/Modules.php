@@ -5,7 +5,7 @@ namespace A8C\SpecialProjects\Atlantis;
 use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
 use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
 use A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter\AutoUpdatePluginsFilter;
-use A8C\SpecialProjects\Atlantis\Modules\Module;
+use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\Messages;
 
 
@@ -24,7 +24,7 @@ class Modules {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @var array<string, array{class: string, instance: ?Module}>
+	 * @var array<string, array{class: string, instance: ?AbstractModule}>
 	 */
 	private array $modules = array();
 
