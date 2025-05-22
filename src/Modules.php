@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis;
 
 use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
+use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
 use A8C\SpecialProjects\Atlantis\Modules\Module;
 
 defined( 'ABSPATH' ) || exit;
@@ -49,12 +50,14 @@ class Modules {
 				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon\\Colophon',
 				'instance' => null,
 			),
+			/*
 			'autoupdate-filter' => array(
 				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\AutoupdateFilter',
 				'instance' => null,
 			),
+			*/
 			'tracking'          => array(
-				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking',
+				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking\\Tracking',
 				'instance' => null,
 			),
 		);
