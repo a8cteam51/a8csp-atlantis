@@ -237,6 +237,22 @@ class Messages extends Module {
 	 * @return void
 	 */
 	private function enqueue_message_form_assets( $current_location = array(), $current_exclude = array() ): void {
+
+		wp_enqueue_script( 
+			'select2', 
+			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', 
+			array( 'jquery' ), 
+			'4.1.0-rc.0', 
+			true 
+		);
+
+		wp_enqueue_style( 
+			'select2-css', 
+			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', 
+			array(), 
+			'4.1.0-rc.0' 
+		);
+
 		wp_enqueue_style(
 			'atlantis-message-form',
 			A8CSP_ATLANTIS_DIR_URL . 'assets/css/build/message-form.css',
@@ -448,7 +464,7 @@ class Messages extends Module {
 		foreach ( $menu as $menu_item ) {
 			if ( ! empty( $menu_item[0] ) && ! empty( $menu_item[2] ) ) {
 				$menu_slug  = $menu_item[2];
-				$menu_title = wp_strip_all_tags( $menu_item[0] );
+				$menu_title = preg_replace( '/\s\d+$/', '', wp_strip_all_tags( $menu_item[0] ) );
 
 				// Keep the .php extension for exact matching
 				$locations[ $menu_slug ] = $menu_title;
@@ -467,7 +483,7 @@ class Messages extends Module {
 
 							$screen_id = $submenu_slug;
 
-							$locations[ $screen_id ] = $menu_title . ' -> ' . $submenu_title;
+							$locations[ $screen_id ] = $menu_title . ' ⇀ ' . preg_replace( '/\s\d+$/', '', $submenu_title );
 						}
 					}
 				}
