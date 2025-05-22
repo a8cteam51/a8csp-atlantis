@@ -291,6 +291,12 @@ class Messages extends Module {
 		$current_location = $message ? maybe_unserialize( $message->message_location ) : array();
 		$current_exclude  = $message && ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
 
+		$message_content = a8csp_atlantis_decrypt_data( $message->message_content );
+
+		if ( ! is_wp_error( $message_content ) ) {
+			$message->message_content = $message_content;
+		}
+
 		// Enqueue assets
 		$this->enqueue_message_form_assets( $current_location, $current_exclude );
 
