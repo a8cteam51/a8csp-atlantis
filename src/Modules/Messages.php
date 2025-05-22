@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis\Modules;
 
 use A8C\SpecialProjects\Atlantis\MessagesList;
+use A8C\SpecialProjects\Atlantis\MessagesSchema;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -13,12 +14,6 @@ defined( 'ABSPATH' ) || exit;
  * @package A8C\SpecialProjects\Atlantis
  */
 class Messages {
-	/**
-	 * Database table name for Atlantis messages.
-	 *
-	 * @var string
-	 */
-	public const TABLE_NAME = 'atlantis_messages';
 
 	/**
 	 * List table instance
@@ -47,15 +42,8 @@ class Messages {
 	 * @return void
 	 */
 	public function maybe_create_table(): void {
-		// Check if we've already created the table
-		$table_version = get_option( 'atlantis_messages_table_version' );
-
-		// If table version doesn't exist or is different from current plugin version, create/update table
-		if ( ! $table_version || version_compare( $table_version, a8csp_atlantis_get_plugin_metadata( 'Version' ), '<' ) ) {
-			$this->create_table();
-
-			// Store current version to prevent future checks
-			update_option( 'atlantis_messages_table_version', a8csp_atlantis_get_plugin_metadata( 'Version' ) );
+		if ( MessagesSchema::needs_update() ) {
+			MessagesSchema::update_schema();
 		}
 	}
 
@@ -65,42 +53,7 @@ class Messages {
 	 * @return void
 	 */
 	public function create_table(): void {
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-
-		// First check if table already exists to avoid unnecessary dbDelta calls
-		if ( self::table_exists() ) {
-			return;
-		}
-
-		$charset_collate = $wpdb->get_charset_collate();
-
-		$sql = "CREATE TABLE IF NOT EXISTS $table_name (
-			id bigint(20) NOT NULL AUTO_INCREMENT,
-			message_name varchar(255) NOT NULL,
-			message_content text NOT NULL,
-			message_type varchar(255) NOT NULL,
-			message_status varchar(255) NOT NULL,
-			message_location text NOT NULL,
-			message_exclude text DEFAULT NULL,
-			message_time datetime DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY  (id),
-			KEY message_name (message_name)
-		) $charset_collate;";
-
-		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		dbDelta( $sql );
-	}
-
-	/**
-	 * Check if the messages table exists.
-	 *
-	 * @return bool True if table exists, false otherwise.
-	 */
-	public static function table_exists(): bool {
-		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
-		return $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
+		MessagesSchema::update_schema();
 	}
 
 	/**
@@ -110,9 +63,10 @@ class Messages {
 	 */
 	private function get_active_messages_count(): int {
 		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
+		$table_name = MessagesSchema::get_table_name();
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
+				//phpcs:ignore
 				"SELECT COUNT(*) FROM {$table_name} WHERE message_status = %s",
 				'active'
 			)
@@ -246,7 +200,7 @@ class Messages {
 			$message = $wpdb->get_row(
 				$wpdb->prepare(
 					//phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-					"SELECT * FROM {$wpdb->prefix}" . self::TABLE_NAME . ' WHERE id = %d',
+					'SELECT * FROM ' . MessagesSchema::get_table_name() . ' WHERE id = %d',
 					$id
 				)
 			);
@@ -294,7 +248,7 @@ class Messages {
 		}
 
 		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
+		$table_name = MessagesSchema::get_table_name();
 
 		$data = array(
 			'message_name'     => $message_name,
@@ -347,7 +301,6 @@ class Messages {
 	 */
 	private function update_messages_status( array $message_ids, string $status ): void {
 		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		if ( empty( $message_ids ) ) {
 			return;
@@ -359,7 +312,7 @@ class Messages {
 		$wpdb->query(
 			$wpdb->prepare(
 				//phpcs:ignore
-				"UPDATE {$wpdb->prefix}" . self::TABLE_NAME . " SET message_status = %s WHERE id IN ({$placeholders})",
+				'UPDATE ' . MessagesSchema::get_table_name() . " SET message_status = %s WHERE id IN ({$placeholders})",
 				array_merge( array( $status ), $message_ids )
 			)
 		);
@@ -475,7 +428,6 @@ class Messages {
 	 */
 	private function delete_messages( array $message_ids ): void {
 		global $wpdb;
-		$table_name = $wpdb->prefix . self::TABLE_NAME;
 
 		if ( empty( $message_ids ) ) {
 			return;
@@ -486,7 +438,8 @@ class Messages {
 
 		$wpdb->query(
 			$wpdb->prepare(
-				"DELETE FROM {$wpdb->prefix}" . self::TABLE_NAME . " WHERE id IN ({$placeholders})",
+				//phpcs:ignore
+				"DELETE FROM " . MessagesSchema::get_table_name() . " WHERE id IN ({$placeholders})",
 				$message_ids
 			)
 		);

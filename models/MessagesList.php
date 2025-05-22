@@ -105,7 +105,7 @@ class MessagesList extends WP_List_Table {
 					sprintf(
 						/* translators: %s: Table name */
 						__( 'The messages table "%s" does not exist. Please deactivate and reactivate the plugin to create it.', 'atlantis' ),
-						esc_html( $wpdb->prefix . Messages::TABLE_NAME )
+						esc_html( MessagesSchema::get_table_name() )
 					),
 					array( 'strong' => array() )
 				);
@@ -124,7 +124,7 @@ class MessagesList extends WP_List_Table {
 		global $wpdb;
 
 		// Check if table exists
-		if ( ! Messages::table_exists() ) {
+		if ( ! MessagesSchema::table_exists() ) {
 			$this->display_table_error();
 			return;
 		}
@@ -168,8 +168,7 @@ class MessagesList extends WP_List_Table {
 		$current_page = $this->get_pagenum();
 		$offset       = ( $current_page - 1 ) * $per_page;
 
-		// For table names, use $wpdb->get_blog_prefix() + constant
-		$table_name = $wpdb->get_blog_prefix() . Messages::TABLE_NAME;
+		$table_name = MessagesSchema::get_table_name();
 
 		// For count query
 		if ( ! empty( $search_conditions ) ) {

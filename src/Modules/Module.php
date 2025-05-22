@@ -2,7 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis\Modules;
 
-use \WP_Error;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -41,16 +41,19 @@ abstract class Module {
 
 		$is_disabled = $this->is_disabled();
 		if ( is_wp_error( $is_disabled ) ) {
-			add_action( 'admin_notices', function() use ( $is_disabled ) {
-				printf(
-					'<div class="notice notice-error"><p><strong>%s</strong>: %s</p></div>',
-					esc_html( $this->get_name() ),
-					esc_html( $is_disabled->get_error_message() )
-				);
-			} );
+			add_action(
+				'admin_notices',
+				function () use ( $is_disabled ) {
+					printf(
+						'<div class="notice notice-error"><p><strong>%s</strong>: %s</p></div>',
+						esc_html( $this->get_name() ),
+						esc_html( $is_disabled->get_error_message() )
+					);
+				}
+			);
 			return;
 		}
 
 		$this->initialize();
 	}
-} 
+}

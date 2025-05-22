@@ -2,6 +2,8 @@
 
 namespace A8C\SpecialProjects\Atlantis\Modules;
 
+use A8C\SpecialProjects\Atlantis\MessagesSchema;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -27,7 +29,7 @@ class Notifications {
 	 */
 	private function get_active_messages(): array {
 		global $wpdb;
-		$table_name = $wpdb->prefix . Messages::TABLE_NAME;
+		$table_name = MessagesSchema::get_table_name();
 
 		// Get current location
 		$current_location = $this->get_current_location();

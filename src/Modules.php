@@ -75,7 +75,7 @@ class Modules {
 	 */
 	private function setup_modules(): void {
 		$this->modules = array(
-			'colophon'          => array(
+			'colophon' => array(
 				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Colophon\\Colophon',
 				'instance' => null,
 			),
@@ -85,7 +85,7 @@ class Modules {
 				'instance' => null,
 			),
 			*/
-			'tracking'          => array(
+			'tracking' => array(
 				'class'    => 'A8C\\SpecialProjects\\Atlantis\\Modules\\Tracking\\Tracking',
 				'instance' => null,
 			),
@@ -136,8 +136,9 @@ class Modules {
 			<form method="post" action="options.php">
 				<?php settings_fields( 'atlantis_settings_group' ); ?>
 				<table class="form-table">
-					<?php foreach ( $this->modules as $key => $module ) : 
-						$instance = new $module['class']();
+					<?php
+					foreach ( $this->modules as $key => $module ) :
+						$instance    = new $module['class']();
 						$is_disabled = $instance->is_disabled();
 						$is_wp_error = is_wp_error( $is_disabled );
 						?>
@@ -178,7 +179,7 @@ class Modules {
 				continue;
 			}
 
-			$instance = new $module['class']();
+			$instance                          = new $module['class']();
 			$this->modules[ $key ]['instance'] = $instance;
 			$instance->maybe_initialize();
 		}

@@ -3,7 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis\Modules\Tracking;
 
 use A8C\SpecialProjects\Atlantis\Modules\Module;
-use \WP_Error;
+use WP_Error;
 
 defined( 'ABSPATH' ) || exit;
 
