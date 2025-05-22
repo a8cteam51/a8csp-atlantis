@@ -15,7 +15,7 @@
  * Plugin URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Update URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Description:             Atlantis.
- * Version:                 0.9.0
+ * Version:                 1.0.0
  * Requires at least:       6.8
  * Tested up to:            6.8.1
  * Requires PHP:            8.3
