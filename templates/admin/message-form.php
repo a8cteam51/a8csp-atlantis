@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 wp_enqueue_editor();
 ?>
+
 <div class="wrap">
 	<h1 class="wp-heading-inline">
 		<?php echo $id > 0 ? esc_html__( 'Edit Message', 'a8csp-atlantis' ) : esc_html__( 'Add New Message', 'a8csp-atlantis' ); ?>

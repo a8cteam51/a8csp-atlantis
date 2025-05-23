@@ -18,47 +18,44 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 class Modules {
+	// region FIELDS AND CONSTANTS
+
 	/**
 	 * Available modules.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @var array<string, array{class: string, instance: ?AbstractModule}>
+	 * @var array<string, ?AbstractModule>
 	 */
-	private array $modules = array();
+	public array $modules;
+
+	// endregion
+
+	// region METHODS
 
 	/**
-	 * Messages module.
+	 * Initialize the submodules.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
-	 */
-	public Messages $messages;
-
-	/**
-	 * Initialize the Modules functionality.
 	 *
-	 * @return void
+	 * @return  void
 	 */
 	public function initialize(): void {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 
-		$this->messages = new Messages();
-		$this->messages->initialize();
-
-		$this->modules['colophon'] = new Colophon();
-		$this->modules['colophon']->maybe_initialize();
-
-		$this->modules['tracking'] = new Tracking();
-		$this->modules['tracking']->maybe_initialize();
-
-		$this->modules['auto-update-plugins-filter'] = new AutoUpdatePluginsFilter();
-		$this->modules['auto-update-plugins-filter']->maybe_initialize();
+		$this->modules = array(
+			'messages'           => new Messages(),
+			'colophon'           => new Colophon(),
+			'tracking'           => new Tracking(),
+			'plugin-autoupdates' => new AutoUpdatePluginsFilter(),
+		);
+		foreach ( $this->modules as $module ) {
+			$module->maybe_initialize();
+		}
 	}
-
-	// region METHODS
 
 	/**
 	 * Add the Modules page to the Atlantis menu.

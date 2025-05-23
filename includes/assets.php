@@ -4,8 +4,8 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * Returns an array with meta information for a given asset path. First, it checks for an .asset.php file in the same directory
- * as the given asset file whose contents are returns if it exists. If not, it returns an array with the file's last modified
- * time as the version and the main stylesheet + any extra dependencies passed in as the dependencies.
+ * as the given asset file whose contents are returned if it exists. If not, it returns an array with the file's last modified
+ * time as the version and the main stylesheet plus any extra dependencies passed in as required.
  *
  * @since   1.0.0
  * @version 1.0.0

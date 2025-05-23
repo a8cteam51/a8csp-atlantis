@@ -2,19 +2,21 @@
 
 defined( 'ABSPATH' ) || exit;
 
-
 /**
- * Check if the current user is an Automattician.
+ * Checks whether the current user is probably an Automattician.
  *
- * @return bool True if user is an admin with Automattic/WordPress.com email.
+ * @since   1.0.0
+ * @version 1.0.0
+ *
+ * @return  bool
  */
-function a8csp_atlantis_is_user_automattician(): bool {
+function a8csp_atlantis_is_automattician(): bool {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return false;
 	}
 
 	$user = wp_get_current_user();
-	if ( ! $user || ! $user->user_email ) {
+	if ( ! $user || ! is_email( $user->user_email ) ) {
 		return false;
 	}
 

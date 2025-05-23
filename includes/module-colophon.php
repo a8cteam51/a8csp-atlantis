@@ -9,19 +9,19 @@ if ( ! function_exists( 'team51_credits' ) ) :
 	 *
 	 * Usage: team51_credits( 'separator= | ' );
 	 *
-	 * @param array{separator?: string, wpcom?: string, pressable?: string} $args The Args passed to the function.
+	 * @param   array{separator?: string, wpcom?: string, pressable?: string} $args The Args passed to the function.
 	 *
-	 * @return void
+	 * @return  void
 	 */
-	function team51_credits( $args = array() ) {
+	function team51_credits( $args = array() ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound
 		$args = wp_parse_args(
 			$args,
 			array(
 				'separator' => ' ',
 				/* translators: %s: WordPress. */
-				'wpcom'     => sprintf( __( 'Proudly powered by %s.', 'team51' ), 'WordPress' ),
+				'wpcom'     => sprintf( __( 'Proudly powered by %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 				/* translators: %s: Pressable. */
-				'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ),
+				'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 			)
 		);
 
@@ -31,7 +31,7 @@ if ( ! function_exists( 'team51_credits' ) ) :
 
 		if ( $args['wpcom'] ) {
 			$wpcom_link            = apply_filters(
-				'team51_credits_link_wpcom',
+				'team51_credits_link_wpcom', // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 				add_query_arg(
 					array(
 						'partner_domain' => $partner_domain,
@@ -52,7 +52,7 @@ if ( ! function_exists( 'team51_credits' ) ) :
 
 		if ( $args['pressable'] ) {
 			$pressable_link            = apply_filters(
-				'team51_credits_link_pressable',
+				'team51_credits_link_pressable', // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 				add_query_arg(
 					array(
 						'utm_source'   => 'Automattic',
@@ -79,13 +79,14 @@ if ( ! function_exists( 'team51_credits' ) ) :
 		 * @param array $credit_links The associative array of credit links.
 		 * @param array $args         The parsed arguments used by `team51_credits()`.
 		 */
-		$credit_links = apply_filters( 'team51_credit_links', $credit_links, $args );
+		$credit_links = apply_filters( 'team51_credit_links', $credit_links, $args ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 		echo implode(
 			esc_html( $args['separator'] ),
 			$credit_links //phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, this cant be escaped as it runs through a filter
 		);
 	}
+
 endif;
 
 if ( ! function_exists( 'team51_credits_shortcode' ) ) :
@@ -95,17 +96,17 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 	 *
 	 * Can also be used in the Shortcode block.
 	 *
-	 * @param array{separator?: string, wpcom?: string, pressable?: string} $atts The Args passed to the function.
+	 * @param   array{separator?: string, wpcom?: string, pressable?: string} $atts The Args passed to the function.
 	 *
-	 * @return string
+	 * @return  string
 	 */
-	function team51_credits_shortcode( $atts ) {
+	function team51_credits_shortcode( $atts ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound
 		$pairs = array(
 			'separator' => ' ',
 			/* translators: %s: WordPress. */
-			'wpcom'     => sprintf( __( 'Proudly powered by %s.', 'team51' ), 'WordPress' ),
+			'wpcom'     => sprintf( __( 'Proudly powered by %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 			/* translators: %s: Pressable. */
-			'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ),
+			'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 		);
 
 		$atts = shortcode_atts( $pairs, $atts, 'team51-credits' );
@@ -114,6 +115,7 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 		team51_credits( $atts );
 		return ob_get_clean();
 	}
+
 endif;
 
 if ( ! function_exists( 'team51_current_year_shortcode' ) ) :
@@ -123,11 +125,11 @@ if ( ! function_exists( 'team51_current_year_shortcode' ) ) :
 	 *
 	 * Can also be used in the Shortcode block.
 	 *
-	 * @param array{format?: string} $atts The Args passed to the function.
+	 * @param   array{format?: string} $atts The Args passed to the function.
 	 *
-	 * @return string
+	 * @return  string
 	 */
-	function team51_current_year_shortcode( $atts ) {
+	function team51_current_year_shortcode( $atts ) { // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedFunctionFound
 		$atts = shortcode_atts(
 			array(
 				'format' => 'Y',
@@ -139,4 +141,5 @@ if ( ! function_exists( 'team51_current_year_shortcode' ) ) :
 		$current_year = gmdate( $atts['format'] );
 		return esc_html( $current_year );
 	}
+
 endif;

@@ -38,7 +38,7 @@ class Settings {
 	 * @return  void
 	 */
 	public function register_admin_menu(): void {
-		if ( ! a8csp_atlantis_is_user_automattician() ) {
+		if ( ! a8csp_atlantis_is_automattician() ) {
 			return;
 		}
 

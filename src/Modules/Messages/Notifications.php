@@ -128,7 +128,7 @@ class Notifications {
 	 */
 	public function display_notifications(): void {
 
-		if ( ! a8csp_atlantis_is_user_automattician() ) {
+		if ( ! a8csp_atlantis_is_automattician() ) {
 			return;
 		}
 

@@ -95,11 +95,11 @@ function a8csp_atlantis_decrypt_data( string $to_decrypt ): string|WP_Error {
 		return new WP_Error( 'decrypt-error', 'Error while decoding data.' );
 	}
 
-	try {
-		if ( mb_strlen( $to_decrypt, '8bit' ) < ( SODIUM_CRYPTO_PWHASH_SALTBYTES + SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES ) ) {
-			return new WP_Error( 'decrypt-error', 'Message was truncated.' );
-		}
+	if ( mb_strlen( $to_decrypt, '8bit' ) < ( SODIUM_CRYPTO_PWHASH_SALTBYTES + SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES ) ) {
+		return new WP_Error( 'decrypt-error', 'Data was truncated.' );
+	}
 
+	try {
 		$salt     = mb_substr( $to_decrypt, 0, SODIUM_CRYPTO_PWHASH_SALTBYTES, '8bit' );
 		$key_data = a8csp_atlantis_get_encryption_key_data( $salt );
 		if ( is_wp_error( $key_data ) ) {
@@ -109,8 +109,8 @@ function a8csp_atlantis_decrypt_data( string $to_decrypt ): string|WP_Error {
 		$key        = $key_data['key'];
 		$nonce      = mb_substr( $to_decrypt, SODIUM_CRYPTO_PWHASH_SALTBYTES, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, '8bit' );
 		$ciphertext = mb_substr( $to_decrypt, SODIUM_CRYPTO_PWHASH_SALTBYTES + SODIUM_CRYPTO_SECRETBOX_NONCEBYTES, null, '8bit' );
-		$plain      = sodium_crypto_secretbox_open( $ciphertext, $nonce, $key );
 
+		$plain = sodium_crypto_secretbox_open( $ciphertext, $nonce, $key );
 		if ( false === $plain ) {
 			return new WP_Error( 'decrypt-error', 'Message could not be decrypted.' );
 		}

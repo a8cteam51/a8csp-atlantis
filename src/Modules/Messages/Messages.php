@@ -42,7 +42,7 @@ class Messages extends AbstractModule {
 	 *
 	 * @return void
 	 */
-	public function initialize(): void {
+	protected function initialize(): void {
 
 		$this->notifications = new Notifications();
 		$this->notifications->initialize();
@@ -146,7 +146,7 @@ class Messages extends AbstractModule {
 	 * @return void
 	 */
 	public function add_admin_menu(): void {
-		if ( a8csp_atlantis_is_user_automattician() ) {
+		if ( a8csp_atlantis_is_automattician() ) {
 			$active_count = $this->get_active_messages_count();
 
 			$menu_title = sprintf(
@@ -191,7 +191,7 @@ class Messages extends AbstractModule {
 	 * @return void
 	 */
 	public function render_page(): void {
-		if ( ! a8csp_atlantis_is_user_automattician() ) {
+		if ( ! a8csp_atlantis_is_automattician() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'a8csp-atlantis' ) );
 		}
 
@@ -338,7 +338,7 @@ class Messages extends AbstractModule {
 			wp_die( esc_html__( 'Security check failed', 'a8csp-atlantis' ) );
 		}
 
-		if ( ! a8csp_atlantis_is_user_automattician() ) {
+		if ( ! a8csp_atlantis_is_automattician() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'a8csp-atlantis' ) );
 		}
 
