@@ -132,7 +132,7 @@ abstract class AbstractModule {
 		$option_name = "a8csp_module_{$this->get_settings_key()}";
 
 		$settings = get_option( $option_name, null );
-		if ( is_null( $settings ) ) {
+		if ( is_null( $settings ) && false === $this->is_disabled() ) {
 			update_option( $option_name, array( 'enabled' => '1' ) );
 		}
 	}
@@ -160,13 +160,14 @@ abstract class AbstractModule {
 			"{$this->get_settings_key()}_enabled",
 			__( 'Enabled', 'a8csp-atlantis' ),
 			function ( array $args ): void {
-				$value   = get_option( $args['option_name'] );
-				$enabled = isset( $value['enabled'] ) && $value['enabled'];
-
+				$value    = get_option( $args['option_name'] );
+				$enabled  = isset( $value['enabled'] ) && $value['enabled'];
+				$disabled = is_wp_error( $this->is_disabled() ) ? 'disabled' : '';
 				printf(
-					'<input type="checkbox" name="%s[enabled]" value="1" %s />',
+					'<input type="checkbox" name="%s[enabled]" value="1" %s %s />',
 					esc_attr( $args['option_name'] ),
-					checked( $enabled, true, false )
+					checked( $enabled, true, false ),
+					$disabled
 				);
 			},
 			'a8csp-atlantis-modules',
