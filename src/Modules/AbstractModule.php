@@ -67,12 +67,8 @@ abstract class AbstractModule {
 	 * @return  bool
 	 */
 	public function is_active(): bool {
-		$settings = get_option( 'atlantis_enabled_modules', array() );
-		if ( ! isset( $settings[ $this->get_settings_key() ] ) ) {
-			return false;
-		}
-
-		return (bool) $settings[ $this->get_settings_key() ];
+		$settings = get_option( "a8csp_module_{$this->get_settings_key()}", array() );
+		return (bool) ( $settings['enabled'] ?? false );
 	}
 
 	/**
@@ -84,6 +80,8 @@ abstract class AbstractModule {
 	 * @return  void
 	 */
 	public function maybe_initialize(): void {
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+
 		if ( ! $this->is_active() ) {
 			return;
 		}
@@ -118,4 +116,46 @@ abstract class AbstractModule {
 	 * @return  void
 	 */
 	abstract protected function initialize(): void;
+
+	// region HOOKS
+
+	/**
+	 * Registers the default settings for the module.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  void
+	 */
+	public function register_settings(): void {
+		$option_name = "a8csp_module_{$this->get_settings_key()}";
+		register_setting( 'a8csp_modules_group', $option_name );
+
+		add_settings_section(
+			"{$this->get_settings_key()}_section",
+			$this->get_name(),
+			fn() => '<p>' . printf( esc_html( $this->get_description() ) ) . '</p>',
+			'a8csp-atlantis-modules'
+		);
+
+		add_settings_field(
+			"{$this->get_settings_key()}_enabled",
+			__( 'Enabled', 'a8csp-atlantis' ),
+			function ( array $args ): void {
+				$value   = get_option( $args['option_name'] );
+				$enabled = isset( $value['enabled'] ) && $value['enabled'];
+
+				printf(
+					'<input type="checkbox" name="%s[enabled]" value="1" %s />',
+					esc_attr( $args['option_name'] ),
+					checked( $enabled, true, false )
+				);
+			},
+			'a8csp-atlantis-modules',
+			"{$this->get_settings_key()}_section",
+			array( 'option_name' => $option_name )
+		);
+	}
+
+	// endregion
 }

@@ -5,14 +5,17 @@ namespace A8C\SpecialProjects\Atlantis\Modules\Messages;
 use A8C\SpecialProjects\Atlantis\MessagesList;
 use A8C\SpecialProjects\Atlantis\MessagesSchema;
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Handles logging and displaying messages.
+ * Messages Module class.
  *
- * @package A8C\SpecialProjects\Atlantis
+ * @since   1.0.0
+ * @version 1.0.0
  */
 class Messages extends AbstractModule {
+	// region FIELDS AND CONSTANTS
 
 	/**
 	 * List table instance
@@ -34,6 +37,50 @@ class Messages extends AbstractModule {
 	 */
 	public Notifications $notifications;
 
+	// endregion
+
+	// region INHERITED METHODS
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public function get_name(): string {
+		return 'messages';
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public function get_description(): string {
+		return __( 'Handles admin messages and notifications.', 'a8csp-atlantis' );
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public function is_active(): bool {
+		return true;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 */
+	public function register_settings(): void {
+		// No settings. Always active.
+	}
+
 	/**
 	 * Initialize the messages functionality.
 	 *
@@ -43,7 +90,6 @@ class Messages extends AbstractModule {
 	 * @return void
 	 */
 	protected function initialize(): void {
-
 		$this->notifications = new Notifications();
 		$this->notifications->initialize();
 
@@ -55,41 +101,7 @@ class Messages extends AbstractModule {
 		add_action( 'init', array( $this, 'maybe_create_table' ) );
 	}
 
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return string
-	 */
-	public function get_name(): string {
-		return 'messages';
-	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return string
-	 */
-	public function get_description(): string {
-		return __( 'Handles admin messages and notifications.', 'a8csp-atlantis' );
-	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return bool
-	 */
-	public function is_active(): bool {
-		return true;
-	}
+	// endregion
 
 	/**
 	 * Check if table needs to be created and create it if necessary.
@@ -160,7 +172,7 @@ class Messages extends AbstractModule {
 				__( 'Atlantis Messages', 'a8csp-atlantis' ),
 				$menu_title,
 				'manage_options',
-				'atlantis-messages',
+				'a8csp-atlantis-messages',
 				array( $this, 'render_page' )
 			);
 		}
@@ -248,7 +260,7 @@ class Messages extends AbstractModule {
 		wp_enqueue_script(
 			'atlantis-message-form',
 			A8CSP_ATLANTIS_DIR_URL . 'assets/js/build/message-form.js',
-			array('jquery'),
+			array( 'jquery' ),
 			a8csp_atlantis_get_plugin_metadata( 'Version' ),
 			true
 		);

@@ -43,8 +43,7 @@ class Modules {
 	 * @return  void
 	 */
 	public function initialize(): void {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 11 );
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'a8csp/atlantis/admin_menu_registered', array( $this, 'register_admin_menu' ) );
 
 		$this->modules = array(
 			'messages'           => new Messages(),
@@ -57,82 +56,41 @@ class Modules {
 		}
 	}
 
-	/**
-	 * Add the Modules page to the Atlantis menu.
-	 *
-	 * @return void
-	 */
-	public function add_admin_menu(): void {
-		if ( current_user_can( 'manage_options' ) ) {
-			add_submenu_page(
-				'a8csp-atlantis',
-				__( 'Modules', 'a8csp-atlantis' ),
-				__( 'Modules', 'a8csp-atlantis' ),
-				'edit_posts',
-				'atlantis-modules',
-				array( $this, 'render_page' )
-			);
-		}
-	}
+	// endregion
+
+	// region HOOKS
 
 	/**
-	 * Register the settings for the modules.
+	 * Registers a submenu page for the Atlantis Modules settings.
 	 *
-	 * @return void
-	 */
-	public function register_settings(): void {
-		register_setting( 'atlantis_settings_group', 'atlantis_enabled_modules' );
-	}
-
-	/**
-	 * Render the module activation settings page.
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 *
-	 * @return void
+	 * @return  void
 	 */
-	public function render_page(): void {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'a8csp-atlantis' ) );
-		}
-
-		$enabled = get_option( 'atlantis_enabled_modules', array() );
-		?>
-		<div class="wrap">
-			<h1>Team51 Atlantis Settings</h1>
-			<form method="post" action="options.php">
-				<?php settings_fields( 'atlantis_settings_group' ); ?>
-				<table class="form-table">
-					<?php
-					foreach ( $this->modules as $module ) :
-						$is_disabled = $module->is_disabled();
-						$is_wp_error = is_wp_error( $is_disabled );
-						$key         = $module->get_settings_key();
+	public function register_admin_menu(): void {
+		add_submenu_page(
+			'a8csp-atlantis',
+			_x( 'Modules', 'page title', 'a8csp-atlantis' ),
+			_x( 'Modules', 'menu title', 'a8csp-atlantis' ),
+			'manage_options',
+			'a8csp-atlantis-modules',
+			function () {
+				?>
+				<div class="wrap">
+					<h1><?php esc_html_e( 'Modules Settings', 'a8csp-atlantis' ); ?></h1>
+					<form method="post" action="options.php">
+						<?php
+						settings_fields( 'a8csp_modules_group' );
+						do_settings_sections( 'a8csp-atlantis-modules' );
+						submit_button();
 						?>
-						<tr>
-							<th scope="row"><?php echo esc_html( $module->get_name() ); ?></th>
-							<td>
-								<input
-									type="checkbox"
-									name="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]"
-									id="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]"
-									value="1"
-									<?php checked( ! empty( $enabled[ $key ] ) ); ?>
-									<?php disabled( $is_wp_error ); ?>
-								/>
-								<label for="atlantis_enabled_modules[<?php echo esc_attr( $key ); ?>]">
-									Enable
-								</label>
-								<?php if ( $is_wp_error ) : ?>
-									<p class="description">
-										<?php echo esc_html( $is_disabled->get_error_message() ); ?>
-									</p>
-								<?php endif; ?>
-							</td>
-						</tr>
-					<?php endforeach; ?>
-				</table>
-				<?php submit_button(); ?>
-			</form>
-		</div>
-		<?php
+					</form>
+				</div>
+				<?php
+			}
+		);
 	}
+
+	// endregion
 }

@@ -23,6 +23,7 @@ class Settings {
 	 */
 	public function initialize(): void {
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
+		add_action( 'admin_menu', array( $this, 'remove_default_submenu' ), 999 );
 	}
 
 	// endregion
@@ -47,12 +48,24 @@ class Settings {
 			_x( 'Atlantis', 'menu title', 'a8csp-atlantis' ),
 			'manage_options',
 			'a8csp-atlantis',
-			array( $this, 'render_settings_page' ),
+			'__return_null',
 			'dashicons-plugins-checked',
 			3
 		);
 
 		do_action( 'a8csp/atlantis/admin_menu_registered' );
+	}
+
+	/**
+	 * Removes the default submenu page.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  void
+	 */
+	public function remove_default_submenu(): void {
+		remove_submenu_page( 'a8csp-atlantis', 'a8csp-atlantis' );
 	}
 
 	// endregion
