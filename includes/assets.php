@@ -15,8 +15,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * @return  array{ version: string, dependencies: array<string> }|null
  */
-function atlantis_get_asset_meta( string $asset_path, ?array $extra_dependencies = null ): ?array {
-	$asset_path = str_starts_with( $asset_path, constant( 'ATLANTIS_DIR_PATH' ) ) ? $asset_path : constant( 'ATLANTIS_DIR_PATH' ) . $asset_path;
+function a8csp_atlantis_get_asset_meta( string $asset_path, ?array $extra_dependencies = null ): ?array {
+	$asset_path = str_starts_with( $asset_path, constant( 'A8CSP_ATLANTIS_DIR_PATH' ) ) ? $asset_path : constant( 'A8CSP_ATLANTIS_DIR_PATH' ) . $asset_path;
 	if ( ! file_exists( $asset_path ) ) {
 		return null;
 	}

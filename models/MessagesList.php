@@ -35,13 +35,13 @@ class MessagesList extends WP_List_Table {
 	public function get_columns(): array {
 		return array(
 			'cb'               => '<input type="checkbox" />',
-			'message_name'     => __( 'Name', 'atlantis' ),
-			'message_content'  => __( 'Content', 'atlantis' ),
-			'message_type'     => __( 'Type', 'atlantis' ),
-			'message_status'   => __( 'Status', 'atlantis' ),
-			'message_location' => __( 'Location', 'atlantis' ),
-			'message_exclude'  => __( 'Exclude', 'atlantis' ),
-			'message_time'     => __( 'Time', 'atlantis' ),
+			'message_name'     => __( 'Name', 'a8csp-atlantis' ),
+			'message_content'  => __( 'Content', 'a8csp-atlantis' ),
+			'message_type'     => __( 'Type', 'a8csp-atlantis' ),
+			'message_status'   => __( 'Status', 'a8csp-atlantis' ),
+			'message_location' => __( 'Location', 'a8csp-atlantis' ),
+			'message_exclude'  => __( 'Exclude', 'a8csp-atlantis' ),
+			'message_time'     => __( 'Time', 'a8csp-atlantis' ),
 		);
 	}
 
@@ -69,9 +69,9 @@ class MessagesList extends WP_List_Table {
 	 */
 	public function get_bulk_actions(): array {
 		return array(
-			'delete'     => __( 'Delete', 'atlantis' ),
-			'activate'   => __( 'Activate', 'atlantis' ),
-			'deactivate' => __( 'Deactivate', 'atlantis' ),
+			'delete'     => __( 'Delete', 'a8csp-atlantis' ),
+			'activate'   => __( 'Activate', 'a8csp-atlantis' ),
+			'deactivate' => __( 'Deactivate', 'a8csp-atlantis' ),
 		);
 	}
 
@@ -101,7 +101,7 @@ class MessagesList extends WP_List_Table {
 				echo wp_kses(
 					sprintf(
 						/* translators: %s: Table name */
-						__( 'The messages table "%s" does not exist. Please deactivate and reactivate the plugin to create it.', 'atlantis' ),
+						__( 'The messages table "%s" does not exist. Please deactivate and reactivate the plugin to create it.', 'a8csp-atlantis' ),
 						esc_html( MessagesSchema::get_table_name() )
 					),
 					array( 'strong' => array() )
@@ -199,7 +199,7 @@ class MessagesList extends WP_List_Table {
 
 		// Apply the filter to each item
 		foreach ( $this->items as $key => $item ) {
-			$this->items[ $key ] = apply_filters( 'atlantis_message_item', $item );
+			$this->items[ $key ] = apply_filters( 'a8csp/atlantis/message_item', $item );
 		}
 
 		// Set pagination arguments
@@ -234,7 +234,7 @@ class MessagesList extends WP_List_Table {
 								)
 							)
 						),
-						__( 'Edit', 'atlantis' )
+						__( 'Edit', 'a8csp-atlantis' )
 					),
 					'delete' => sprintf(
 						'<a href="%s" class="submitdelete" onclick="return confirm(\'%s\');">%s</a>',
@@ -249,8 +249,8 @@ class MessagesList extends WP_List_Table {
 								'bulk-messages'
 							)
 						),
-						esc_js( __( 'Are you sure you want to delete this message?', 'atlantis' ) ),
-						__( 'Delete', 'atlantis' )
+						esc_js( __( 'Are you sure you want to delete this message?', 'a8csp-atlantis' ) ),
+						__( 'Delete', 'a8csp-atlantis' )
 					),
 				);
 				return sprintf(
@@ -267,7 +267,7 @@ class MessagesList extends WP_List_Table {
 			case 'message_type':
 				return esc_html( $item->message_type );
 			case 'message_status':
-				$status = 'active' === $item->message_status ? __( 'Active', 'atlantis' ) : __( 'Inactive', 'atlantis' );
+				$status = 'active' === $item->message_status ? __( 'Active', 'a8csp-atlantis' ) : __( 'Inactive', 'a8csp-atlantis' );
 				return sprintf(
 					'<span class="status-%s">%s</span>',
 					esc_attr( $item->message_status ),

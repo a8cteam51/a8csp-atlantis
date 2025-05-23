@@ -22,14 +22,14 @@ function a8csp_atlantis_get_plugin_instance(): Plugin {
 
 // region OTHERS
 
-$atlantis_files = glob( constant( 'A8CSP_ATLANTIS_DIR_PATH' ) . 'includes/*.php' );
-if ( false !== $atlantis_files ) {
-	foreach ( $atlantis_files as $atlantis_file ) {
-		if ( 1 === preg_match( '#/includes/_#i', $atlantis_file ) ) {
+$a8csp_atlantis_files = glob( constant( 'A8CSP_ATLANTIS_DIR_PATH' ) . 'includes/*.php' );
+if ( false !== $a8csp_atlantis_files ) {
+	foreach ( $a8csp_atlantis_files as $a8csp_atlantis_file ) {
+		if ( 1 === preg_match( '#/includes/_#i', $a8csp_atlantis_file ) ) {
 			continue; // Ignore files prefixed with an underscore.
 		}
 
-		require_once $atlantis_file;
+		require_once $a8csp_atlantis_file;
 	}
 }
 

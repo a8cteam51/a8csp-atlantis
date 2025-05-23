@@ -76,7 +76,7 @@ class Messages extends AbstractModule {
 	 * @return string
 	 */
 	public function get_description(): string {
-		return __( 'Handles admin messages and notifications.', 'atlantis' );
+		return __( 'Handles admin messages and notifications.', 'a8csp-atlantis' );
 	}
 
 	/**
@@ -151,13 +151,13 @@ class Messages extends AbstractModule {
 
 			$menu_title = sprintf(
 				/* translators: %s: Number of active messages */
-				__( 'Messages %s', 'atlantis' ),
+				__( 'Messages %s', 'a8csp-atlantis' ),
 				$active_count > 0 ? '<span class="update-plugins count-' . $active_count . '"><span class="plugin-count">' . number_format_i18n( $active_count ) . '</span></span>' : ''
 			);
 
 			add_submenu_page(
 				'a8csp-atlantis',
-				__( 'Atlantis Messages', 'atlantis' ),
+				__( 'Atlantis Messages', 'a8csp-atlantis' ),
 				$menu_title,
 				'manage_options',
 				'atlantis-messages',
@@ -192,7 +192,7 @@ class Messages extends AbstractModule {
 	 */
 	public function render_page(): void {
 		if ( ! a8csp_atlantis_is_user_automattician() ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'atlantis' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'a8csp-atlantis' ) );
 		}
 
 		// Check if we're viewing a single message
@@ -208,8 +208,8 @@ class Messages extends AbstractModule {
 
 		?>
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php echo esc_html__( 'Atlantis Messages', 'atlantis' ); ?></h1>
-			<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'new' ) ) ); ?>" class="page-title-action"><?php echo esc_html__( 'Add New', 'atlantis' ); ?></a>
+			<h1 class="wp-heading-inline"><?php echo esc_html__( 'Atlantis Messages', 'a8csp-atlantis' ); ?></h1>
+			<a href="<?php echo esc_url( add_query_arg( array( 'action' => 'new' ) ) ); ?>" class="page-title-action"><?php echo esc_html__( 'Add New', 'a8csp-atlantis' ); ?></a>
 
 			<hr class="wp-header-end">
 
@@ -217,7 +217,7 @@ class Messages extends AbstractModule {
 				<input type="hidden" name="page" value="atlantis-messages" />
 		<?php
 		$list_table->prepare_items();
-		$list_table->search_box( __( 'Search Messages', 'atlantis' ), 'atlantis-messages' );
+		$list_table->search_box( __( 'Search Messages', 'a8csp-atlantis' ), 'atlantis-messages' );
 		$list_table->display();
 		?>
 			</form>
@@ -350,11 +350,11 @@ class Messages extends AbstractModule {
 		}
 
 		if ( ! check_admin_referer( 'atlantis_message_edit', 'atlantis_message_nonce' ) ) {
-			wp_die( esc_html__( 'Security check failed', 'atlantis' ) );
+			wp_die( esc_html__( 'Security check failed', 'a8csp-atlantis' ) );
 		}
 
 		if ( ! a8csp_atlantis_is_user_automattician() ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'atlantis' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'a8csp-atlantis' ) );
 		}
 
 		$message_id       = isset( $_POST['message_id'] ) ? intval( $_POST['message_id'] ) : 0;
@@ -366,7 +366,7 @@ class Messages extends AbstractModule {
 		$message_exclude  = isset( $_POST['message_location_exclude'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['message_location_exclude'] ) ) : array();
 
 		if ( empty( $message_name ) || empty( $message_content ) || empty( $message_type ) || empty( $message_status ) || empty( $message_location ) ) {
-			wp_die( esc_html__( 'All fields are required.', 'atlantis' ) );
+			wp_die( esc_html__( 'All fields are required.', 'a8csp-atlantis' ) );
 		}
 
 		global $wpdb;
@@ -407,7 +407,7 @@ class Messages extends AbstractModule {
 		}
 
 		if ( false === $result ) {
-			wp_die( esc_html__( 'Error saving message.', 'atlantis' ) );
+			wp_die( esc_html__( 'Error saving message.', 'a8csp-atlantis' ) );
 		}
 
 		wp_safe_redirect( remove_query_arg( array( 'action', 'id' ) ) );
@@ -456,8 +456,8 @@ class Messages extends AbstractModule {
 		global $menu, $submenu;
 
 		$locations = array(
-			'all'              => __( 'All Locations', 'atlantis' ),
-			'all_post_editors' => __( 'All Post Editors', 'atlantis' ),
+			'all'              => __( 'All Locations', 'a8csp-atlantis' ),
+			'all_post_editors' => __( 'All Post Editors', 'a8csp-atlantis' ),
 		);
 
 		// Top-level menu items
@@ -505,7 +505,7 @@ class Messages extends AbstractModule {
 			$screen_id               = 'edit-tags.php?taxonomy=' . $taxonomy->name;
 			$locations[ $screen_id ] = sprintf(
 				/* translators: %s: Taxonomy label */
-				__( '%s Categories', 'atlantis' ),
+				__( '%s Categories', 'a8csp-atlantis' ),
 				$taxonomy->label
 			);
 		}
@@ -527,11 +527,11 @@ class Messages extends AbstractModule {
 		}
 
 		if ( ! check_admin_referer( 'bulk-messages' ) ) {
-			wp_die( esc_html__( 'Security check failed', 'atlantis' ) );
+			wp_die( esc_html__( 'Security check failed', 'a8csp-atlantis' ) );
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'atlantis' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'a8csp-atlantis' ) );
 		}
 
 		$action      = sanitize_text_field( wp_unslash( $_REQUEST['action'] ) );

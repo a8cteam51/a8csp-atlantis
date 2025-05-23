@@ -69,8 +69,8 @@ class Modules {
 		if ( current_user_can( 'manage_options' ) ) {
 			add_submenu_page(
 				'a8csp-atlantis',
-				__( 'Modules', 'atlantis' ),
-				__( 'Modules', 'atlantis' ),
+				__( 'Modules', 'a8csp-atlantis' ),
+				__( 'Modules', 'a8csp-atlantis' ),
 				'edit_posts',
 				'atlantis-modules',
 				array( $this, 'render_page' )
@@ -94,7 +94,7 @@ class Modules {
 	 */
 	public function render_page(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'atlantis' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'a8csp-atlantis' ) );
 		}
 
 		$enabled = get_option( 'atlantis_enabled_modules', array() );

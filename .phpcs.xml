@@ -16,8 +16,8 @@
 	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
 		<properties>
 			<property name="prefixes" type="array">
-				<element value="a8csp_"/>
-				<element value="a8csp_atlantis_"/>
+				<element value="a8csp"/>
+				<element value="a8csp_atlantis"/>
 				<element value="A8C\SpecialProjects\Atlantis"/>
 			</property>
 		</properties>

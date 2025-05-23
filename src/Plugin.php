@@ -18,6 +18,8 @@ class Plugin {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @var Encryption
 	 */
 	public Encryption $encryption;
 
@@ -26,6 +28,8 @@ class Plugin {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @var Modules
 	 */
 	public Modules $modules;
 
@@ -34,6 +38,8 @@ class Plugin {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @var Settings
 	 */
 	public Settings $settings;
 

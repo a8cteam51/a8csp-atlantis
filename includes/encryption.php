@@ -26,7 +26,7 @@ function a8csp_atlantis_generate_random_encryption_key(): string|WP_Error {
 	try {
 		return sodium_bin2hex( sodium_crypto_secretbox_keygen() );
 	} catch ( Exception $e ) {
-		return new WP_Error( 'encrypt-key-error', sprintf( 'Error while creating new encryption key: %s', print_r( $e, true ) ) );
+		return new WP_Error( 'encrypt-key-error', sprintf( 'Error while creating new encryption key: %s', $e->getMessage() ) );
 	}
 }
 
@@ -51,7 +51,7 @@ function a8csp_atlantis_get_encryption_key_data( ?string $salt = null ): array|W
 			'salt' => $salt ?? random_bytes( SODIUM_CRYPTO_PWHASH_SALTBYTES ),
 		);
 	} catch ( Exception $e ) {
-		return new WP_Error( 'encrypt-key-error', sprintf( 'Error while getting encryption key data: %s', print_r( $e, true ) ) );
+		return new WP_Error( 'encrypt-key-error', sprintf( 'Error while getting encryption key data: %s', $e->getMessage() ) );
 	}
 }
 
@@ -75,7 +75,7 @@ function a8csp_atlantis_encrypt_data( string $to_encrypt ): string|WP_Error {
 		$nonce = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 		return base64_encode( $key_data['salt'] . $nonce . sodium_crypto_secretbox( $to_encrypt, $nonce, $key_data['key'] ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	} catch ( Exception $e ) {
-		return new WP_Error( 'encrypt-error', sprintf( 'Error while encrypting data: %s', print_r( $e, true ) ) );
+		return new WP_Error( 'encrypt-error', sprintf( 'Error while encrypting data: %s', $e->getMessage() ) );
 	}
 }
 
@@ -97,7 +97,7 @@ function a8csp_atlantis_decrypt_data( string $to_decrypt ): string|WP_Error {
 
 	try {
 		if ( mb_strlen( $to_decrypt, '8bit' ) < ( SODIUM_CRYPTO_PWHASH_SALTBYTES + SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES ) ) {
-			throw new Exception( 'Message was truncated.' );
+			return new WP_Error( 'decrypt-error', 'Message was truncated.' );
 		}
 
 		$salt     = mb_substr( $to_decrypt, 0, SODIUM_CRYPTO_PWHASH_SALTBYTES, '8bit' );
@@ -112,7 +112,7 @@ function a8csp_atlantis_decrypt_data( string $to_decrypt ): string|WP_Error {
 		$plain      = sodium_crypto_secretbox_open( $ciphertext, $nonce, $key );
 
 		if ( false === $plain ) {
-			throw new Exception( 'Message could not be decrypted.' );
+			return new WP_Error( 'decrypt-error', 'Message could not be decrypted.' );
 		}
 
 		try {
@@ -125,6 +125,6 @@ function a8csp_atlantis_decrypt_data( string $to_decrypt ): string|WP_Error {
 
 		return $plain;
 	} catch ( Exception $e ) {
-		return new WP_Error( 'decrypt-error', sprintf( 'Error while decrypting data: %s', print_r( $e, true ) ) );
+		return new WP_Error( 'decrypt-error', sprintf( 'Error while decrypting data: %s', $e->getMessage() ) );
 	}
 }

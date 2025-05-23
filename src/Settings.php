@@ -38,14 +38,13 @@ class Settings {
 	 * @return  void
 	 */
 	public function register_admin_menu(): void {
-
 		if ( ! a8csp_atlantis_is_user_automattician() ) {
 			return;
 		}
 
 		add_menu_page(
-			__( 'Atlantis', 'a8csp-atlantis' ),
-			__( 'Atlantis', 'a8csp-atlantis' ),
+			_x( 'Atlantis', 'page title', 'a8csp-atlantis' ),
+			_x( 'Atlantis', 'menu title', 'a8csp-atlantis' ),
 			'manage_options',
 			'a8csp-atlantis',
 			array( $this, 'render_settings_page' ),
@@ -54,9 +53,6 @@ class Settings {
 		);
 
 		do_action( 'a8csp/atlantis/admin_menu_registered' );
-	}
-
-	public function render_settings_page(): void {
 	}
 
 	// endregion
