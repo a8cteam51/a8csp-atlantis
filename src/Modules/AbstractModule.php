@@ -80,6 +80,7 @@ abstract class AbstractModule {
 	 * @return  void
 	 */
 	public function maybe_initialize(): void {
+		add_action( 'init', array( $this, 'maybe_set_default_settings' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 
 		if ( ! $this->is_active() ) {
@@ -118,6 +119,23 @@ abstract class AbstractModule {
 	abstract protected function initialize(): void;
 
 	// region HOOKS
+
+	/**
+	 * Sets the default settings for the module.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @return  void
+	 */
+	public function maybe_set_default_settings(): void {
+		$option_name = "a8csp_module_{$this->get_settings_key()}";
+
+		$settings = get_option( $option_name, null );
+		if ( is_null( $settings ) ) {
+			update_option( $option_name, array( 'enabled' => '1' ) );
+		}
+	}
 
 	/**
 	 * Registers the default settings for the module.
