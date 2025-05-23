@@ -93,7 +93,7 @@ abstract class AbstractModule {
 				'admin_notices',
 				function () use ( $is_disabled ) {
 					$screen = get_current_screen();
-					if ( $screen && $screen->id === 'atlantis_page_a8csp-atlantis-modules' ) {
+					if ( 'atlantis_page_a8csp-atlantis-modules' === $screen?->id ) {
 						wp_admin_notice(
 							wp_sprintf(
 								'<strong>%s</strong>: %s',
