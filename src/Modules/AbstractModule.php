@@ -162,7 +162,8 @@ abstract class AbstractModule {
 			function ( array $args ): void {
 				$value    = get_option( $args['option_name'] );
 				$enabled  = isset( $value['enabled'] ) && $value['enabled'];
-				$disabled = is_wp_error( $this->is_disabled() ) ? 'disabled' : '';
+				$disabled = is_wp_error( $this->is_disabled() ) && ! $enabled ? 'disabled' : '';
+
 				printf(
 					'<input type="checkbox" name="%s[enabled]" value="1" %s %s />',
 					esc_attr( $args['option_name'] ),
