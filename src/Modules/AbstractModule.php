@@ -171,7 +171,7 @@ abstract class AbstractModule {
 					'<input type="checkbox" name="%s[enabled]" value="1" %s %s />',
 					esc_attr( $args['option_name'] ),
 					checked( $enabled, true, false ),
-					$disabled
+					esc_attr( $disabled )
 				);
 			},
 			'a8csp-atlantis-modules',

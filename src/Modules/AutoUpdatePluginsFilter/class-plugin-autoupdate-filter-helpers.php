@@ -139,7 +139,7 @@ class Plugin_Autoupdate_Filter_Helpers {
 
 		$plugin_info = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( isset( $plugin_info['last_updated'] ) ) {
-			return strtotime( $plugin_info['last_updated'] ) ?: time();
+			return strtotime( $plugin_info['last_updated'] ) ?: time(); // phpcs:disable Universal.Operators.DisallowShortTernary.Found
 		}
 
 		return time();
