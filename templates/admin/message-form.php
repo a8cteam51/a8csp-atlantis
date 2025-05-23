@@ -81,7 +81,7 @@ wp_enqueue_editor();
 						<?php endforeach; ?>
 					</div>
 					<select class="atlantis-location-dropdown" data-target="include">
-						<option value=""><?php echo esc_html__( '-- Select Location --', 'a8csp-atlantis' ); ?></option>
+						<option value=""><?php echo esc_html__( '-- Include a location --', 'a8csp-atlantis' ); ?></option>
 						<?php
 						foreach ( $locations as $key => $label ) :
 							if ( ! in_array( $key, $current_location, true ) ) :
@@ -110,7 +110,7 @@ wp_enqueue_editor();
 						<?php endforeach; ?>
 					</div>
 					<select class="atlantis-location-dropdown" data-target="exclude">
-						<option value=""><?php echo esc_html__( '-- Select Location --', 'a8csp-atlantis' ); ?></option>
+						<option value=""><?php echo esc_html__( '-- Exclude a location --', 'a8csp-atlantis' ); ?></option>
 						<?php
 						foreach ( $locations as $key => $label ) :
 							if ( ! in_array( $key, $current_exclude, true ) ) :

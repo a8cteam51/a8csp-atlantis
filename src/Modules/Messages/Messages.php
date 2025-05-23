@@ -299,24 +299,25 @@ class Messages extends AbstractModule {
 	 * @return void
 	 */
 	private function render_single_message( int $id = 0 ): void {
-		$message = null;
+		$message          = null;
+		$current_location = array();
+		$current_exclude  = array();
+		$message_content  = '';
+		$locations        = $this->get_admin_locations();
+
 		if ( $id > 0 ) {
 			$message = $this->fetch_single_message( $id );
-		}
+			$current_location = $message ? maybe_unserialize( $message->message_location ) : array();
+			$current_exclude  = $message && ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
+			$message_content  = a8csp_atlantis_decrypt_data( $message->message_content );
 
-		$locations        = $this->get_admin_locations();
-		$current_location = $message ? maybe_unserialize( $message->message_location ) : array();
-		$current_exclude  = $message && ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
-
-		$message_content = a8csp_atlantis_decrypt_data( $message->message_content );
-
-		if ( ! is_wp_error( $message_content ) ) {
-			$message->message_content = $message_content;
+			if ( ! is_wp_error( $message_content ) ) {
+				$message->message_content = $message_content;
+			}
 		}
 
 		// Enqueue assets
 		$this->enqueue_message_form_assets( $current_location, $current_exclude );
-
 		// Load the template
 		include A8CSP_ATLANTIS_DIR_PATH . 'templates/admin/message-form.php';
 	}
