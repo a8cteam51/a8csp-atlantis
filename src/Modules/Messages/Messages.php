@@ -318,7 +318,7 @@ class Messages extends AbstractModule {
 		$locations        = $this->get_admin_locations();
 
 		if ( $id > 0 ) {
-			$message = $this->fetch_single_message( $id );
+			$message          = $this->fetch_single_message( $id );
 			$current_location = $message ? maybe_unserialize( $message->message_location ) : array();
 			$current_exclude  = $message && ! empty( $message->message_exclude ) ? maybe_unserialize( $message->message_exclude ) : array();
 			$message_content  = a8csp_atlantis_decrypt_data( $message->message_content );
