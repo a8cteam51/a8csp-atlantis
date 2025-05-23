@@ -3,6 +3,9 @@
 namespace A8C\SpecialProjects\Atlantis;
 
 use WP_List_Table;
+use function wp_strip_all_tags;
+use function esc_html;
+use function is_wp_error;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -261,9 +264,14 @@ class MessagesList extends WP_List_Table {
 			case 'message_content':
 				$decrypted_content = a8csp_atlantis_decrypt_data( $item->message_content );
 				if ( ! is_wp_error( $decrypted_content ) ) {
-					return wp_kses_post( $decrypted_content );
+					$text_content = wp_strip_all_tags( $decrypted_content );
+				} else {
+					$text_content = wp_strip_all_tags( $item->message_content );
 				}
-				return wp_kses_post( $item->message_content );
+				if ( mb_strlen( $text_content ) > 120 ) {
+					$text_content = mb_substr( $text_content, 0, 120 ) . '…';
+				}
+				return esc_html( $text_content );
 			case 'message_type':
 				return esc_html( $item->message_type );
 			case 'message_status':
