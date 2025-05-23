@@ -238,21 +238,6 @@ class Messages extends AbstractModule {
 	 */
 	private function enqueue_message_form_assets( $current_location = array(), $current_exclude = array() ): void {
 
-		wp_enqueue_script(
-			'select2',
-			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js',
-			array( 'jquery' ),
-			'4.1.0-rc.0',
-			true
-		);
-
-		wp_enqueue_style(
-			'select2-css',
-			'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css',
-			array(),
-			'4.1.0-rc.0'
-		);
-
 		wp_enqueue_style(
 			'atlantis-message-form',
 			A8CSP_ATLANTIS_DIR_URL . 'assets/css/build/message-form.css',
@@ -263,7 +248,7 @@ class Messages extends AbstractModule {
 		wp_enqueue_script(
 			'atlantis-message-form',
 			A8CSP_ATLANTIS_DIR_URL . 'assets/js/build/message-form.js',
-			array(),
+			array('jquery'),
 			a8csp_atlantis_get_plugin_metadata( 'Version' ),
 			true
 		);
@@ -483,7 +468,7 @@ class Messages extends AbstractModule {
 
 							$screen_id = $submenu_slug;
 
-							$locations[ $screen_id ] = $menu_title . ' ⇀ ' . preg_replace( '/\s\d+$/', '', $submenu_title );
+							$locations[ $screen_id ] = $menu_title . ' → ' . preg_replace( '/\s\d+$/', '', $submenu_title );
 						}
 					}
 				}
