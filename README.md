@@ -7,7 +7,7 @@
 **Requires PHP:** 8.3
 **Stable tag:** 1.0.0
 **License:** GPLv3 or later
-**License URI:** http://www.gnu.org/licenses/gpl-3.0.html
+**License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)
 
 
 
@@ -27,7 +27,7 @@ This plugin requires WooCommerce 7.4+ to run. If you're running a lower version,
 
 ### INSTALL MANUALLY
 
-1. Download the plugin from https://wordpress.org/plugins/ and unzip the archive.
+1. Download the plugin from [https://wordpress.org/plugins/](https://wordpress.org/plugins/) and unzip the archive.
 1. Upload the `atlantis` folder to the `/wp-content/plugins/` directory.
 1. Activate the plugin through the `Plugins` menu in WordPress.
 
@@ -44,6 +44,15 @@ Quisque volutpat tortor id varius pulvinar. Vivamus porttitor, mi non auctor pel
 ### I have a question that is not listed here
 
 Duis efficitur, sapien ac scelerisque placerat, elit justo tempor nisl, ut feugiat magna orci quis odio.
+
+
+### What to do if I get a 500 error "Uncaught Error: Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found"
+
+Run `composer generate-autoloader` from the root
+
+### Why don't I see the Atlantis menu on Wp Admin?
+
+Make sure your user is automattic.com email address
 
 ## Screenshots
 
