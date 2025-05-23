@@ -92,14 +92,17 @@ abstract class AbstractModule {
 			add_action(
 				'admin_notices',
 				function () use ( $is_disabled ) {
-					wp_admin_notice(
-						wp_sprintf(
-							'<strong>%s</strong>: %s',
-							esc_html( $this->get_name() ),
-							esc_html( $is_disabled->get_error_message() )
-						),
-						array( 'type' => 'error' )
-					);
+					$screen = get_current_screen();
+					if ( $screen && $screen->id === 'atlantis_page_a8csp-atlantis-modules' ) {
+						wp_admin_notice(
+							wp_sprintf(
+								'<strong>%s</strong>: %s',
+								esc_html( $this->get_name() ),
+								esc_html( $is_disabled->get_error_message() )
+							),
+							array( 'type' => 'error' )
+						);
+					}
 				}
 			);
 			return;
