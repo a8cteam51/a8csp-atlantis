@@ -48,7 +48,7 @@ class Messages extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	public function get_name(): string {
-		return 'messages';
+		return 'Messages';
 	}
 
 	/**
@@ -58,7 +58,7 @@ class Messages extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	public function get_description(): string {
-		return __( 'Handles admin messages and notifications.', 'a8csp-atlantis' );
+		return __( 'Allows the inclusion of site-specific messages to various admin pages for Automattician-eyes only.', 'a8csp-atlantis' );
 	}
 
 	/**
@@ -67,18 +67,8 @@ class Messages extends AbstractModule {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public function is_active(): bool {
+	public function is_mandatory(): bool {
 		return true;
-	}
-
-	/**
-	 * {@inheritDoc}
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 */
-	public function register_settings(): void {
-		// No settings. Always active.
 	}
 
 	/**
