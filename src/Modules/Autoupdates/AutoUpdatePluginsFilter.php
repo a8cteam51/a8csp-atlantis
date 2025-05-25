@@ -6,8 +6,6 @@ use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 
 defined( 'ABSPATH' ) || exit;
 
-require_once __DIR__ . '/class-plugin-autoupdate-filter-helpers.php';
-
 /**
  * AutoUpdatePluginsFilter Module class.
  *
@@ -113,8 +111,10 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	/**
 	 * Load settings from the centralized settings page
 	 *
-	 * @return \stdClass The settings object.
-	 * @throws \RuntimeException If the settings cannot be loaded.
+	 * @throws  \RuntimeException If the settings cannot be loaded.
+	 * @throws  \JsonException    If the settings cannot be decoded.
+	 *
+	 * @return  \stdClass
 	 */
 	private function get_auto_update_settings(): \stdClass {
 
@@ -129,7 +129,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				throw new \RuntimeException( $response->get_error_message() );
+				throw new \RuntimeException( wp_kses_post( $response->get_error_message() ) );
 			}
 
 			$response_code = wp_remote_retrieve_response_code( $response );
@@ -138,10 +138,14 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			// Check that the response code is a 2xx code.
 			if ( ! \str_starts_with( (string) $response_code, '2' ) ) {
 				$response_message = wp_remote_retrieve_response_message( $response );
-				throw new \Exception( $response_message, $response_code );
+				throw new \RuntimeException( wp_kses_post( $response_message ), absint( $response_code ) );
 			}
 
-			$decoded_body = json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR );
+			try {
+				$decoded_body = json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR );
+			} catch ( \JsonException $exception ) {
+				throw $exception;
+			}
 
 			// if the settings are empty, we still need to return an object
 			if ( ! is_object( $decoded_body ) ) {
@@ -208,7 +212,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		}
 
 		// otherwise apply delay logic
-		$helpers = new Plugin_Autoupdate_Filter_Helpers();
+		$helpers = new Helpers();
 
 		$plugin_file        = empty( $item->plugin ) ? '' : $item->plugin;
 		$plugin_slug        = empty( $item->slug ) ? '' : $item->slug;
@@ -271,7 +275,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 				'end'   => gmdate( 'Y' ) . '-01-02 23:59:59',
 			),
 		);
-		$holidays = apply_filters( 'plugin_autoupdate_filter_holidays', $holidays );
+		$holidays = apply_filters( 'plugin_autoupdate_filter_holidays', $holidays ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 		$now = gmdate( 'Y-m-d H:i:s' );
 
@@ -288,13 +292,13 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			'end'        => '23', // 7pm Eastern
 			'friday_end' => '19', // 3pm Eastern on Fridays
 		);
-		$hours = apply_filters( 'plugin_autoupdate_filter_hours', $hours );
+		$hours = apply_filters( 'plugin_autoupdate_filter_hours', $hours ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 		$days_off = array(
 			'Sat',
 			'Sun',
 		);
-		$days_off = apply_filters( 'plugin_autoupdate_filter_days_off', $days_off );
+		$days_off = apply_filters( 'plugin_autoupdate_filter_days_off', $days_off ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 		$hour = gmdate( 'H' ); // Current hour
 		$day  = gmdate( 'D' );  // Current day of the week
@@ -445,7 +449,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		// Check if this is a plugin update.
 		if ( 'update' === $options['action'] && 'plugin' === $options['type'] ) {
 			if ( isset( $options['plugins'] ) ) {
-				$helpers = new Plugin_Autoupdate_Filter_Helpers();
+				$helpers = new Helpers();
 				foreach ( $options['plugins'] as $plugin ) {
 					$helpers->clear_plugin_delay( $plugin );
 				}

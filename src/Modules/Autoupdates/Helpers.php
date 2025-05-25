@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Plugin Autoupdate Filter Helpers class
  */
-class Plugin_Autoupdate_Filter_Helpers {
+class Helpers {
 
 	/**
 	 * The plugins array.
