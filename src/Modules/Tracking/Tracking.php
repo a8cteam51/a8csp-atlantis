@@ -13,6 +13,20 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 class Tracking extends AbstractModule {
+	// region FIELDS AND CONSTANTS
+
+	/**
+	 * Available integrations.
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
+	 *
+	 * @var array<string, ?AbstractIntegration>
+	 */
+	public array $integrations = array();
+
+	// endregion
+
 	// region INHERITED METHODS
 
 	/**
@@ -61,9 +75,14 @@ class Tracking extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	protected function initialize(): void {
-		include __DIR__ . '/includes/bilmur.php';
-		include __DIR__ . '/includes/sensei.php';
-		include __DIR__ . '/includes/woocommerce.php';
+		$this->integrations = array(
+			'bilmur'      => new Integrations\Bilmur(),
+			'sensei'      => new Integrations\Sensei(),
+			'woocommerce' => new Integrations\WooCommerce(),
+		);
+		foreach ( $this->integrations as $integration ) {
+			$integration->maybe_initialize();
+		}
 	}
 
 	// endregion
