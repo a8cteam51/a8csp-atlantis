@@ -3,9 +3,6 @@
 namespace A8C\SpecialProjects\Atlantis\Modules\Autoupdates;
 
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
-use AutomateWoo\Error;
-use Exception;
-use RuntimeException;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -18,65 +15,54 @@ require_once __DIR__ . '/class-plugin-autoupdate-filter-helpers.php';
  * @version 1.0.0
  */
 class AutoUpdatePluginsFilter extends AbstractModule {
-	/**
-	 * The settings object.
-	 *
-	 * @var \stdClass Holds the settings
-	 */
-	private $settings;
-
+	// region FIELDS AND CONSTANTS
 
 	/**
-	 * Gets the module name.
+	 * Settings fetched from OpsOasis or default ones in case of failure.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @return  string  The module name.
+	 * @var \stdClass
+	 */
+	private \stdClass $settings;
+
+	// endregion
+
+	// region INHERITED METHODS
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 */
 	public function get_name(): string {
-		return 'Auto Update Filter';
+		return 'Autoupdates';
 	}
 
-
 	/**
-	 * Gets the module description.
+	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
-	 *
-	 * @return  string  The module description.
 	 */
 	public function get_description(): string {
-		return __( 'Manages the auto-update schedule of installed plugins.', 'a8csp-atlantis' );
+		return __( 'Manages the auto-update schedule of core, themes, and plugins.', 'a8csp-atlantis' );
 	}
 
 	/**
-	 * Checks module-specific requirements and returns true if they all pass.
+	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
-	 *
-	 * @return  true|\WP_Error
-	 */
-	protected function module_requirements_check(): bool|\WP_Error {
-		return true; // TODO: Implement module-specific requirements check.
-	}
-
-	/**
-	 * Initializes the module components.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return  void
 	 */
 	protected function initialize(): void {
 
 		// get the centralized settings from opsoasis
 		try {
 			$this->settings = $this->get_auto_update_settings();
-		} catch ( Exception $exception ) {
+		} catch ( \Exception $exception ) {
 			$error_message  = $exception->getMessage();
 			$this->settings = (object) array( 'disable_all' => true );
 
@@ -122,11 +108,13 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		add_action( 'upgrader_process_complete', array( $this, 'cleanup_plugin_delay_after_update_complete' ), 10, 2 );
 	}
 
+	// endregion
+
 	/**
 	 * Load settings from the centralized settings page
 	 *
 	 * @return \stdClass The settings object.
-	 * @throws RuntimeException If the settings cannot be loaded.
+	 * @throws \RuntimeException If the settings cannot be loaded.
 	 */
 	private function get_auto_update_settings(): \stdClass {
 
@@ -141,7 +129,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				throw new RuntimeException( $response->get_error_message() );
+				throw new \RuntimeException( $response->get_error_message() );
 			}
 
 			$response_code = wp_remote_retrieve_response_code( $response );
@@ -150,7 +138,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			// Check that the response code is a 2xx code.
 			if ( ! \str_starts_with( (string) $response_code, '2' ) ) {
 				$response_message = wp_remote_retrieve_response_message( $response );
-				throw new Exception( $response_message, $response_code );
+				throw new \Exception( $response_message, $response_code );
 			}
 
 			$decoded_body = json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR );
@@ -402,7 +390,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
 			// create a fake object to feed to disable_autoupdate_specific_plugins
-			$plugin_obj                    = new stdClass();
+			$plugin_obj                    = new \stdClass();
 			$slug                          = dirname( $plugin_file );
 			$plugin_obj->slug              = $slug;
 			$plugin_allowed_to_update_bool = disable_autoupdate_specific_plugins( true, $plugin_obj );

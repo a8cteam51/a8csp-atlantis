@@ -1,15 +1,8 @@
-<?php
-/**
- * Plugin Autoupdate Filter Helpers class
- *
- * @package Plugin_Autoupdate_Filter
- */
+<?php declare( strict_types=1 );
 
 namespace A8C\SpecialProjects\Atlantis\Modules\Autoupdates;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
-}
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Plugin Autoupdate Filter Helpers class
