@@ -70,10 +70,10 @@ class Encryption {
 		$wp_filesystem = $this->get_wp_filesystem();
 
 		$wp_config_path     = $this->get_wp_config_path();
-		$wp_config_contents = \is_null( $wp_config_path ) ? null : $wp_filesystem?->get_contents( $wp_config_path );
+		$wp_config_contents = \is_string( $wp_config_path ) ? $wp_filesystem?->get_contents( $wp_config_path ) : null;
 
 		$success = false;
-		if ( ! \is_null( $wp_config_path ) && ! \is_null( $wp_config_contents ) ) {
+		if ( \is_string( $wp_config_path ) && \is_string( $wp_config_contents ) ) {
 			$to_insert = "define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . \addcslashes( $encryption_key, "\\'" ) . "' );\r\n";
 			if ( \str_contains( $wp_config_contents, "/* That's all, stop editing!" ) ) {
 				$wp_config_contents = \str_replace( "/* That's all, stop editing!", $to_insert . "/* That's all, stop editing!", $wp_config_contents );
@@ -81,7 +81,7 @@ class Encryption {
 				$wp_config_contents = \preg_replace( '/<\?php/', "<?php\r\n" . $to_insert, $wp_config_contents, 1 );
 			}
 
-			if ( $wp_config_contents && $wp_filesystem?->put_contents( $wp_config_path, $wp_config_contents, FS_CHMOD_FILE ) ) {
+			if ( \is_string( $wp_config_contents ) && true === $wp_filesystem?->put_contents( $wp_config_path, $wp_config_contents, FS_CHMOD_FILE ) ) {
 				$success = true;
 
 				update_option( 'a8csp_atlantis_inserted_encryption_key', 'yes' );

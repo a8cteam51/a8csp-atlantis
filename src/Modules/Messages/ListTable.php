@@ -113,7 +113,7 @@ class ListTable {
 		if ( ! isset( $_POST['action'] ) || 'a8csp_atlantis_save_message' !== $_POST['action'] ) {
 			return;
 		}
-		if ( ! check_admin_referer( 'save_message', 'a8csp_atlantis_message_nonce' ) ) {
+		if ( false === check_admin_referer( 'save_message', 'a8csp_atlantis_message_nonce' ) ) {
 			wp_die( esc_html__( 'Security check failed', 'a8csp-atlantis' ) );
 		}
 		if ( ! a8csp_atlantis_is_automattician() ) {
@@ -128,7 +128,7 @@ class ListTable {
 		$message_includes = isset( $_POST['location_include'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['location_include'] ) ) : array();
 		$message_excludes = isset( $_POST['location_exclude'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['location_exclude'] ) ) : array();
 
-		if ( empty( $message_title ) || empty( $message_content ) || empty( $message_type ) || empty( $message_status ) || empty( $message_includes ) ) {
+		if ( '' === $message_title || '' === $message_content || '' === $message_type || '' === $message_status || 0 === \count( $message_includes ) ) {
 			wp_die( esc_html__( 'All required fields must be filled out.', 'a8csp-atlantis' ) );
 		}
 
@@ -141,7 +141,7 @@ class ListTable {
 			'type'       => $message_type,
 			'status'     => $message_status,
 			'locations'  => wp_json_encode( $message_includes ),
-			'exclusions' => ! empty( $message_excludes ) ? wp_json_encode( $message_excludes ) : null,
+			'exclusions' => 0 < \count( $message_excludes ) ? wp_json_encode( $message_excludes ) : null,
 		);
 
 		if ( $message_id > 0 ) {
@@ -175,7 +175,7 @@ class ListTable {
 		if ( ! isset( $_REQUEST['action'] ) || ! isset( $_REQUEST['message'] ) ) {
 			return;
 		}
-		if ( ! check_admin_referer( 'bulk-messages' ) ) {
+		if ( false === check_admin_referer( 'bulk-messages' ) ) {
 			wp_die( esc_html__( 'Security check failed', 'a8csp-atlantis' ) );
 		}
 		if ( ! a8csp_atlantis_is_automattician() ) {
@@ -188,7 +188,7 @@ class ListTable {
 		}
 
 		$message_ids = array_map( 'intval', (array) $_REQUEST['message'] );
-		if ( empty( $message_ids ) ) {
+		if ( 0 === \count( $message_ids ) ) {
 			wp_die( esc_html__( 'No messages selected for action.', 'a8csp-atlantis' ) );
 		}
 
@@ -291,13 +291,13 @@ class ListTable {
 
 		// Top-level menu items.
 		foreach ( $menu as $menu_item ) {
-			if ( empty( $menu_item[0] ) || empty( $menu_item[2] ) ) {
+			if ( ! \is_string( $menu_item[0] ) || ! \is_string( $menu_item[2] ) ) {
 				continue;
 			}
 
 			$menu_slug  = $menu_item[2];
 			$menu_title = \preg_replace( '/\s\d+$/', '', wp_strip_all_tags( $menu_item[0] ) );
-			if ( ! $menu_title ) {
+			if ( ! \is_string( $menu_title ) ) {
 				continue;
 			}
 
@@ -305,12 +305,12 @@ class ListTable {
 			$locations[ $menu_slug ] = $menu_title;
 
 			// Submenu items.
-			if ( empty( $submenu[ $menu_slug ] ) ) {
+			if ( ! isset( $submenu[ $menu_slug ] ) ) {
 				continue;
 			}
 
 			foreach ( $submenu[ $menu_slug ] as $submenu_item ) {
-				if ( empty( $submenu_item[0] ) || empty( $submenu_item[2] ) ) {
+				if ( ! \is_string( $submenu_item[0] ) || ! \is_string( $submenu_item[2] ) ) {
 					continue;
 				}
 
@@ -318,7 +318,7 @@ class ListTable {
 				$submenu_title = \preg_replace( '/\s\d+$/', '', wp_strip_all_tags( $submenu_item[0] ) );
 
 				// Skip if it's the same as the parent menu.
-				if ( ! $submenu_title || $submenu_slug === $menu_slug ) {
+				if ( ! \is_string( $submenu_title ) || $submenu_slug === $menu_slug ) {
 					continue;
 				}
 
