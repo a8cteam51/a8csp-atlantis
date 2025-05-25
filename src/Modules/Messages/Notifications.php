@@ -45,7 +45,7 @@ class Notifications {
 		}
 
 		$active_messages = $this->get_active_messages();
-		if ( empty( $active_messages ) ) {
+		if ( 0 === \count( $active_messages ) ) {
 			return;
 		}
 
@@ -82,7 +82,7 @@ class Notifications {
 	 */
 	protected function get_active_messages(): array {
 		$all_active_messages = a8csp_atlantis_get_active_messages();
-		if ( empty( $all_active_messages ) ) {
+		if ( 0 === \count( $all_active_messages ) ) {
 			return array();
 		}
 
@@ -121,7 +121,7 @@ class Notifications {
 	 */
 	protected function is_block_editor(): bool {
 		$screen = get_current_screen();
-		return $screen && $screen->is_block_editor;
+		return $screen instanceof \WP_Screen && $screen->is_block_editor;
 	}
 
 	/**
@@ -138,13 +138,13 @@ class Notifications {
 		global $pagenow;
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
-		if ( ! empty( $_GET['post_type'] ) ) {
+		if ( isset( $_GET['post_type'] ) ) {
 			return $pagenow . '?post_type=' . sanitize_key( $_GET['post_type'] );
 		}
-		if ( ! empty( $_GET['taxonomy'] ) ) {
+		if ( isset( $_GET['taxonomy'] ) ) {
 			return $pagenow . '?taxonomy=' . sanitize_key( $_GET['taxonomy'] );
 		}
-		if ( ! empty( $_GET['page'] ) ) {
+		if ( isset( $_GET['page'] ) ) {
 			return sanitize_key( $_GET['page'] );
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended

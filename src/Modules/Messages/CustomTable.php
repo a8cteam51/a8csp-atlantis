@@ -105,6 +105,7 @@ class CustomTable {
 	 * @return  void
 	 */
 	protected function update_schema(): void {
+		/* @phpstan-ignore requireOnce.fileNotFound */
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 		$sql = $this->get_table_definition();
@@ -149,7 +150,7 @@ class CustomTable {
 	 * @return  bool
 	 */
 	protected function needs_update(): bool {
-		return version_compare( $this->get_db_version(), self::SCHEMA_VERSION, '<' );
+		return \version_compare( $this->get_db_version(), self::SCHEMA_VERSION, '<' );
 	}
 
 	/**

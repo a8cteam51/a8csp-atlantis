@@ -57,7 +57,7 @@ class Tracking extends AbstractModule {
 	 */
 	public function is_disabled(): bool|\WP_Error {
 		if ( \function_exists( 'wp_get_environment_type' ) && 'production' !== wp_get_environment_type() ) {
-			if ( did_action( 'init' ) || doing_action( 'init' ) ) {
+			if ( 0 < did_action( 'init' ) || doing_action( 'init' ) ) {
 				/* translators: %s: Current environment type */
 				return new \WP_Error( 'not-production', wp_sprintf( __( 'Production environment is required. Current environment: %s', 'a8csp-atlantis' ), wp_get_environment_type() ) );
 			}

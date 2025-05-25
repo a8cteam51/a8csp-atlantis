@@ -88,7 +88,7 @@ class Messages extends AbstractModule {
 	 */
 	public function is_disabled(): bool|\WP_Error {
 		if ( ! CustomTable::table_exists() ) {
-			if ( did_action( 'init' ) || doing_action( 'init' ) ) {
+			if ( 0 < did_action( 'init' ) || doing_action( 'init' ) ) {
 				return new \WP_Error(
 					'custom-table-not-found',
 					__( 'The custom table cannot be found or could not be created.', 'a8csp-atlantis' )
