@@ -27,7 +27,7 @@ if ( ! function_exists( 'team51_credits' ) ) :
 
 		$credit_links   = array();
 		$parsed_url     = wp_parse_url( get_site_url(), PHP_URL_HOST );
-		$partner_domain = $parsed_url ? $parsed_url : 'wpspecialprojects.com';
+		$partner_domain = is_string( $parsed_url ) ? $parsed_url : 'wpspecialprojects.com';
 
 		if ( $args['wpcom'] ) {
 			$wpcom_link            = apply_filters(
@@ -113,7 +113,9 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 
 		ob_start();
 		team51_credits( $atts );
-		return ob_get_clean() ?: ''; // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
+		$credits = ob_get_contents();
+
+		return false === $credits ? '' : $credits;
 	}
 
 endif;

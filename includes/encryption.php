@@ -90,7 +90,7 @@ function a8csp_atlantis_encrypt_data( string $to_encrypt ): string|WP_Error {
  * @return  string|WP_Error
  */
 function a8csp_atlantis_decrypt_data( string $to_decrypt ): string|WP_Error {
-	$to_decrypt = base64_decode( $to_decrypt ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+	$to_decrypt = base64_decode( $to_decrypt, true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 	if ( false === $to_decrypt ) {
 		return new WP_Error( 'decrypt-error', 'Error while decoding data.' );
 	}

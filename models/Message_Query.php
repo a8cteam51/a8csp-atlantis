@@ -105,9 +105,9 @@ class Message_Query {
 
 		// Figure out pagination data first.
 		$count_sql = $wpdb->prepare( 'SELECT COUNT(id) FROM %i', $table );
-		if ( ! empty( $where_data['clause'] ) ) {
+		if ( '' !== $where_data['clause'] ) {
 			$count_sql .= ' ' . $where_data['clause'];
-			if ( ! empty( $where_data['params'] ) ) {
+			if ( 0 < \count( $where_data['params'] ) ) {
 				$count_sql = $wpdb->prepare( $count_sql, ...$where_data['params'] ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
@@ -211,7 +211,7 @@ class Message_Query {
 		}
 
 		return array(
-			'clause' => $where ? 'WHERE ' . implode( ' AND ', $where ) : '',
+			'clause' => 0 < \count( $where ) ? 'WHERE ' . \implode( ' AND ', $where ) : '',
 			'params' => $params,
 		);
 	}

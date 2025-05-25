@@ -47,7 +47,7 @@ function a8csp_atlantis_get_active_messages(): array {
  */
 function a8csp_atlantis_get_message( int $message_id ): ?Message {
 	$messages = a8csp_atlantis_get_messages( array( 'id' => $message_id ) );
-	return ! empty( $messages ) ? reset( $messages ) : null;
+	return 0 < count( $messages ) ? reset( $messages ) : null;
 }
 
 /**

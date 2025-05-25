@@ -5,6 +5,7 @@ namespace A8C\SpecialProjects\Atlantis;
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( '\WP_List_Table' ) ) {
+	/* @phpstan-ignore requireOnce.fileNotFound */
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
 

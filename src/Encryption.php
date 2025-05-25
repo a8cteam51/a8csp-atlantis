@@ -161,6 +161,7 @@ class Encryption {
 		global $wp_filesystem;
 
 		if ( ! \function_exists( 'WP_Filesystem' ) ) {
+			/* @phpstan-ignore requireOnce.fileNotFound */
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 

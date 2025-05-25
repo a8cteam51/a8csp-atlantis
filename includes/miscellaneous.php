@@ -16,7 +16,7 @@ function a8csp_atlantis_is_automattician(): bool {
 	}
 
 	$user = wp_get_current_user();
-	if ( ! $user || ! is_email( $user->user_email ) ) {
+	if ( 0 === $user->ID || false === is_email( $user->user_email ) ) {
 		return false;
 	}
 
