@@ -94,12 +94,17 @@ abstract class AbstractModule {
 			add_action(
 				'admin_notices',
 				function () {
+					$error = $this->is_disabled();
+					if ( ! is_wp_error( $error ) ) {
+						return;
+					}
+
 					$environment_error = wp_sprintf(
 						/* translators: 1: Plugin name, 2: Module name, 3: Error message */
 						__( '<strong>%1$s %2$s Module:</strong> %3$s', 'a8csp-atlantis' ),
 						a8csp_atlantis_get_plugin_metadata( 'Name' ),
 						esc_html( $this->get_name() ),
-						esc_html( $this->is_disabled()->get_error_message() )
+						esc_html( $error->get_error_message() )
 					);
 
 					wp_admin_notice( $environment_error, array( 'type' => 'error' ) );
