@@ -86,11 +86,11 @@ abstract class AbstractModule {
 		add_action( 'init', array( $this, 'maybe_set_default_settings' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 
-		if ( ! $this->is_active() ) {
+		if ( true !== $this->is_active() ) {
 			return;
 		}
 
-		if ( $this->is_disabled() ) {
+		if ( false !== $this->is_disabled() ) {
 			add_action(
 				'admin_notices',
 				function () {
@@ -142,9 +142,12 @@ abstract class AbstractModule {
 		$settings = get_option( $settings_key, null );
 		if ( is_null( $settings ) ) {
 			update_option( $settings_key, array( 'enabled' => '1' ) );
-		} elseif ( $this->is_mandatory() && ! ( $settings['enabled'] ?? false ) ) {
-			$settings = a8csp_atlantis_get_module_settings( $this->get_name() );
-			update_option( $settings_key, array( 'enabled' => '1' ) + $settings );
+		} elseif ( $this->is_mandatory() ) {
+			$is_enabled = isset( $settings['enabled'] ) && '1' === $settings['enabled'];
+			if ( ! $is_enabled ) {
+				$settings = a8csp_atlantis_get_module_settings( $this->get_name() );
+				update_option( $settings_key, array( 'enabled' => '1' ) + $settings );
+			}
 		}
 	}
 
@@ -181,7 +184,7 @@ abstract class AbstractModule {
 			__( 'Enabled', 'a8csp-atlantis' ),
 			function ( array $args ): void {
 				$value    = get_option( $args['option_name'] );
-				$enabled  = isset( $value['enabled'] ) && $value['enabled'];
+				$enabled  = isset( $value['enabled'] ) && '1' === $value['enabled'];
 				$disabled = $this->is_mandatory() || ( false !== $this->is_disabled() && false === $enabled );
 
 				printf(

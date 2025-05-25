@@ -115,9 +115,6 @@ class Messages_List_Table extends \WP_List_Table {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @param   Message $item        The message item to display.
-	 * @param   string  $column_name The name of the column to display.
-	 *
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 */
@@ -206,8 +203,6 @@ class Messages_List_Table extends \WP_List_Table {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
-	 *
-	 * @param   Message $item The message item to display.
 	 */
 	protected function column_cb( $item ): string {
 		return wp_sprintf(

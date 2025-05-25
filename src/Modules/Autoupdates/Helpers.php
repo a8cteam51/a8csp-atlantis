@@ -20,8 +20,8 @@ class Helpers {
 	 * Constructor
 	 */
 	public function __construct() {
-
 		if ( ! function_exists( 'get_plugins' ) ) {
+			/* @phpstan-ignore requireOnce.fileNotFound */
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
@@ -101,9 +101,6 @@ class Helpers {
 
 		if ( ! isset( $delays[ $plugin_file ][ $update_version ] ) ) {
 			$release_date = $this->get_plugin_release_date( $plugin_slug );
-			if ( ! $release_date ) {
-				$release_date = time();
-			}
 
 			// We've got a release date. That release date could be 10 days ago. So instead of adding extra days,
 			// make a calculation here to see if time() > $release_date + $delay_days. If so, the update version time is now.
@@ -133,7 +130,8 @@ class Helpers {
 
 		$plugin_info = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( isset( $plugin_info['last_updated'] ) ) {
-			return strtotime( $plugin_info['last_updated'] ) ?: time(); // phpcs:disable Universal.Operators.DisallowShortTernary.Found
+			$last_updated = strtotime( $plugin_info['last_updated'] );
+			return false === $last_updated ? time() : $last_updated;
 		}
 
 		return time();
