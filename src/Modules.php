@@ -4,7 +4,7 @@ namespace A8C\SpecialProjects\Atlantis;
 
 use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
 use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
-use A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter\AutoUpdatePluginsFilter;
+use A8C\SpecialProjects\Atlantis\Modules\Autoupdates\AutoUpdatePluginsFilter;
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\Messages;
 
@@ -46,10 +46,10 @@ class Modules {
 		add_action( 'a8csp/atlantis/admin_menu_registered', array( $this, 'register_admin_menu' ) );
 
 		$this->modules = array(
-			'messages'           => new Messages(),
-			'colophon'           => new Colophon(),
-			'tracking'           => new Tracking(),
-			'plugin-autoupdates' => new AutoUpdatePluginsFilter(),
+			'messages'    => new Messages(),
+			'colophon'    => new Colophon(),
+			'tracking'    => new Tracking(),
+			'autoupdates' => new AutoUpdatePluginsFilter(),
 		);
 		foreach ( $this->modules as $module ) {
 			$module->maybe_initialize();

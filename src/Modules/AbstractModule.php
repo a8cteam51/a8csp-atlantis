@@ -46,14 +46,16 @@ abstract class AbstractModule {
 
 	/**
 	 * Returns whether the module is disabled due to environmental constraints.
-	 * The reason for the module being disabled should be returned as a WP_Error object.
+	 *
+	 * Before the init hook, this method should return true if the module is disabled.
+	 * After the init hook, it should return a WP_Error object with a message explaining why the module is disabled.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @return  false|\WP_Error
+	 * @return  bool|\WP_Error
 	 */
-	public function is_disabled(): false|\WP_Error {
+	public function is_disabled(): bool|\WP_Error {
 		return false;
 	}
 
@@ -87,22 +89,19 @@ abstract class AbstractModule {
 			return;
 		}
 
-		$is_disabled = $this->is_disabled();
-		if ( is_wp_error( $is_disabled ) ) {
+		if ( $this->is_disabled() ) {
 			add_action(
 				'admin_notices',
-				function () use ( $is_disabled ) {
-					$screen = get_current_screen();
-					if ( 'atlantis_page_a8csp-atlantis-modules' === $screen?->id ) {
-						wp_admin_notice(
-							wp_sprintf(
-								'<strong>%s</strong>: %s',
-								esc_html( $this->get_name() ),
-								esc_html( $is_disabled->get_error_message() )
-							),
-							array( 'type' => 'error' )
-						);
-					}
+				function () {
+					$environment_error = wp_sprintf(
+						/* translators: 1: Plugin name, 2: Module name, 3: Error message */
+						__( '<strong>%1$s %2$s Module:</strong> %3$s', 'a8csp-atlantis' ),
+						a8csp_atlantis_get_plugin_metadata( 'Name' ),
+						esc_html( $this->get_name() ),
+						esc_html( $this->is_disabled()->get_error_message() )
+					);
+
+					wp_admin_notice( $environment_error, array( 'type' => 'error' ) );
 				}
 			);
 			return;
@@ -155,7 +154,16 @@ abstract class AbstractModule {
 		add_settings_section(
 			"{$this->get_settings_key()}_section",
 			$this->get_name(),
-			fn() => '<p>' . printf( esc_html( $this->get_description() ) ) . '</p>',
+			function (): void {
+				echo wp_kses_post( wpautop( $this->get_description() ) );
+
+				$disabled = $this->is_disabled();
+				if ( is_wp_error( $disabled ) ) {
+					$warning_intro   = __( 'Warning!', 'a8csp-atlantis' );
+					$warning_message = __( 'This module cannot run due to the following reason', 'a8csp-atlantis' );
+					echo wp_kses_post( wpautop( wp_sprintf( '<strong><span style="color: red;">%s</span> %s</strong>: %s', $warning_intro, $warning_message, $disabled->get_error_message() ) ) );
+				}
+			},
 			'a8csp-atlantis-modules'
 		);
 

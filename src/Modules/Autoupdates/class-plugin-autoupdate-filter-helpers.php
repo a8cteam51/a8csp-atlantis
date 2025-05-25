@@ -5,7 +5,7 @@
  * @package Plugin_Autoupdate_Filter
  */
 
-namespace A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter;
+namespace A8C\SpecialProjects\Atlantis\Modules\Autoupdates;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly

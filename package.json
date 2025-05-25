@@ -10,12 +10,15 @@
   "keywords": [
     "wordpress"
   ],
-  "homepage": "https://wordpress.org/plugins/atlantis",
-  "repository": "https://github.com/a8cteam51/atlantis",
-  "bugs": "https://github.com/a8cteam51/atlantis/issues",
+  "homepage": "https://specialprojects.automattic.com/tools/",
+  "repository": "https://github.com/a8cteam51/a8csp-atlantis",
+  "bugs": "https://github.com/a8cteam51/a8csp-atlantis/issues",
   "engines": {
     "node": ">=20.0",
     "npm": ">=10.0"
+  },
+  "dependencies": {
+    "select2": "^4.1.0-rc.0"
   },
   "devDependencies": {
     "@csstools/postcss-sass": "^5.0.1",
@@ -75,8 +78,5 @@
     "wp-env:update": "wp-env start --update",
     "wp-env:stop": "wp-env stop",
     "wp-env": "wp-env"
-  },
-  "dependencies": {
-    "select2": "^4.1.0-rc.0"
   }
 }

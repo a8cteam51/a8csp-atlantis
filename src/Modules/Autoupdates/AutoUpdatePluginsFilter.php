@@ -1,6 +1,6 @@
 <?php declare( strict_types=1 );
 
-namespace A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter;
+namespace A8C\SpecialProjects\Atlantis\Modules\Autoupdates;
 
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 use AutomateWoo\Error;
@@ -48,7 +48,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return  string  The module description.
 	 */
 	public function get_description(): string {
-		return 'Manages the update process of the site plugins';
+		return __( 'Manages the auto-update schedule of installed plugins.', 'a8csp-atlantis' );
 	}
 
 	/**

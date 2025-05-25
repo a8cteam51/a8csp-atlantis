@@ -32,7 +32,7 @@ class Tracking extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	public function get_description(): string {
-		return 'Opts sites into tracking.';
+		return __( 'Automatically opts-in the site for usage tracking with Automattic-owned plugins.', 'a8csp-atlantis' );
 	}
 
 	/**
@@ -41,13 +41,14 @@ class Tracking extends AbstractModule {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
-	public function is_disabled(): false|\WP_Error {
-		$environment_types = array( 'development', 'staging', 'develop', 'local' );
-		if ( \defined( 'WP_ENVIRONMENT_TYPE' ) && \in_array( WP_ENVIRONMENT_TYPE, $environment_types, true ) ) {
-			return new \WP_Error(
-				'tracking_disabled',
-				'Tracking module is disabled in the current environment.'
-			);
+	public function is_disabled(): bool|\WP_Error {
+		if ( \function_exists( 'wp_get_environment_type' ) && 'production' !== wp_get_environment_type() ) {
+			if ( did_action( 'init' ) || doing_action( 'init' ) ) {
+				/* translators: %s: Current environment type */
+				return new \WP_Error( 'not-production', wp_sprintf( __( 'Production environment is required. Current environment: %s', 'a8csp-atlantis' ), wp_get_environment_type() ) );
+			}
+
+			return true;
 		}
 
 		return false;
