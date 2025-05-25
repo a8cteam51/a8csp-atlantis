@@ -12,6 +12,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since   1.0.0
  * @version 1.0.0
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ListTable {
 	// region METHODS
@@ -74,18 +76,18 @@ class ListTable {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'a8csp-atlantis' ) );
 		}
 
-		$action = sanitize_text_field( $_GET['action'] ?? '-1' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! \in_array( $action, array( 'new', 'edit', 'delete', 'activate', 'deactivate', '-1' ), true ) ) {
+		$message_action = sanitize_text_field( $_GET['action'] ?? '-1' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! \in_array( $message_action, array( 'new', 'edit', 'delete', 'activate', 'deactivate', '-1' ), true ) ) {
 			wp_die( esc_html__( 'Invalid action.', 'a8csp-atlantis' ) );
 		}
 
-		$id = absint( $_GET['id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ( 'new' === $action && 0 !== $id ) || ( 'edit' === $action && 0 === $id ) ) {
+		$message_id = absint( $_GET['id'] ?? 0 ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ( 'new' === $message_action && 0 !== $message_id ) || ( 'edit' === $message_action && 0 === $message_id ) ) {
 			wp_die( esc_html__( 'Invalid message ID.', 'a8csp-atlantis' ) );
 		}
 
-		if ( \in_array( $action, array( 'new', 'edit' ), true ) ) {
-			$this->render_message_form( $id );
+		if ( \in_array( $message_action, array( 'new', 'edit' ), true ) ) {
+			$this->render_message_form( $message_id );
 		} else {
 			$this->render_message_list();
 		}
@@ -96,6 +98,10 @@ class ListTable {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 * @SuppressWarnings(PHPMD.ExitExpression)
 	 *
 	 * @return  void
 	 */
@@ -110,15 +116,15 @@ class ListTable {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'a8csp-atlantis' ) );
 		}
 
-		$id       = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
-		$title    = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
-		$content  = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : '';
-		$type     = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash( $_POST['type'] ) ) : '';
-		$status   = isset( $_POST['status'] ) ? sanitize_text_field( wp_unslash( $_POST['status'] ) ) : '';
-		$includes = isset( $_POST['location_include'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['location_include'] ) ) : array();
-		$excludes = isset( $_POST['location_exclude'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['location_exclude'] ) ) : array();
+		$message_id       = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
+		$message_title    = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		$message_content  = isset( $_POST['content'] ) ? wp_kses_post( wp_unslash( $_POST['content'] ) ) : '';
+		$message_type     = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash( $_POST['type'] ) ) : '';
+		$message_status   = isset( $_POST['status'] ) ? sanitize_text_field( wp_unslash( $_POST['status'] ) ) : '';
+		$message_includes = isset( $_POST['location_include'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['location_include'] ) ) : array();
+		$message_excludes = isset( $_POST['location_exclude'] ) ? array_map( 'sanitize_text_field', (array) wp_unslash( $_POST['location_exclude'] ) ) : array();
 
-		if ( empty( $title ) || empty( $content ) || empty( $type ) || empty( $status ) || empty( $includes ) ) {
+		if ( empty( $message_title ) || empty( $message_content ) || empty( $message_type ) || empty( $message_status ) || empty( $message_includes ) ) {
 			wp_die( esc_html__( 'All required fields must be filled out.', 'a8csp-atlantis' ) );
 		}
 
@@ -126,16 +132,16 @@ class ListTable {
 		$table_name = CustomTable::get_table_name();
 
 		$data = array(
-			'title'      => $title,
-			'content'    => a8csp_atlantis_encrypt_data( $content ),
-			'type'       => $type,
-			'status'     => $status,
-			'locations'  => wp_json_encode( $includes ),
-			'exclusions' => ! empty( $excludes ) ? wp_json_encode( $excludes ) : null,
+			'title'      => $message_title,
+			'content'    => a8csp_atlantis_encrypt_data( $message_content ),
+			'type'       => $message_type,
+			'status'     => $message_status,
+			'locations'  => wp_json_encode( $message_includes ),
+			'exclusions' => ! empty( $message_excludes ) ? wp_json_encode( $message_excludes ) : null,
 		);
 
-		if ( $id > 0 ) {
-			$result = $wpdb->update( $table_name, $data, array( 'id' => $id ), where_format: array( '%d' ) );
+		if ( $message_id > 0 ) {
+			$result = $wpdb->update( $table_name, $data, array( 'id' => $message_id ), where_format: array( '%d' ) );
 		} else {
 			$result = $wpdb->insert( $table_name, $data );
 		}
@@ -153,6 +159,9 @@ class ListTable {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @SuppressWarnings(PHPMD.ExitExpression)
 	 *
 	 * @return  void
 	 */
@@ -239,12 +248,14 @@ class ListTable {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @param   int $id The message ID if editing, 0 for a new message.
+	 * @param   int $message_id The message ID if editing, 0 for a new message.
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedLocalVariable)
 	 *
 	 * @return  void
 	 */
-	protected function render_message_form( int $id = 0 ): void {
-		$a8csp_atlantis_message = new Message( $id );
+	protected function render_message_form( int $message_id = 0 ): void {
+		$a8csp_atlantis_message = new Message( $message_id );
 		$a8csp_admin_locations  = $this->generate_admin_locations();
 
 		include A8CSP_ATLANTIS_DIR_PATH . 'templates/admin/message-form.php';
@@ -255,6 +266,9 @@ class ListTable {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 *
 	 * @return  string[]
 	 */

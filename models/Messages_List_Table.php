@@ -109,6 +109,8 @@ class Messages_List_Table extends \WP_List_Table {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 */
 	public function column_default( $item, $column_name ): string {
 		switch ( $column_name ) {

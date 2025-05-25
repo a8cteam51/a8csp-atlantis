@@ -36,6 +36,8 @@ class Encryption {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 *
 	 * @return  void
 	 */
 	public function maybe_auto_insert_encryption_key(): void {
@@ -124,8 +126,8 @@ class Encryption {
 	 * @return  string|null
 	 */
 	private function get_wp_config_path(): ?string {
-		$fs = $this->get_wp_filesystem();
-		if ( \is_null( $fs ) ) {
+		$wp_filesystem = $this->get_wp_filesystem();
+		if ( \is_null( $wp_filesystem ) ) {
 			return null;
 		}
 
@@ -135,8 +137,8 @@ class Encryption {
 		);
 
 		foreach ( $candidates as $local ) {
-			$remote = str_replace( ABSPATH, $fs->abspath(), $local );
-			if ( $fs->exists( $remote ) && $fs->is_writable( $remote ) ) {
+			$remote = str_replace( ABSPATH, $wp_filesystem->abspath(), $local );
+			if ( $wp_filesystem->exists( $remote ) && $wp_filesystem->is_writable( $remote ) ) {
 				return $remote;
 			}
 		}

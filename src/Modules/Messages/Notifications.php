@@ -75,6 +75,8 @@ class Notifications {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 *
 	 * @return  Message[]
 	 */
 	protected function get_active_messages(): array {
@@ -100,7 +102,6 @@ class Notifications {
 			if ( \in_array( 'all', $included_locations, true ) || \in_array( $current_location, $included_locations, true ) ) {
 				$local_active_messages[] = $message;
 			}
-
 			if ( $is_block_editor && \in_array( 'all_post_editors', $included_locations, true ) ) {
 				$local_active_messages[] = $message;
 			}

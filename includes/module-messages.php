@@ -1,6 +1,7 @@
 <?php declare( strict_types=1 );
 
 use A8C\SpecialProjects\Atlantis\Message;
+use A8C\SpecialProjects\Atlantis\Message_Query;
 use A8C\SpecialProjects\Atlantis\Modules\Messages;
 
 defined( 'ABSPATH' ) || exit;
@@ -16,7 +17,7 @@ defined( 'ABSPATH' ) || exit;
  * @return  Message[]
  */
 function a8csp_atlantis_get_messages( array $args = array() ): array {
-	$query = new \A8C\SpecialProjects\Atlantis\Message_Query( $args );
+	$query = new Message_Query( $args );
 	return $query->get_results();
 }
 
@@ -40,12 +41,12 @@ function a8csp_atlantis_get_active_messages(): array {
 /**
  * Returns a single message by its ID from the Atlantis messages table.
  *
- * @param   int $id The ID of the message to retrieve.
+ * @param   int $message_id The ID of the message to retrieve.
  *
  * @return  Message|null
  */
-function a8csp_atlantis_get_message( int $id ): ?Message {
-	$messages = a8csp_atlantis_get_messages( array( 'id' => $id ) );
+function a8csp_atlantis_get_message( int $message_id ): ?Message {
+	$messages = a8csp_atlantis_get_messages( array( 'id' => $message_id ) );
 	return ! empty( $messages ) ? reset( $messages ) : null;
 }
 
@@ -55,16 +56,16 @@ function a8csp_atlantis_get_message( int $id ): ?Message {
  * @since   1.0.0
  * @version 1.0.0
  *
- * @param   int $id The ID of the message to delete.
+ * @param   int $message_id The ID of the message to delete.
  *
  * @return  bool
  */
-function a8csp_atlantis_delete_message( int $id ): bool {
+function a8csp_atlantis_delete_message( int $message_id ): bool {
 	global $wpdb;
 
 	return false !== $wpdb->delete(
 		Messages\CustomTable::get_table_name(),
-		array( 'id' => $id ),
+		array( 'id' => $message_id ),
 		array( '%d' )
 	);
 }
@@ -75,18 +76,18 @@ function a8csp_atlantis_delete_message( int $id ): bool {
  * @since   1.0.0
  * @version 1.0.0
  *
- * @param   int    $id     The ID of the message to update.
- * @param   string $status The new status to set for the message.
+ * @param   int    $message_id The ID of the message to update.
+ * @param   string $new_status The new status to set for the message.
  *
  * @return  bool
  */
-function a8csp_atlantis_update_message_status( int $id, string $status ): bool {
+function a8csp_atlantis_update_message_status( int $message_id, string $new_status ): bool {
 	global $wpdb;
 
 	return false !== $wpdb->update(
 		Messages\CustomTable::get_table_name(),
-		array( 'status' => $status ),
-		array( 'id' => $id ),
+		array( 'status' => $new_status ),
+		array( 'id' => $message_id ),
 		array( '%s' ),
 		array( '%d' )
 	);
