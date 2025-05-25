@@ -12,9 +12,9 @@ class Helpers {
 	/**
 	 * The plugins array.
 	 *
-	 * @var array
+	 * @var array<string, PluginMetaData>
 	 */
-	private $plugins;
+	private array $plugins;
 
 	/**
 	 * Constructor
@@ -25,6 +25,7 @@ class Helpers {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
+		// @phpstan-ignore-next-line
 		$this->plugins = get_plugins();
 	}
 

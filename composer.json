@@ -36,7 +36,8 @@
     "wp-cli/i18n-command": "^2",
     "lucatume/wp-browser": "^4",
 
-    "roave/security-advisories": "dev-latest"
+    "roave/security-advisories": "dev-latest",
+    "phpstan/extension-installer": "^1.4"
   },
 
   "autoload": {

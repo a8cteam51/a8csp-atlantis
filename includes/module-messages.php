@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
  * @since   1.0.0
  * @version 1.0.0
  *
- * @param   array $args Optional arguments to filter messages.
+ * @param   array<string, int|string|bool> $args Optional arguments to filter messages.
  *
  * @return  Message[]
  */

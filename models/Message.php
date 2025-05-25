@@ -9,6 +9,17 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since   1.0.0
  * @version 1.0.0
+ *
+ * @property-read int    $id
+ * @property-read string $created_at
+ * @property-read string $updated_at
+ *
+ * @property string $title
+ * @property string $content
+ * @property string $type
+ * @property string $status
+ * @property array<string, string> $locations
+ * @property array<string, string> $exclusions
  */
 class Message {
 	// region FIELDS AND CONSTANTS

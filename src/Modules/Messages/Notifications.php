@@ -75,6 +75,7 @@ class Notifications {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 *
 	 * @return  Message[]

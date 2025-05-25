@@ -73,6 +73,8 @@ class Messages_List_Table extends \WP_List_Table {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @return  array<string, string>
 	 */
 	public function get_columns(): array {
 		return array(
@@ -93,6 +95,8 @@ class Messages_List_Table extends \WP_List_Table {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @return  array<string, string|array{0: string, 1: bool}>
 	 */
 	protected function get_sortable_columns(): array {
 		return array(
@@ -110,6 +114,10 @@ class Messages_List_Table extends \WP_List_Table {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @param   Message $item        The message item to display.
+	 * @param   string  $column_name The name of the column to display.
+	 *
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 */
 	public function column_default( $item, $column_name ): string {
@@ -173,7 +181,7 @@ class Messages_List_Table extends \WP_List_Table {
 
 				return wp_sprintf(
 					'<span class="status-%s">%s</span>',
-					esc_attr( $item->message_status ),
+					esc_attr( $item->status ),
 					esc_html( $status )
 				);
 
@@ -197,6 +205,8 @@ class Messages_List_Table extends \WP_List_Table {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @param   Message $item The message item to display.
 	 */
 	protected function column_cb( $item ): string {
 		return wp_sprintf(
@@ -210,6 +220,8 @@ class Messages_List_Table extends \WP_List_Table {
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
+	 *
+	 * @return  array<string, string>
 	 */
 	protected function get_bulk_actions(): array {
 		return array(

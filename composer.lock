@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f8d2ced4c857bd25cc92ca2f27e7b627",
+    "content-hash": "1b83e4342485a9f2de2232f5ad964589",
     "packages": [],
     "packages-dev": [
         {
@@ -13,12 +13,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/a8cteam51/team51-configs.git",
-                "reference": "9af88fa024e8f7cdc12c281cb84cb34810221dbb"
+                "reference": "1f025c367e0287886d1f7490618950131fa8d491"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/a8cteam51/team51-configs/zipball/9af88fa024e8f7cdc12c281cb84cb34810221dbb",
-                "reference": "9af88fa024e8f7cdc12c281cb84cb34810221dbb",
+                "url": "https://api.github.com/repos/a8cteam51/team51-configs/zipball/1f025c367e0287886d1f7490618950131fa8d491",
+                "reference": "1f025c367e0287886d1f7490618950131fa8d491",
                 "shasum": ""
             },
             "require": {
@@ -71,7 +71,7 @@
                 "source": "https://github.com/a8cteam51/team51-configs/tree/trunk",
                 "issues": "https://github.com/a8cteam51/team51-configs/issues"
             },
-            "time": "2025-04-03T14:21:57+00:00"
+            "time": "2025-05-25T15:59:20+00:00"
         },
         {
             "name": "behat/gherkin",
@@ -8323,7 +8323,7 @@
         "a8cteam51/team51-configs": 20,
         "roave/security-advisories": 20
     },
-    "prefer-stable": true,
+    "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
         "php": ">=8.3",

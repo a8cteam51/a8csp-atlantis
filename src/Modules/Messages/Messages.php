@@ -17,7 +17,7 @@ class Messages extends AbstractModule {
 	// region FIELDS AND CONSTANTS
 
 	/**
-	 * The custom table component.
+	 * The CustomTable component.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
@@ -27,17 +27,17 @@ class Messages extends AbstractModule {
 	public CustomTable $table;
 
 	/**
-	 * The list table component.
+	 * The ListTable component.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @var Messages_List_Table
+	 * @var ListTable
 	 */
 	public ListTable $list_table;
 
 	/**
-	 * The notifications component.
+	 * The Notifications component.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0

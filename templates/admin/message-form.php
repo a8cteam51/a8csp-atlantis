@@ -35,7 +35,7 @@ wp_localize_script(
 	array(
 		'locations' => $a8csp_admin_locations,
 		'include'   => $a8csp_atlantis_message->locations,
-		'exclude'   => $a8csp_atlantis_message->excludes,
+		'exclude'   => $a8csp_atlantis_message->exclusions,
 	)
 );
 
@@ -54,7 +54,7 @@ wp_localize_script(
 	<form method="post" action="">
 		<?php wp_nonce_field( 'save_message', 'a8csp_atlantis_message_nonce' ); ?>
 		<input type="hidden" name="action" value="a8csp_atlantis_save_message">
-		<input type="hidden" name="id" value="<?php echo esc_attr( $a8csp_atlantis_message->id ); ?>">
+		<input type="hidden" name="id" value="<?php echo esc_attr( (string) $a8csp_atlantis_message->id ); ?>">
 
 		<table class="form-table">
 			<tr>

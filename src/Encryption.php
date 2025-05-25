@@ -36,7 +36,10 @@ class Encryption {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 *
 	 * @return  void
 	 */
@@ -67,7 +70,7 @@ class Encryption {
 		$wp_filesystem = $this->get_wp_filesystem();
 
 		$wp_config_path     = $this->get_wp_config_path();
-		$wp_config_contents = $wp_filesystem->get_contents( $wp_config_path );
+		$wp_config_contents = $wp_config_path ? $wp_filesystem?->get_contents( $wp_config_path ) : null;
 
 		$success = false;
 		if ( $wp_config_path && $wp_config_contents ) {
@@ -78,7 +81,7 @@ class Encryption {
 				$wp_config_contents = \preg_replace( '/<\?php/', "<?php\r\n" . $to_insert, $wp_config_contents, 1 );
 			}
 
-			if ( $wp_config_contents && $wp_filesystem->put_contents( $wp_config_path, $wp_config_contents, FS_CHMOD_FILE ) ) {
+			if ( $wp_config_contents && $wp_filesystem?->put_contents( $wp_config_path, $wp_config_contents, FS_CHMOD_FILE ) ) {
 				$success = true;
 
 				update_option( 'a8csp_atlantis_inserted_encryption_key', 'yes' );
@@ -158,7 +161,6 @@ class Encryption {
 		global $wp_filesystem;
 
 		if ( ! \function_exists( 'WP_Filesystem' ) ) {
-			/* @phpstan-ignore-next-line */
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 

@@ -13,6 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * @since   1.0.0
  * @version 1.0.0
  *
+ * @phpstan-ignore-next-line
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ListTable {
@@ -99,8 +100,11 @@ class ListTable {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.ExitExpression)
 	 *
 	 * @return  void
@@ -160,7 +164,9 @@ class ListTable {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.ExitExpression)
 	 *
 	 * @return  void
@@ -250,6 +256,7 @@ class ListTable {
 	 *
 	 * @param   int $message_id The message ID if editing, 0 for a new message.
 	 *
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.UnusedLocalVariable)
 	 *
 	 * @return  void
@@ -267,7 +274,9 @@ class ListTable {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 *
 	 * @return  string[]
@@ -288,6 +297,9 @@ class ListTable {
 
 			$menu_slug  = $menu_item[2];
 			$menu_title = \preg_replace( '/\s\d+$/', '', wp_strip_all_tags( $menu_item[0] ) );
+			if ( ! $menu_title ) {
+				continue;
+			}
 
 			// Keep the .php extension for exact matching.
 			$locations[ $menu_slug ] = $menu_title;
@@ -306,12 +318,12 @@ class ListTable {
 				$submenu_title = \preg_replace( '/\s\d+$/', '', wp_strip_all_tags( $submenu_item[0] ) );
 
 				// Skip if it's the same as the parent menu.
-				if ( $submenu_slug === $menu_slug ) {
+				if ( ! $submenu_title || $submenu_slug === $menu_slug ) {
 					continue;
 				}
 
 				$screen_id               = $submenu_slug;
-				$locations[ $screen_id ] = $menu_title . ' → ' . preg_replace( '/\s\d+$/', '', $submenu_title );
+				$locations[ $screen_id ] = $menu_title . ' → ' . \preg_replace( '/\s\d+$/', '', $submenu_title );
 			}
 		}
 

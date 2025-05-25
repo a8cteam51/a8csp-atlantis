@@ -38,7 +38,7 @@ function a8csp_atlantis_generate_random_encryption_key(): string|WP_Error {
  *
  * @param   string|null $salt The salt to use for encryption. If null, a new salt will be generated.
  *
- * @return  array|WP_Error
+ * @return  array{key: string, salt: string}|WP_Error
  */
 function a8csp_atlantis_get_encryption_key_data( ?string $salt = null ): array|WP_Error {
 	if ( ! a8csp_atlantis_has_encryption_key() ) {

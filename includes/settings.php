@@ -25,7 +25,7 @@ function a8csp_atlantis_generate_module_settings_key( string $module_name ): str
  *
  * @param   string $module_name The name of the module.
  *
- * @return  array
+ * @return  array<string, mixed>
  */
 function a8csp_atlantis_get_module_settings( string $module_name ): array {
 	$settings_key = a8csp_atlantis_generate_module_settings_key( $module_name );

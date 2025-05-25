@@ -11,6 +11,8 @@ defined( 'ABSPATH' ) || exit;
  *
  * @since   1.0.0
  * @version 1.0.0
+ *
+ * @phpstan-type MessageQueryArgs array{search: string, orderby: string, order: 'ASC'|'DESC', paged: int, per_page: int, id: int|null, type: string|null, status: string|null}
  */
 class Message_Query {
 	// region FIELDS AND CONSTANTS
@@ -61,9 +63,9 @@ class Message_Query {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @var array
+	 * @var array<string, mixed> & MessageQueryArgs
 	 */
-	protected array $query_vars = array();
+	protected array $query_vars;
 
 	/**
 	 * Default query args.
@@ -71,7 +73,7 @@ class Message_Query {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @var array
+	 * @var MessageQueryArgs
 	 */
 	protected array $defaults = array(
 		'search'   => '',
@@ -91,7 +93,7 @@ class Message_Query {
 	/**
 	 * Constructor.
 	 *
-	 * @param array $args The query arguments to filter messages.
+	 * @param array<string, mixed> $args The query arguments to filter messages.
 	 */
 	public function __construct( array $args = array() ) {
 		global $wpdb;
@@ -154,9 +156,9 @@ class Message_Query {
 	/**
 	 * Sanitize and validate query variables.
 	 *
-	 * @param   array $args The query arguments to sanitize.
+	 * @param   array<string, mixed> $args The query arguments to sanitize.
 	 *
-	 * @return  array
+	 * @return  array<string, mixed> & MessageQueryArgs
 	 */
 	protected function sanitize_query_vars( array $args ): array {
 		$args = wp_parse_args( $args, $this->defaults );
@@ -177,6 +179,7 @@ class Message_Query {
 			true
 		) ? $args['orderby'] : 'created_at';
 
+		// @phpstan-ignore-next-line
 		return $args;
 	}
 
@@ -186,7 +189,7 @@ class Message_Query {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @return  array
+	 * @return  array{clause: string, params: array<int|string>}
 	 */
 	private function build_where_clause(): array {
 		global $wpdb;

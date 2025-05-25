@@ -113,7 +113,7 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 
 		ob_start();
 		team51_credits( $atts );
-		return ob_get_clean();
+		return ob_get_clean() ?: ''; // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
 	}
 
 endif;
