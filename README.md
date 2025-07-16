@@ -1,67 +1,129 @@
-# atlantis
+| :exclamation:  This is a public repository |
+|--------------------------------------------|
 
-**Contributors:** wpcomspecialprojects
-**Tags:**
-**Requires at least:** 6.5
-**Tested up to:** 6.5
-**Requires PHP:** 8.3
-**Stable tag:** 1.0.0
-**License:** GPLv3 or later
-**License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)
+# a8csp-atlantis
+
+- **Contributors:** wpcomspecialprojects
+- **Tags:** auto-updates, tracking, messages, colophon, site-management
+- **Requires at least:** 6.5
+- **Tested up to:** 6.8.1
+- **Requires PHP:** 8.3
+- **Stable tag:** 1.0.1
+- **License:** GPLv3 or later
+- **License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)
 
 
 
 ## Description
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed leo ligula, aliquam et sem luctus, placerat facilisis orci. Cras faucibus, odio ac aliquet scelerisque, nisi ligula dignissim nisi, sed tincidunt magna libero vitae dui. Sed varius lectus turpis, fringilla maximus libero posuere nec. Aenean volutpat pharetra sem, et cursus leo sodales quis.
+A collection of utilities developed by the WordPress Special Projects team for managing partner sites. The plugin provides a modular system with the following core modules:  
+
+- **Messages**: Admin notification system with location-based filtering ([Readme](./src/Modules/Messages/README.md))
+- **AutoUpdate Filter**: Manages WordPress plugin and core auto-updates with sophisticated timing controls, business hour restrictions, and delay periods for stability testing ([Readme](./src/Modules/AutoUpdatePluginsFilter/README.md))
+- **Tracking**: Analytics integration that opts sites into tracking (disabled in development environments) ([Readme](./src/Modules/Tracking/README.md))
+- **Colophon**: Footer attribution system for site credits ([Readme](./src/Modules/Colophon/README.md))
+  
+The plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.  
 
 ## Installation
 
-This plugin requires WooCommerce 7.4+ to run. If you're running a lower version, please update first. After you made sure that you're running a supported version of WooCommerce, you may install `Team51 Plugin Scaffold` either manually or through your site's plugins page.
+You may install `a8csp-atlantis` either manually or through your site's plugins page.
 
 ### INSTALL FROM WITHIN WORDPRESS
 
-1. Visit the plugins page withing your dashboard and select `Add New`.
-1. Search for `Team51 Plugin Scaffold` and click the `Install Now` button.
-1. Activate the plugin from within your `Plugins` page.
+1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis).
+2. Visit the plugins page within your dashboard and select `Add New`.
+3. Click on `Upload Plugin` then `Choose File`, select the `a8csp-atlantis.zip` file and click the `Install Now` button.
+4. Click on the `Activate` button.
 
 ### INSTALL MANUALLY
 
-1. Download the plugin from [https://wordpress.org/plugins/](https://wordpress.org/plugins/) and unzip the archive.
-1. Upload the `atlantis` folder to the `/wp-content/plugins/` directory.
-1. Activate the plugin through the `Plugins` menu in WordPress.
+1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis) and unzip the archive.
+2. Upload the `a8csp-atlantis` folder to the `/wp-content/plugins/` directory.
+3. Activate the plugin through the `Plugins` menu in WordPress.
 
 ### AFTER ACTIVATION
 
-If the minimum required version of WooCommerce is present, you will find a section present in the `Advanced` tab of the WooCommerce `Settings` page. Aliquam dolor sem, convallis malesuada neque sit amet, dictum mattis velit. Vestibulum at pharetra metus. Suspendisse rhoncus libero nisi, sed rhoncus tortor aliquam pretium.
+Settings for the plugin can be found in the wp-admin dashboard under `Atlantis`.
 
 ## Frequently Asked Questions
 
-### How can I get help if I'm stuck?
+### Why don't I see the Atlantis menu on WP Admin?
 
-Quisque volutpat tortor id varius pulvinar. Vivamus porttitor, mi non auctor pellentesque, leo purus interdum libero, at aliquam justo lectus sed ligula.
+Ensure your user is an admin with an `@automattic.com` or `@wordpress.com` email address.
 
-### I have a question that is not listed here
+### Can I disable specific modules?
 
-Duis efficitur, sapien ac scelerisque placerat, elit justo tempor nisl, ut feugiat magna orci quis odio.
+Yes, the plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.
+
+### How can I get more information on how to use the plugin?
+
+You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https://deepwiki.com/a8cteam51/a8csp-atlantis) for extensive help related to usablity, plugin structure, and development.
+
+## Development
+
+### Setup
+
+1. Install dependencies:
+   ```bash
+   composer install
+   npm install
+   ```
+
+2. Build assets:
+   ```bash
+   npm run build
+   ```
+
+   This will build all JavaScript and CSS assets. The build process includes:
+   - Building block editor assets
+   - Compiling JavaScript files
+   - Processing SCSS to CSS
+
+3. For development, you can use watch mode:
+   ```bash
+   npm run start
+   ```
+   This will automatically rebuild assets when files change.
+
+### Testing
+
+Run all tests:
+```bash
+npm run tests:run
+```
+
+This includes both integration and end-to-end tests. Make sure Docker is running for the test environment.
+
+### Creating a Release on GitHub
+
+When creating a new release, follow these steps:
+
+1. Update version numbers in:
+   - `package.json` ("version" field)
+   - `a8csp-atlantis.php` ("Version" in plugin header)
+   - Update "Tested up to" in both README.md and a8csp-atlantis.php if WordPress compatibility was tested
+
+2. Build a production release (if needed):
+   ```bash
+   composer install --no-dev
+   npm install
+   npm run build
+   ```
+   Commit and merge to trunk via a new feature branch.
+
+3. Create a new release on GitHub:
+   - Go to the Releases page at `https://github.com/a8cteam51/a8csp-atlantis/releases` and create a new release.
+   - Create a new tag following semantic versioning (e.g., v1.0.1)
+   - Title the release and add a description, or, click on the "Generate release notes" button. Edit as needed.
+   - Click on the "Publish release" button.
+   - After a few minutes the new plugin `zip` file will be available for download.
+
+### Development FAQs
+
+#### What to do if I get the 500 error `"Uncaught Error: Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found"` during development?
+
+Run `composer generate-autoloader` from the root.
 
 
-### What to do if I get a 500 error "Uncaught Error: Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found"
 
-Run `composer generate-autoloader` from the root
-
-### Why don't I see the Atlantis menu on Wp Admin?
-
-Make sure your user is automattic.com email address
-
-## Screenshots
-
-### 1. Example screenshot
-
-[missing image]
-
-## Changelog
-
-### 1.0.0 (FIRST RELEASE DATE)
-
-* First official release.
