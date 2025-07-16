@@ -16,12 +16,12 @@ function a8csp_atlantis_is_automattician(): bool {
 	}
 
 	$user = wp_get_current_user();
-	if ( ! $user || ! is_email( $user->user_email ) ) {
+	if ( 0 === $user->ID || false === is_email( $user->user_email ) ) {
 		return false;
 	}
 
-	$allowed_domains = array( 'a8c.com', 'automattic.com', 'wordpress.com' );
-	$email_domain    = substr( strrchr( $user->user_email, '@' ), 1 );
+	$allowed_domains = array( '@a8c.com', '@automattic.com', '@wordpress.com' );
+	$email_domain    = strrchr( $user->user_email, '@' );
 
 	return in_array( $email_domain, $allowed_domains, true );
 }

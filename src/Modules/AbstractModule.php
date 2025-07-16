@@ -33,27 +33,26 @@ abstract class AbstractModule {
 	abstract public function get_description(): string;
 
 	/**
-	 * Returns the key used to store the module's settings in the database.
+	 * Returns whether the module is always enabled or whether it can be disabled by the user.
 	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return  string
+	 * @return  bool
 	 */
-	public function get_settings_key(): string {
-		return sanitize_title( $this->get_name() );
+	public function is_mandatory(): bool {
+		return false;
 	}
 
 	/**
 	 * Returns whether the module is disabled due to environmental constraints.
-	 * The reason for the module being disabled should be returned as a WP_Error object.
+	 *
+	 * Before the init hook, this method should return true if the module is disabled.
+	 * After the init hook, it should return a WP_Error object with a message explaining why the module is disabled.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @return  false|\WP_Error
+	 * @return  bool|\WP_Error
 	 */
-	public function is_disabled(): false|\WP_Error {
+	public function is_disabled(): bool|\WP_Error {
 		return false;
 	}
 
@@ -67,7 +66,11 @@ abstract class AbstractModule {
 	 * @return  bool
 	 */
 	public function is_active(): bool {
-		$settings = get_option( "a8csp_module_{$this->get_settings_key()}", array() );
+		if ( $this->is_mandatory() ) {
+			return true;
+		}
+
+		$settings = a8csp_atlantis_get_module_settings( $this->get_name() );
 		return (bool) ( $settings['enabled'] ?? false );
 	}
 
@@ -83,23 +86,28 @@ abstract class AbstractModule {
 		add_action( 'init', array( $this, 'maybe_set_default_settings' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 
-		if ( ! $this->is_active() ) {
+		if ( true !== $this->is_active() ) {
 			return;
 		}
 
-		$is_disabled = $this->is_disabled();
-		if ( is_wp_error( $is_disabled ) ) {
+		if ( false !== $this->is_disabled() ) {
 			add_action(
 				'admin_notices',
-				function () use ( $is_disabled ) {
-					wp_admin_notice(
-						wp_sprintf(
-							'<strong>%s</strong>: %s',
-							esc_html( $this->get_name() ),
-							esc_html( $is_disabled->get_error_message() )
-						),
-						array( 'type' => 'error' )
+				function () {
+					$error = $this->is_disabled();
+					if ( ! is_wp_error( $error ) ) {
+						return;
+					}
+
+					$environment_error = wp_sprintf(
+						/* translators: 1: Plugin name, 2: Module name, 3: Error message */
+						__( '<strong>%1$s %2$s Module:</strong> %3$s', 'a8csp-atlantis' ),
+						a8csp_atlantis_get_plugin_metadata( 'Name' ),
+						esc_html( $this->get_name() ),
+						esc_html( $error->get_error_message() )
 					);
+
+					wp_admin_notice( $environment_error, array( 'type' => 'error' ) );
 				}
 			);
 			return;
@@ -129,11 +137,17 @@ abstract class AbstractModule {
 	 * @return  void
 	 */
 	public function maybe_set_default_settings(): void {
-		$option_name = "a8csp_module_{$this->get_settings_key()}";
+		$settings_key = a8csp_atlantis_generate_module_settings_key( $this->get_name() );
 
-		$settings = get_option( $option_name, null );
+		$settings = get_option( $settings_key, null );
 		if ( is_null( $settings ) ) {
-			update_option( $option_name, array( 'enabled' => '1' ) );
+			update_option( $settings_key, array( 'enabled' => '1' ) );
+		} elseif ( $this->is_mandatory() ) {
+			$is_enabled = isset( $settings['enabled'] ) && '1' === $settings['enabled'];
+			if ( ! $is_enabled ) {
+				$settings = a8csp_atlantis_get_module_settings( $this->get_name() );
+				update_option( $settings_key, array( 'enabled' => '1' ) + $settings );
+			}
 		}
 	}
 
@@ -146,31 +160,42 @@ abstract class AbstractModule {
 	 * @return  void
 	 */
 	public function register_settings(): void {
-		$option_name = "a8csp_module_{$this->get_settings_key()}";
+		$option_name = a8csp_atlantis_generate_module_settings_key( $this->get_name() );
 		register_setting( 'a8csp_modules_group', $option_name );
 
 		add_settings_section(
-			"{$this->get_settings_key()}_section",
+			"{$option_name}_section",
 			$this->get_name(),
-			fn() => '<p>' . printf( esc_html( $this->get_description() ) ) . '</p>',
+			function (): void {
+				echo wp_kses_post( wpautop( $this->get_description() ) );
+
+				$disabled = $this->is_disabled();
+				if ( is_wp_error( $disabled ) ) {
+					$warning_intro   = __( 'Warning!', 'a8csp-atlantis' );
+					$warning_message = __( 'This module cannot run due to the following reason', 'a8csp-atlantis' );
+					echo wp_kses_post( wpautop( wp_sprintf( '<strong><span style="color: red;">%s</span> %s</strong>: %s', $warning_intro, $warning_message, $disabled->get_error_message() ) ) );
+				}
+			},
 			'a8csp-atlantis-modules'
 		);
 
 		add_settings_field(
-			"{$this->get_settings_key()}_enabled",
+			"{$option_name}_enabled",
 			__( 'Enabled', 'a8csp-atlantis' ),
 			function ( array $args ): void {
-				$value   = get_option( $args['option_name'] );
-				$enabled = isset( $value['enabled'] ) && $value['enabled'];
+				$value    = get_option( $args['option_name'] );
+				$enabled  = isset( $value['enabled'] ) && '1' === $value['enabled'];
+				$disabled = $this->is_mandatory() || ( false !== $this->is_disabled() && false === $enabled );
 
 				printf(
-					'<input type="checkbox" name="%s[enabled]" value="1" %s />',
+					'<input type="checkbox" name="%s[enabled]" value="1" %s %s />',
 					esc_attr( $args['option_name'] ),
-					checked( $enabled, true, false )
+					checked( $enabled, true, false ),
+					disabled( $disabled, true, false )
 				);
 			},
 			'a8csp-atlantis-modules',
-			"{$this->get_settings_key()}_section",
+			"{$option_name}_section",
 			array( 'option_name' => $option_name )
 		);
 	}

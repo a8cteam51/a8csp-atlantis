@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-05-20T10:23:41+00:00\n"
+"POT-Creation-Date: 2025-05-25T17:55:31+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: a8csp-atlantis\n"
@@ -20,19 +20,23 @@ msgid "A8CSP Atlantis"
 msgstr ""
 
 #. Plugin URI of the plugin
-#. Author URI of the plugin
 #: a8csp-atlantis.php
-msgid "https://specialprojects.automattic.com"
+msgid "https://github.com/a8cteam51/a8csp-atlantis"
 msgstr ""
 
 #. Description of the plugin
 #: a8csp-atlantis.php
-msgid "Lorem Ipsum (to be replaced with a proper description)."
+msgid "Atlantis."
 msgstr ""
 
 #. Author of the plugin
 #: a8csp-atlantis.php
 msgid "Automattic Special Projects"
+msgstr ""
+
+#. Author URI of the plugin
+#: a8csp-atlantis.php
+msgid "https://specialprojects.automattic.com"
 msgstr ""
 
 #. translators: 1: Plugin name, 2: Plugin version
@@ -59,4 +63,274 @@ msgstr ""
 
 #: functions-bootstrap.php:183
 msgid "The autoloader file is missing. Please run <code>composer install</code> to generate it."
+msgstr ""
+
+#: models/Messages_List_Table.php:83
+msgid "Title"
+msgstr ""
+
+#: models/Messages_List_Table.php:84
+msgid "Content"
+msgstr ""
+
+#: models/Messages_List_Table.php:85
+msgid "Type"
+msgstr ""
+
+#: models/Messages_List_Table.php:86
+#: templates/admin/message-form.php:117
+msgid "Status"
+msgstr ""
+
+#: models/Messages_List_Table.php:87
+#: templates/admin/message-form.php:134
+msgid "Included Locations"
+msgstr ""
+
+#: models/Messages_List_Table.php:88
+#: templates/admin/message-form.php:172
+msgid "Excluded Locations"
+msgstr ""
+
+#: models/Messages_List_Table.php:89
+msgid "Created"
+msgstr ""
+
+#: models/Messages_List_Table.php:90
+msgid "Last Updated"
+msgstr ""
+
+#: models/Messages_List_Table.php:138
+msgid "Edit"
+msgstr ""
+
+#: models/Messages_List_Table.php:153
+msgid "Are you sure you want to delete this message?"
+msgstr ""
+
+#: models/Messages_List_Table.php:154
+#: models/Messages_List_Table.php:230
+msgid "Delete"
+msgstr ""
+
+#: models/Messages_List_Table.php:180
+#: templates/admin/message-form.php:123
+msgid "Active"
+msgstr ""
+
+#: models/Messages_List_Table.php:181
+#: templates/admin/message-form.php:126
+msgid "Inactive"
+msgstr ""
+
+#: models/Messages_List_Table.php:231
+msgid "Activate"
+msgstr ""
+
+#: models/Messages_List_Table.php:232
+msgid "Deactivate"
+msgstr ""
+
+#. translators: 1: Plugin name, 2: Plugin version
+#: src/Encryption.php:59
+#, php-format
+msgid "<strong>%1$s (version %2$s)</strong> cannot auto-generate an encryption key."
+msgstr ""
+
+#. translators: 1: Plugin name, 2: Plugin version
+#: src/Encryption.php:101
+#, php-format
+msgid "<strong>%1$s (version %2$s)</strong> cannot auto-insert an encryption key. Please add the following line to your wp-config.php file:"
+msgstr ""
+
+#: src/Modules.php:74
+msgctxt "page title"
+msgid "Modules"
+msgstr ""
+
+#: src/Modules.php:75
+msgctxt "menu title"
+msgid "Modules"
+msgstr ""
+
+#: src/Modules.php:81
+msgid "Modules Settings"
+msgstr ""
+
+#. translators: 1: Plugin name, 2: Module name, 3: Error message
+#: src/Modules/AbstractModule.php:104
+#, php-format
+msgid "<strong>%1$s %2$s Module:</strong> %3$s"
+msgstr ""
+
+#: src/Modules/AbstractModule.php:174
+msgid "Warning!"
+msgstr ""
+
+#: src/Modules/AbstractModule.php:175
+msgid "This module cannot run due to the following reason"
+msgstr ""
+
+#: src/Modules/AbstractModule.php:184
+msgid "Enabled"
+msgstr ""
+
+#: src/Modules/Autoupdates/AutoUpdatePluginsFilter.php:51
+msgid "Manages the auto-update schedule of core, themes, and plugins."
+msgstr ""
+
+#: src/Modules/Colophon/Colophon.php:35
+msgid "Provides a standardized set of APIs to set up footer links on partner sites."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:59
+msgctxt "page title"
+msgid "Atlantis Messages"
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:60
+msgctxt "menu title"
+msgid "Messages"
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:77
+msgid "You do not have sufficient permissions to access this page."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:82
+msgid "Invalid action."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:87
+msgid "Invalid message ID."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:117
+#: src/Modules/Messages/ListTable.php:179
+msgid "Security check failed"
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:120
+#: src/Modules/Messages/ListTable.php:182
+msgid "You do not have sufficient permissions to perform this action."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:132
+msgid "All required fields must be filled out."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:154
+msgid "There was a problem saving your message."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:187
+msgid "Invalid bulk action."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:192
+msgid "No messages selected for action."
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:233
+msgctxt "new message button"
+msgid "Add New"
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:242
+msgid "Search Messages"
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:288
+msgid "All Locations"
+msgstr ""
+
+#: src/Modules/Messages/ListTable.php:289
+msgid "All Post Editors"
+msgstr ""
+
+#. translators: %s: Taxonomy label
+#: src/Modules/Messages/ListTable.php:347
+#, php-format
+msgid "%s Categories"
+msgstr ""
+
+#: src/Modules/Messages/Messages.php:70
+msgid "Allows the inclusion of site-specific messages to various admin pages for Automattician-eyes only."
+msgstr ""
+
+#: src/Modules/Messages/Messages.php:94
+msgid "The custom table cannot be found or could not be created."
+msgstr ""
+
+#: src/Modules/Tracking/Tracking.php:49
+msgid "Automatically opts-in the site for usage tracking with Automattic-owned plugins."
+msgstr ""
+
+#. translators: %s: Current environment type
+#: src/Modules/Tracking/Tracking.php:62
+#, php-format
+msgid "Production environment is required. Current environment: %s"
+msgstr ""
+
+#: src/Settings.php:47
+msgctxt "page title"
+msgid "Atlantis"
+msgstr ""
+
+#: src/Settings.php:48
+msgctxt "menu title"
+msgid "Atlantis"
+msgstr ""
+
+#: templates/admin/message-form.php:46
+msgid "Edit Message"
+msgstr ""
+
+#: templates/admin/message-form.php:46
+msgid "Add New Message"
+msgstr ""
+
+#: templates/admin/message-form.php:49
+msgid "Back to List"
+msgstr ""
+
+#: templates/admin/message-form.php:63
+msgid "Message Title"
+msgstr ""
+
+#: templates/admin/message-form.php:74
+msgid "Message Content"
+msgstr ""
+
+#: templates/admin/message-form.php:95
+msgid "Message Type"
+msgstr ""
+
+#: templates/admin/message-form.php:143
+#: templates/admin/message-form.php:181
+msgid "Remove"
+msgstr ""
+
+#: templates/admin/message-form.php:151
+msgid "-- Include a location --"
+msgstr ""
+
+#: templates/admin/message-form.php:165
+msgid "Select one or more Admin pages where this notice should be displayed."
+msgstr ""
+
+#: templates/admin/message-form.php:188
+msgid "-- Exclude a location --"
+msgstr ""
+
+#: templates/admin/message-form.php:201
+msgid "Select one or more Admin pages where this notice should NOT be displayed."
+msgstr ""
+
+#: templates/admin/message-form.php:208
+msgid "Update Message"
+msgstr ""
+
+#: templates/admin/message-form.php:208
+msgid "Add Message"
 msgstr ""

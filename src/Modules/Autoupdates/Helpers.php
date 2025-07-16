@@ -1,25 +1,31 @@
-<?php
+<?php declare( strict_types=1 );
+
+namespace A8C\SpecialProjects\Atlantis\Modules\Autoupdates;
+
+defined( 'ABSPATH' ) || exit;
+
 /**
  * Plugin Autoupdate Filter Helpers class
- *
- * @package Plugin_Autoupdate_Filter
  */
-namespace A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter;
+class Helpers {
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
-}
+	/**
+	 * The plugins array.
+	 *
+	 * @var array<string, PluginMetaData>
+	 */
+	private array $plugins;
 
-class Plugin_Autoupdate_Filter_Helpers {
-
-	private $plugins;
-
+	/**
+	 * Constructor
+	 */
 	public function __construct() {
-
 		if ( ! function_exists( 'get_plugins' ) ) {
+			/* @phpstan-ignore requireOnce.fileNotFound */
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
+		// @phpstan-ignore-next-line
 		$this->plugins = get_plugins();
 	}
 
@@ -40,18 +46,14 @@ class Plugin_Autoupdate_Filter_Helpers {
 		);
 
 		$delay_days = in_array( $plugin_file, $longer_delay_plugins, true ) ? 7 : 2;
-		error_log( sprintf( '[AutoUpdatePluginsFilter] Plugin %s has a delay period of %d days', $plugin_file, $delay_days ) );
 
 		$installed_version = $this->get_installed_plugin_version( $plugin_file );
-		error_log( sprintf( '[AutoUpdatePluginsFilter] Plugin %s current version: %s, new version: %s', $plugin_file, $installed_version, $plugin_new_version ) );
 
 		if ( $plugin_new_version === $installed_version ) {
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Plugin %s already at version %s - no update needed', $plugin_file, $installed_version ) );
 			return null;
 		}
 
 		if ( '0.0.0' === $installed_version || '0.0.0' === $plugin_new_version ) {
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Plugin %s has invalid version information - blocking update', $plugin_file ) );
 			return false;
 		}
 
@@ -60,19 +62,14 @@ class Plugin_Autoupdate_Filter_Helpers {
 
 		// only apply delays to major and minor releases. let point releases (patches) go through.
 		if ( $installed_version_parts[0] !== $update_version_parts[0] || $installed_version_parts[1] !== $update_version_parts[1] ) {
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Plugin %s update from %s to %s is a major/minor update - applying delay', $plugin_file, $installed_version, $plugin_new_version ) );
 			$update_allowed_after = $this->get_delay_date( $plugin_slug, $plugin_new_version, $delay_days, $plugin_file );
 
 			if ( time() >= $update_allowed_after ) {
-				error_log( sprintf( '[AutoUpdatePluginsFilter] Delay period has passed for plugin %s - update allowed', $plugin_file ) );
 				return true;
 			}
 
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Delay period has NOT passed for plugin %s - update blocked until %s', $plugin_file, date( 'Y-m-d H:i:s', $update_allowed_after ) ) );
 			return false;
 		}
-
-		error_log( sprintf( '[AutoUpdatePluginsFilter] Plugin %s update from %s to %s is a patch release - no delay needed', $plugin_file, $installed_version, $plugin_new_version ) );
 
 		return true;
 	}
@@ -104,15 +101,10 @@ class Plugin_Autoupdate_Filter_Helpers {
 
 		if ( ! isset( $delays[ $plugin_file ][ $update_version ] ) ) {
 			$release_date = $this->get_plugin_release_date( $plugin_slug );
-			if ( ! $release_date ) {
-				$release_date = time();
-			}
 
 			// We've got a release date. That release date could be 10 days ago. So instead of adding extra days,
 			// make a calculation here to see if time() > $release_date + $delay_days. If so, the update version time is now.
 			$release_plus_delay = strtotime( "+$delay_days days", $release_date );
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Plugin %s v%s release date: %s', $plugin_file, $update_version, date( 'Y-m-d H:i:s', $release_date ) ) );
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Delay end date: %s (current time: %s)', date( 'Y-m-d H:i:s', $release_plus_delay ), date( 'Y-m-d H:i:s', time() ) ) );
 			if ( time() > $release_plus_delay ) {
 				$release_plus_delay = time();
 			}
@@ -131,16 +123,15 @@ class Plugin_Autoupdate_Filter_Helpers {
 	 * @return int The Unix timestamp of the release date or the current time if not available.
 	 */
 	public function get_plugin_release_date( string $plugin_slug ): int {
-		error_log( sprintf( '[AutoUpdatePluginsFilter] Fetching release date for plugin slug: %s', $plugin_slug ) );
 		$response = wp_safe_remote_get( "https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&slug={$plugin_slug}" );
 		if ( is_wp_error( $response ) ) {
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Error fetching release date for %s: %s', $plugin_slug, $response->get_error_message() ) );
 			return time();
 		}
 
 		$plugin_info = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( isset( $plugin_info['last_updated'] ) ) {
-			return strtotime( $plugin_info['last_updated'] ) ?: time();
+			$last_updated = strtotime( $plugin_info['last_updated'] );
+			return false === $last_updated ? time() : $last_updated;
 		}
 
 		return time();
@@ -158,11 +149,8 @@ class Plugin_Autoupdate_Filter_Helpers {
 		$delays     = get_option( $option_key, array() );
 
 		if ( isset( $delays[ $plugin_file ] ) ) {
-			error_log( sprintf( '[AutoUpdatePluginsFilter] Clearing delay data for plugin: %s', $plugin_file ) );
 			unset( $delays[ $plugin_file ] );
 			update_option( $option_key, $delays );
-		} else {
-			error_log( sprintf( '[AutoUpdatePluginsFilter] No delay data found for plugin: %s', $plugin_file ) );
 		}
 	}
 }

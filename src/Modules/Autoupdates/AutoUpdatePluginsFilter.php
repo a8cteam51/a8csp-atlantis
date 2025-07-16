@@ -1,82 +1,68 @@
 <?php declare( strict_types=1 );
 
-namespace A8C\SpecialProjects\Atlantis\Modules\AutoUpdatePluginsFilter;
+namespace A8C\SpecialProjects\Atlantis\Modules\Autoupdates;
 
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
-use AutomateWoo\Error;
-use Exception;
-use RuntimeException;
 
 defined( 'ABSPATH' ) || exit;
-
-require_once __DIR__ . '/class-plugin-autoupdate-filter-helpers.php';
 
 /**
  * AutoUpdatePluginsFilter Module class.
  *
  * @since   1.0.0
  * @version 1.0.0
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class AutoUpdatePluginsFilter extends AbstractModule {
-	/**
-	 * The settings object.
-	 *
-	 * @var \stdClass Holds the settings
-	 */
-	private $settings;
-
+	// region FIELDS AND CONSTANTS
 
 	/**
-	 * Gets the module name.
+	 * Settings fetched from OpsOasis or default ones in case of failure.
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @return  string  The module name.
+	 * @var \stdClass
+	 */
+	private \stdClass $settings;
+
+	// endregion
+
+	// region INHERITED METHODS
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @since   1.0.0
+	 * @version 1.0.0
 	 */
 	public function get_name(): string {
-		return 'Auto Update Filter';
+		return 'Autoupdates';
 	}
 
-
 	/**
-	 * Gets the module description.
+	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
-	 *
-	 * @return  string  The module description.
 	 */
 	public function get_description(): string {
-		return 'Manages the update process of the site plugins';
+		return __( 'Manages the auto-update schedule of core, themes, and plugins.', 'a8csp-atlantis' );
 	}
 
 	/**
-	 * Checks module-specific requirements and returns true if they all pass.
+	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
-	 *
-	 * @return  true|\WP_Error
-	 */
-	protected function module_requirements_check(): bool|\WP_Error {
-		return true; // TODO: Implement module-specific requirements check.
-	}
-
-	/**
-	 * Initializes the module components.
-	 *
-	 * @since   1.0.0
-	 * @version 1.0.0
-	 *
-	 * @return  void
 	 */
 	protected function initialize(): void {
 
 		// get the centralized settings from opsoasis
 		try {
 			$this->settings = $this->get_auto_update_settings();
-		} catch ( Exception $exception ) {
+		} catch ( \Exception $exception ) {
 			$error_message  = $exception->getMessage();
 			$this->settings = (object) array( 'disable_all' => true );
 
@@ -113,7 +99,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		add_filter( 'auto_theme_update_send_email', '__return_true', 11 );
 
 		// "Disable all autoupdates" toggle
-		add_filter( 'auto_update_plugin', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
+		add_filter( 'auto_update_plugin', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX );
 		add_filter( 'auto_update_core', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
 		add_filter( 'auto_update_theme', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
 		add_action( 'admin_init', array( $this, 'output_auto_updates_disabled_admin_notice' ) );
@@ -122,11 +108,15 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		add_action( 'upgrader_process_complete', array( $this, 'cleanup_plugin_delay_after_update_complete' ), 10, 2 );
 	}
 
+	// endregion
+
 	/**
 	 * Load settings from the centralized settings page
 	 *
-	 * @return \stdClass The settings object.
-	 * @throws RuntimeException If the settings cannot be loaded.
+	 * @throws  \RuntimeException If the settings cannot be loaded.
+	 * @throws  \JsonException    If the settings cannot be decoded.
+	 *
+	 * @return  \stdClass
 	 */
 	private function get_auto_update_settings(): \stdClass {
 
@@ -141,7 +131,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				throw new RuntimeException( $response->get_error_message() );
+				throw new \RuntimeException( wp_kses_post( $response->get_error_message() ) );
 			}
 
 			$response_code = wp_remote_retrieve_response_code( $response );
@@ -150,10 +140,14 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			// Check that the response code is a 2xx code.
 			if ( ! \str_starts_with( (string) $response_code, '2' ) ) {
 				$response_message = wp_remote_retrieve_response_message( $response );
-				throw new Exception( $response_message, $response_code );
+				throw new \RuntimeException( wp_kses_post( $response_message ), absint( $response_code ) );
 			}
 
-			$decoded_body = json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR );
+			try {
+				$decoded_body = json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR );
+			} catch ( \JsonException $exception ) {
+				throw $exception;
+			}
 
 			// if the settings are empty, we still need to return an object
 			if ( ! is_object( $decoded_body ) ) {
@@ -175,15 +169,10 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * If we have hit the "Disable all autoupdates" toggle switch, or if we can't get the centralized settings, don't autoupdate anything.
 	 *
 	 * @param bool|null $update Whether to update the plugin or not. This can be bool or null as per the docs.
-	 * @param object    $item   The plugin update object.
 	 *
 	 * @return bool True to update, false to not update.
 	 */
-	public function filter_maybe_disable_all_autoupdates( $update, $item ): bool {
-		$plugin_file    = isset( $item->plugin ) ? $item->plugin : 'unknown';
-		$plugin_slug    = isset( $item->slug ) ? $item->slug : 'unknown';
-		$plugin_version = isset( $item->new_version ) ? $item->new_version : 'unknown';
-
+	public function filter_maybe_disable_all_autoupdates( $update ): bool {
 		if ( isset( $this->settings->disable_all ) ) {
 			return false;
 		}
@@ -201,13 +190,12 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @param bool   $update Whether to update the plugin or not.
 	 * @param object $item   The plugin update object.
 	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 *
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_enforce_delay( $update, $item ): bool {
-		$plugin_file    = isset( $item->plugin ) ? $item->plugin : 'unknown';
-		$plugin_slug    = isset( $item->slug ) ? $item->slug : 'unknown';
-		$plugin_version = isset( $item->new_version ) ? $item->new_version : 'unknown';
-
 		// protect against non-bool being returned from this function
 		if ( null === $update ) {
 			$update = false;
@@ -220,7 +208,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		}
 
 		// otherwise apply delay logic
-		$helpers = new Plugin_Autoupdate_Filter_Helpers();
+		$helpers = new Helpers();
 
 		$plugin_file        = empty( $item->plugin ) ? '' : $item->plugin;
 		$plugin_slug        = empty( $item->slug ) ? '' : $item->slug;
@@ -233,9 +221,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			$delays     = get_option( $option_key, array() );
 
 			if ( isset( $delays[ $plugin_file ][ $plugin_new_version ] ) && is_numeric( $delays[ $plugin_file ][ $plugin_new_version ] ) && ( ! empty( $plugin_file ) && is_plugin_active( $plugin_file ) ) ) {
-				$delay_date     = $delays[ $plugin_file ][ $plugin_new_version ];
-				$current_time   = time();
-				$time_remaining = $delay_date - $current_time;
+				$delay_date = $delays[ $plugin_file ][ $plugin_new_version ];
 
 				// Get the site's date and time format settings.
 				$datetime_format = get_option( 'date_format' ) . ' ' . get_option( 'time_format' );
@@ -269,10 +255,6 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_auto_update_specific_times( $update, $item ): bool {
-		$plugin_file    = isset( $item->plugin ) ? $item->plugin : 'unknown';
-		$plugin_slug    = isset( $item->slug ) ? $item->slug : 'unknown';
-		$plugin_version = isset( $item->new_version ) ? $item->new_version : 'unknown';
-
 		$holidays = array(
 			'christmas' => array(
 				'start' => gmdate( 'Y' ) . '-12-23 00:00:00',
@@ -283,7 +265,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 				'end'   => gmdate( 'Y' ) . '-01-02 23:59:59',
 			),
 		);
-		$holidays = apply_filters( 'plugin_autoupdate_filter_holidays', $holidays );
+		$holidays = apply_filters( 'plugin_autoupdate_filter_holidays', $holidays ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 		$now = gmdate( 'Y-m-d H:i:s' );
 
@@ -300,20 +282,18 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			'end'        => '23', // 7pm Eastern
 			'friday_end' => '19', // 3pm Eastern on Fridays
 		);
-		$hours = apply_filters( 'plugin_autoupdate_filter_hours', $hours );
+		$hours = apply_filters( 'plugin_autoupdate_filter_hours', $hours ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 		$days_off = array(
 			'Sat',
 			'Sun',
 		);
-		$days_off = apply_filters( 'plugin_autoupdate_filter_days_off', $days_off );
+		$days_off = apply_filters( 'plugin_autoupdate_filter_days_off', $days_off ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 		$hour = gmdate( 'H' ); // Current hour
 		$day  = gmdate( 'D' );  // Current day of the week
 
 		// If outside business hours, disable auto-updates
-		$current_time = gmdate( 'Y-m-d H:i:s' );
-
 		if ( $hour < $hours['start'] ) {
 			return false;
 		}
@@ -376,11 +356,11 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		if ( function_exists( 'disable_autoupdate_specific_plugins' ) ) {
 
 			// create a fake object to feed to disable_autoupdate_specific_plugins
-			$plugin_obj                    = new stdClass();
-			$plugin_obj->slug              = dirname( $plugin_file );
-			$plugin_allowed_to_update_bool = disable_autoupdate_specific_plugins( true, $plugin_obj );
+			$plugin_obj        = new \stdClass();
+			$plugin_obj->slug  = dirname( $plugin_file );
+			$plugin_can_update = disable_autoupdate_specific_plugins( true, $plugin_obj );
 
-			if ( false === $plugin_allowed_to_update_bool ) {
+			if ( false === $plugin_can_update ) {
 				return 'Autoupdates have been explicitly deactivated for this plugin.';
 			}
 		}
@@ -400,13 +380,13 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		$all_plugins = get_plugins();
 
-		foreach ( $all_plugins as $plugin_file => $plugin_data ) {
+		foreach ( array_keys( $all_plugins ) as $plugin_file ) {
 			// create a fake object to feed to disable_autoupdate_specific_plugins
-			$plugin_obj                    = new stdClass();
-			$slug                          = dirname( $plugin_file );
-			$plugin_obj->slug              = $slug;
-			$plugin_allowed_to_update_bool = disable_autoupdate_specific_plugins( true, $plugin_obj );
-			if ( false === $plugin_allowed_to_update_bool ) {
+			$plugin_obj        = new \stdClass();
+			$slug              = dirname( $plugin_file );
+			$plugin_obj->slug  = $slug;
+			$plugin_can_update = disable_autoupdate_specific_plugins( true, $plugin_obj );
+			if ( false === $plugin_can_update ) {
 				// add notice next to the "update now" link
 				add_filter(
 					"in_plugin_update_message-{$plugin_file}",
@@ -457,7 +437,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		// Check if this is a plugin update.
 		if ( 'update' === $options['action'] && 'plugin' === $options['type'] ) {
 			if ( isset( $options['plugins'] ) ) {
-				$helpers = new Plugin_Autoupdate_Filter_Helpers();
+				$helpers = new Helpers();
 				foreach ( $options['plugins'] as $plugin ) {
 					$helpers->clear_plugin_delay( $plugin );
 				}

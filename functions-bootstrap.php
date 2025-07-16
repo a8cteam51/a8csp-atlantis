@@ -47,7 +47,7 @@ function a8csp_atlantis_get_plugin_metadata( $property = null ) {
  *
  * @return  string
  */
-function a8csp_atlantis_get_plugin_slug(): string {
+function a8csp_atlantis_get_plugin_slug() {
 	$text_domain = a8csp_atlantis_get_plugin_metadata( 'TextDomain' );
 	return sanitize_key( $text_domain );
 }
@@ -60,7 +60,7 @@ function a8csp_atlantis_get_plugin_slug(): string {
  *
  * @return  string
  */
-function a8csp_atlantis_get_plugin_name(): string {
+function a8csp_atlantis_get_plugin_name() {
 	return a8csp_atlantis_get_plugin_metadata( 'Name' );
 }
 
@@ -72,7 +72,7 @@ function a8csp_atlantis_get_plugin_name(): string {
  *
  * @return  string
  */
-function a8csp_atlantis_get_plugin_version(): string {
+function a8csp_atlantis_get_plugin_version() {
 	return a8csp_atlantis_get_plugin_metadata( 'Version' );
 }
 
@@ -109,7 +109,7 @@ function a8csp_atlantis_is_php_version_compatible( $min_php_version ) {
 /**
  * Validates the plugin requirements.
  *
- * @return  true|\WP_Error
+ * @return  true|WP_Error
  */
 function a8csp_atlantis_validate_requirements() {
 	$plugin_metadata = a8csp_atlantis_get_plugin_metadata();
@@ -123,7 +123,7 @@ function a8csp_atlantis_validate_requirements() {
 	$is_php_compatible = a8csp_atlantis_is_php_version_compatible( $plugin_metadata['RequiresPHP'] );
 	$is_wp_compatible  = a8csp_atlantis_is_wp_version_compatible( $plugin_metadata['RequiresWP'] );
 
-	$wp_error = new \WP_Error();
+	$wp_error = new WP_Error();
 	if ( ! $is_wp_compatible ) {
 		$wp_error->add( 'plugin_wp_incompatible', '', array( 'requires_wp' => $plugin_metadata['RequiresWP'] ) );
 	}
@@ -137,7 +137,7 @@ function a8csp_atlantis_validate_requirements() {
 /**
  * Outputs an error that the system requirements weren't met.
  *
- * @param   \WP_Error $error          The error message to display.
+ * @param   WP_Error $error The error message to display.
  *
  * @return  void
  */
@@ -145,7 +145,7 @@ function a8csp_atlantis_output_requirements_error( $error ) {
 	add_action(
 		'admin_notices',
 		static function () use ( $error ) {
-			$requirements_error = \wp_sprintf(
+			$requirements_error = wp_sprintf(
 				/* translators: 1: Plugin name, 2: Plugin version */
 				__( '<strong>%1$s (version %2$s)</strong> could not be initialized.', 'a8csp-atlantis' ),
 				a8csp_atlantis_get_plugin_metadata( 'Name' ),

@@ -1,6 +1,5 @@
 import domReady from '@wordpress/dom-ready';
 import 'select2/dist/js/select2.full.min.js';
-import 'select2/dist/css/select2.min.css';
 /* global jQuery */
 
 class MessageForm {
@@ -60,7 +59,7 @@ class MessageForm {
 				item.innerHTML = `
                     <span>${ label }</span>
                     <button type="button" class="button-link delete-location" data-location="${ value }">Remove</button>
-                    <input type="hidden" name="message_location_${ target }[]" value="${ value }">
+                    <input type="hidden" name="location_${ target }[]" value="${ value }">
                 `;
 				container.appendChild( item );
 

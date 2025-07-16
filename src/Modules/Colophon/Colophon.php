@@ -32,7 +32,7 @@ class Colophon extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	public function get_description(): string {
-		return 'Having set up footer links in many partner sites, this aims to simplify the deployment of each, by using a more consistent api.';
+		return __( 'Provides a standardized set of APIs to set up footer links on partner sites.', 'a8csp-atlantis' );
 	}
 
 	/**

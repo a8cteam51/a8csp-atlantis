@@ -53,7 +53,7 @@ add_action(
 add_action(
 	'update_plugins_github.com',
 	static function ( $update, array $plugin_data, string $plugin_file ) {
-		if ( A8CSP_ATLANTIS_BASENAME !== $plugin_file || ! empty( $update ) ) {
+		if ( A8CSP_ATLANTIS_BASENAME !== $plugin_file || false !== $update ) {
 			return $update;
 		}
 
