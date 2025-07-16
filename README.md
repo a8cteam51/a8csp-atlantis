@@ -19,7 +19,7 @@
 A collection of utilities developed by the WordPress Special Projects team for managing partner sites. The plugin provides a modular system with the following core modules:  
 
 - **Messages**: Admin notification system with location-based filtering ([Readme](./src/Modules/Messages/README.md))
-- **AutoUpdate Filter**: Manages WordPress plugin and core auto-updates with sophisticated timing controls, business hour restrictions, and delay periods for stability testing ([Readme](./src/Modules/AutoUpdatePluginsFilter/README.md))
+- **AutoUpdate Filter**: Manages WordPress plugin and core auto-updates with sophisticated timing controls, business hour restrictions, and delay periods for stability testing ([Readme](./src/Modules/AutoUpdates/README.md))
 - **Tracking**: Analytics integration that opts sites into tracking (disabled in development environments) ([Readme](./src/Modules/Tracking/README.md))
 - **Colophon**: Footer attribution system for site credits ([Readme](./src/Modules/Colophon/README.md))
   
