@@ -32,14 +32,14 @@ You may install `a8csp-atlantis` either manually or through your site's plugins 
 ### INSTALL FROM WITHIN WORDPRESS
 
 1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis).
-2. Visit the plugins page withing your dashboard and select `Add New`.
+2. Visit the plugins page within your dashboard and select `Add New`.
 3. Click on `Upload Plugin` then `Choose File`, select the `a8csp-atlantis.zip` file and click the `Install Now` button.
 4. Click on the `Activate` button.
 
 ### INSTALL MANUALLY
 
 1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis) and unzip the archive.
-2. Upload the `atlantis` folder to the `/wp-content/plugins/` directory.
+2. Upload the `a8csp-atlantis` folder to the `/wp-content/plugins/` directory.
 3. Activate the plugin through the `Plugins` menu in WordPress.
 
 ### AFTER ACTIVATION
@@ -48,9 +48,9 @@ Settings for the plugin can be found in the wp-admin dashboard under `Atlantis`.
 
 ## Frequently Asked Questions
 
-### Why don't I see the Atlantis menu on Wp Admin?
+### Why don't I see the Atlantis menu on WP Admin?
 
-Ensure your user is an admin with an `automattic.com` or `wordpress.com` email address.
+Ensure your user is an admin with an `@automattic.com` or `@wordpress.com` email address.
 
 ### Can I disable specific modules?
 
@@ -58,7 +58,7 @@ Yes, the plugin uses a modular architecture where individual modules can be enab
 
 ### How can I get more information on how to use the plugin?
 
-You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https://deepwiki.com/a8cteam51/a8csp-atlantis) for extensive help related to useablity, plugin structure, and development.
+You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https://deepwiki.com/a8cteam51/a8csp-atlantis) for extensive help related to usablity, plugin structure, and development.
 
 ## Development
 
