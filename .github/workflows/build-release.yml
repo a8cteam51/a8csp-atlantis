@@ -35,7 +35,7 @@ jobs:
       - name: Prepare Release Directory
         run: |
           mkdir a8csp-atlantis
-          cp -r a8csp-atlantis.php functions.php functions-bootstrap.php index.php LICENSE src includes assets blocks languages models templates vendor a8csp-atlantis/
+          cp -r a8csp-atlantis.php functions.php functions-bootstrap.php index.php LICENSE src includes assets languages models templates vendor a8csp-atlantis/
 
       - name: Zip Release
         run: |
