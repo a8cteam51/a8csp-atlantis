@@ -1,7 +1,7 @@
-# atlantis
+# a8csp-atlantis
 
 **Contributors:** wpcomspecialprojects
-**Tags:**
+**Tags:** auto-updates, tracking, messages, colophon, site-management
 **Requires at least:** 6.5
 **Tested up to:** 6.5
 **Requires PHP:** 8.3
@@ -13,55 +13,66 @@
 
 ## Description
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed leo ligula, aliquam et sem luctus, placerat facilisis orci. Cras faucibus, odio ac aliquet scelerisque, nisi ligula dignissim nisi, sed tincidunt magna libero vitae dui. Sed varius lectus turpis, fringilla maximus libero posuere nec. Aenean volutpat pharetra sem, et cursus leo sodales quis.
+A comprehensive WordPress plugin developed by the WordPress Special Projects team for managing partner sites. The plugin provides a modular system with four core modules:  
+
+- **Messages**: Admin notification system with location-based filtering
+- **AutoUpdate Filter**: Manages WordPress plugin and core auto-updates with sophisticated timing controls, business hour restrictions, and delay periods for stability testing  
+- **Tracking**: Analytics integration that opts sites into tracking (disabled in development environments)   
+- **Colophon**: Footer attribution system for site credits  
+  
+The plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.  
 
 ## Installation
 
-This plugin requires WooCommerce 7.4+ to run. If you're running a lower version, please update first. After you made sure that you're running a supported version of WooCommerce, you may install `Team51 Plugin Scaffold` either manually or through your site's plugins page.
+You may install `a8csp-atlantis` either manually or through your site's plugins page.
 
 ### INSTALL FROM WITHIN WORDPRESS
 
-1. Visit the plugins page withing your dashboard and select `Add New`.
-1. Search for `Team51 Plugin Scaffold` and click the `Install Now` button.
-1. Activate the plugin from within your `Plugins` page.
+1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis).
+2. Visit the plugins page withing your dashboard and select `Add New`.
+3. Click on `Upload Plugin` then `Choose File`, select the `a8csp-atlantis.zip` file and click the `Install Now` button.
+4. Click on the `Activate` button.
 
 ### INSTALL MANUALLY
 
-1. Download the plugin from [https://wordpress.org/plugins/](https://wordpress.org/plugins/) and unzip the archive.
-1. Upload the `atlantis` folder to the `/wp-content/plugins/` directory.
-1. Activate the plugin through the `Plugins` menu in WordPress.
+1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis) and unzip the archive.
+2. Upload the `atlantis` folder to the `/wp-content/plugins/` directory.
+3. Activate the plugin through the `Plugins` menu in WordPress.
 
 ### AFTER ACTIVATION
 
-If the minimum required version of WooCommerce is present, you will find a section present in the `Advanced` tab of the WooCommerce `Settings` page. Aliquam dolor sem, convallis malesuada neque sit amet, dictum mattis velit. Vestibulum at pharetra metus. Suspendisse rhoncus libero nisi, sed rhoncus tortor aliquam pretium.
+Settings for the plugin can be found in the wp-admin dashboard under `Atlantis`.
 
 ## Frequently Asked Questions
 
-### How can I get help if I'm stuck?
+### Why don't I see the Atlantis menu on Wp Admin?
 
-Quisque volutpat tortor id varius pulvinar. Vivamus porttitor, mi non auctor pellentesque, leo purus interdum libero, at aliquam justo lectus sed ligula.
+Make sure your user is `automattic.com` or `wordpress.com` email address
 
-### I have a question that is not listed here
+### Can I disable specific modules?
 
-Duis efficitur, sapien ac scelerisque placerat, elit justo tempor nisl, ut feugiat magna orci quis odio.
+Yes, the plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.
+
+### How can I get more information on how to use the plugin?
+
+You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https://deepwiki.com/a8cteam51/a8csp-atlantis) for extensive help related to useablity, plugin structure, and development.
+
+## Development
+
+### Prerequisites  
+  
+Before starting development, ensure you have the following installed:  
+  
+- **Node.js 20.0+** and **npm 10.0+**
+- **PHP 8.3+** or higher
+- **Docker** (optional, required for wp-env)
+- **Git**
+
 
 
 ### What to do if I get a 500 error "Uncaught Error: Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found"
 
 Run `composer generate-autoloader` from the root
 
-### Why don't I see the Atlantis menu on Wp Admin?
 
-Make sure your user is automattic.com email address
 
-## Screenshots
-
-### 1. Example screenshot
-
-[missing image]
-
-## Changelog
-
-### 1.0.0 (FIRST RELEASE DATE)
-
-* First official release.
