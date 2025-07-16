@@ -1,6 +1,3 @@
-| :exclamation:  This is a public repository |
-|--------------------------------------------|
-
 # Plugin Autoupdate Filter
 Filters whether autoupdates are on based on day/time and other settings.
 
@@ -11,14 +8,9 @@ This is a plugin that the WordPress Special Projects team uses on many of their 
 
 ## Usage
 
-1. Download the .zip file from https://github.com/a8cteam51/plugin-autoupdate-filter/releases
-2. Via the wp-admin plugins page on your WordPress site, upload the zip file and activate the plugin
-
 ### Notes on functionality
 
 This plugin filters the core `auto_update_plugin` functionality to always run autoupdates during specific hours. It doesn't respect any toggle settings prior to activating this plugin, and is also respected by Jetpack autoupdate settings (the Jetpack autoupdate toggles may still reflect something different, but are not meaningful if this plugin is activated).
-
-It's a good idea to load this as a normal plugin (rather than an mu-plugin), so that it can be deactivated easily by a site admin, in case autoupdates needs to be paused during troubleshooting, etc.
 
 By default, the plugin always returns `true` for autoupdates Mon-Thu 6am-7pm Eastern, and Fri 6am-3pm Eastern. The 13 hour days are because the cron event which checks for autoupdates only runs every 12 hours, and so if the window isn't more than 12 hours at least once during the week, we run the risk of missing updates completely.
 
@@ -30,7 +22,7 @@ By default, this plugin checks an endpoint set up by the WordPress Special Proje
 
 **This plugin is unsupported; use at your own discretion**
 
-If you have a problem or suggestion, please make an issue in the repo here: https://github.com/a8cteam51/plugin-autoupdate-filter/issues
+If you have a problem or suggestion, please make an issue in the repo here: https://github.com/a8cteam51/a8csp-atlantis/issues
 
 Feel free to fork and/or create a PR!
 

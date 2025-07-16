@@ -1,24 +1,27 @@
+| :exclamation:  This is a public repository |
+|--------------------------------------------|
+
 # a8csp-atlantis
 
-**Contributors:** wpcomspecialprojects
-**Tags:** auto-updates, tracking, messages, colophon, site-management
-**Requires at least:** 6.5
-**Tested up to:** 6.5
-**Requires PHP:** 8.3
-**Stable tag:** 1.0.0
-**License:** GPLv3 or later
-**License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)
+- **Contributors:** wpcomspecialprojects
+- **Tags:** auto-updates, tracking, messages, colophon, site-management
+- **Requires at least:** 6.5
+- **Tested up to:** 6.8.1
+- **Requires PHP:** 8.3
+- **Stable tag:** 1.0.0
+- **License:** GPLv3 or later
+- **License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)
 
 
 
 ## Description
 
-A comprehensive WordPress plugin developed by the WordPress Special Projects team for managing partner sites. The plugin provides a modular system with four core modules:  
+A collection of utilities developed by the WordPress Special Projects team for managing partner sites. The plugin provides a modular system with the following core modules:  
 
 - **Messages**: Admin notification system with location-based filtering
-- **AutoUpdate Filter**: Manages WordPress plugin and core auto-updates with sophisticated timing controls, business hour restrictions, and delay periods for stability testing  
-- **Tracking**: Analytics integration that opts sites into tracking (disabled in development environments)   
-- **Colophon**: Footer attribution system for site credits  
+- **AutoUpdate Filter**: Manages WordPress plugin and core auto-updates with sophisticated timing controls, business hour restrictions, and delay periods for stability testing ([Readme](https://github.com/a8cteam51/a8csp-atlantis/blob/fix/readme/src/Modules/AutoUpdatePluginsFilter/README.md))
+- **Tracking**: Analytics integration that opts sites into tracking (disabled in development environments) ([Readme](https://github.com/a8cteam51/a8csp-atlantis/blob/fix/readme/src/Modules/Tracking/README.md))
+- **Colophon**: Footer attribution system for site credits ([Readme](https://github.com/a8cteam51/a8csp-atlantis/blob/fix/readme/src/Modules/Colophon/README.md))
   
 The plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.  
 
@@ -47,7 +50,7 @@ Settings for the plugin can be found in the wp-admin dashboard under `Atlantis`.
 
 ### Why don't I see the Atlantis menu on Wp Admin?
 
-Make sure your user is `automattic.com` or `wordpress.com` email address
+Ensure your user is an admin with an `automattic.com` or `wordpress.com` email address.
 
 ### Can I disable specific modules?
 
@@ -59,20 +62,68 @@ You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https
 
 ## Development
 
-### Prerequisites  
-  
-Before starting development, ensure you have the following installed:  
-  
-- **Node.js 20.0+** and **npm 10.0+**
-- **PHP 8.3+** or higher
-- **Docker** (optional, required for wp-env)
-- **Git**
+### Setup
 
+1. Install dependencies:
+   ```bash
+   composer install
+   npm install
+   ```
 
+2. Build assets:
+   ```bash
+   npm run build
+   ```
 
-### What to do if I get a 500 error "Uncaught Error: Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found"
+   This will build all JavaScript and CSS assets. The build process includes:
+   - Building block editor assets
+   - Compiling JavaScript files
+   - Processing SCSS to CSS
 
-Run `composer generate-autoloader` from the root
+3. For development, you can use watch mode:
+   ```bash
+   npm run start
+   ```
+   This will automatically rebuild assets when files change.
+
+### Testing
+
+Run all tests:
+```bash
+npm run tests:run
+```
+
+This includes both integration and end-to-end tests. Make sure Docker is running for the test environment.
+
+### Creating a Release on GitHub
+
+When creating a new release, follow these steps:
+
+1. Update version numbers in:
+   - `package.json` ("version" field)
+   - `a8csp-atlantis.php` ("Version" in plugin header)
+   - Update "Tested up to" in both README.md and a8csp-atlantis.php if WordPress compatibility was tested
+
+2. Build a production release (if needed):
+   ```bash
+   composer install --no-dev
+   npm install
+   npm run build
+   ```
+   Commit and merge to trunk via a new feature branch.
+
+3. Create a new release on GitHub:
+   - Go to the Releases page at `https://github.com/a8cteam51/a8csp-atlantis/releases` and create a new release.
+   - Create a new tag following semantic versioning (e.g., v1.0.1)
+   - Title the release and add a description, or, click on the "Generate release notes" button. Edit as needed.
+   - Click on the "Publish release" button.
+   - After a few minutes the new plugin `zip` file will be available for download.
+
+### Development FAQs
+
+#### What to do if I get the 500 error `"Uncaught Error: Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found"` during development?
+
+Run `composer generate-autoloader` from the root.
 
 
 

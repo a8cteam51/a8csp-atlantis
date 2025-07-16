@@ -49,10 +49,10 @@ function PREFIX_team51_credit_links( $credit_links ) {
 add_filter( 'team51_credit_links', 'PREFIX_team51_credit_links' );
 ```
 
-FSE Themes
+Block Themes
 ==========
 
-If your site using Full Site Editing, then insert a shortcode
+If your site is using a block theme, then insert a shortcode
 block into the footer.html and use `[team51-credits /]` as an embed.
 
 Something like this:
@@ -110,39 +110,3 @@ Add the current year in the format “24”:
 [team51-current-year format="y"]
 <!-- /wp:shortcode -->
 ```
-
-
-
-Installation
-============
-
-Colophon should be installed as a submodule into `mu-plugins`, rather than committing its files directly.  This will enable updates from the source repository when needed more easily and provide greater consistency while lessening the support burden.
-
-First, ensure the following two lines are included in your `.gitignore` so that the files are explicitly not ignored, and can be committed:
-
-```
-!mu-plugins/mu-loader.php
-!mu-plugins/colophon
-```
-
-If `mu-loader.php` is not already in the `mu-plugins` directory, it can be copied from https://github.com/a8cteam51/team51-project-scaffold/blob/trunk/mu-plugins/mu-loader.php
-
-This can be done on cli from the repository root via:
-
-```
-mkdir mu-plugins
-curl https://github.com/a8cteam51/team51-project-scaffold/blob/trunk/mu-plugins/mu-loader.php -o mu-plugins/mu-loader.php
-```
-
-From the project repository's root, we add the Colophon as a submodule via
-
-```
-git submodule add https://github.com/a8cteam51/colophon mu-plugins/colophon
-```
-
-Then we create a pull request as needed and integrate it as above.
-
-
-### Updates
-
-* v1.2.0 Add a new shortcode for showing the copyright year.
