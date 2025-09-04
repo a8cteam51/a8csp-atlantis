@@ -1,9 +1,9 @@
 <?php
 /**
- * The A8CSP Atlantic bootstrap file.
+ * The A8CSP Atlantis bootstrap file.
  *
  * @since       1.0.0
- * @version     1.0.1
+ * @version     1.0.2
  * @package     A8C\SpecialProjects\Plugins
  * @author      WordPress.com Special Projects
  * @license     GPL-3.0-or-later
@@ -15,10 +15,10 @@
  * Plugin URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Update URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Description:             Atlantis.
- * Version:                 1.0.1
+ * Version:                 1.0.2
  * Requires at least:       6.8
  * Tested up to:            6.8.1
- * Requires PHP:            8.1
+ * Requires PHP:            8.3
  * Author:                  Automattic Special Projects
  * Author URI:              https://specialprojects.automattic.com
  * License:                 GPL v3 or later
