@@ -58,7 +58,7 @@ Yes, the plugin uses a modular architecture where individual modules can be enab
 
 ### How can I get more information on how to use the plugin?
 
-You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https://deepwiki.com/a8cteam51/a8csp-atlantis) for extensive help related to usablity, plugin structure, and development.
+You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https://deepwiki.com/a8cteam51/a8csp-atlantis) for extensive help related to usability, plugin structure, and development.
 
 ## Development
 
