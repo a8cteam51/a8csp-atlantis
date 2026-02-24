@@ -14,7 +14,7 @@
  * Plugin Name:             A8CSP Atlantis
  * Plugin URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Update URI:              https://github.com/a8cteam51/a8csp-atlantis
- * Description:             Atlantis.
+ * Description:             Centralized site management for Team51.
  * Version:                 1.0.2
  * Requires at least:       6.8
  * Tested up to:            6.8.1

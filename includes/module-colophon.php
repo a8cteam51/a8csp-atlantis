@@ -19,7 +19,7 @@ if ( ! function_exists( 'team51_credits' ) ) :
 			array(
 				'separator' => ' ',
 				/* translators: %s: WordPress. */
-				'wpcom'     => sprintf( __( 'Proudly powered by %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+				'wpcom'     => sprintf( __( 'Designed with %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 				/* translators: %s: Pressable. */
 				'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 			)
@@ -104,7 +104,7 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 		$pairs = array(
 			'separator' => ' ',
 			/* translators: %s: WordPress. */
-			'wpcom'     => sprintf( __( 'Proudly powered by %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+			'wpcom'     => sprintf( __( 'Designed with %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 			/* translators: %s: Pressable. */
 			'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
 		);
@@ -113,8 +113,7 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 
 		ob_start();
 		team51_credits( $atts );
-		$credits = ob_get_contents();
-
+		$credits = ob_get_clean();
 		return false === $credits ? '' : $credits;
 	}
 
