@@ -3,7 +3,7 @@
  * The A8CSP Atlantis bootstrap file.
  *
  * @since       1.0.0
- * @version     1.0.3
+ * @version     1.0.4
  * @package     A8C\SpecialProjects\Plugins
  * @author      WordPress.com Special Projects
  * @license     GPL-3.0-or-later
@@ -15,7 +15,7 @@
  * Plugin URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Update URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Description:             Centralized site management for Team51.
- * Version:                 1.0.3
+ * Version:                 1.0.4
  * Requires at least:       6.8
  * Tested up to:            6.8.1
  * Requires PHP:            8.3
@@ -36,6 +36,7 @@ define( 'A8CSP_ATLANTIS_DIR_URL', plugin_dir_url( __FILE__ ) );
 
 // Load the rest of the bootstrap functions.
 require_once A8CSP_ATLANTIS_DIR_PATH . '/functions-bootstrap.php';
+register_activation_hook( __FILE__, 'a8csp_atlantis_maybe_disable_autoupdates_module_on_activation' );
 
 // Load plugin translations so they are available even for the error admin notices.
 add_action(
