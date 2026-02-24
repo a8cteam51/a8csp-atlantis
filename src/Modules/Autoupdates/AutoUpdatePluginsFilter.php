@@ -18,13 +18,6 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	// region FIELDS AND CONSTANTS
 
 	/**
-	 * Option key that stores plugins for which this module's filters are disabled.
-	 *
-	 * @var string
-	 */
-	private const string DISABLED_PLUGIN_FILTERS_OPTION = 'plugin_autoupdate_filter_disabled_plugins';
-
-	/**
 	 * Settings fetched from OpsOasis or default ones in case of failure.
 	 *
 	 * @since   1.0.0
@@ -310,39 +303,6 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	}
 
 	/**
-	 * Get a normalized list of plugin files for which this module's filters are disabled.
-	 *
-	 * @return array<int, string>
-	 */
-	private function get_filter_disabled_plugins(): array {
-		$disabled_plugins = get_site_option( self::DISABLED_PLUGIN_FILTERS_OPTION, array() );
-
-		if ( ! is_array( $disabled_plugins ) ) {
-			return array();
-		}
-
-		return array_values(
-			array_unique(
-				array_map(
-					'plugin_basename',
-					array_filter( $disabled_plugins, 'is_string' )
-				)
-			)
-		);
-	}
-
-	/**
-	 * Determine whether this module's filters are disabled for a plugin file.
-	 *
-	 * @param string $plugin_file Path to plugin file.
-	 *
-	 * @return bool
-	 */
-	private function is_filter_disabled_for_plugin_file( string $plugin_file ): bool {
-		return in_array( plugin_basename( $plugin_file ), $this->get_filter_disabled_plugins(), true );
-	}
-
-	/**
 	 * Determine whether this module's filters are disabled for a plugin update item.
 	 *
 	 * @param object $item The plugin update object.
@@ -353,7 +313,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		$plugin_file = empty( $item->plugin ) ? '' : plugin_basename( $item->plugin );
 
 		if ( ! empty( $plugin_file ) ) {
-			return $this->is_filter_disabled_for_plugin_file( $plugin_file );
+			return PluginFilterRules::is_filter_disabled_for_plugin_file( $plugin_file );
 		}
 
 		if ( empty( $item->slug ) ) {
@@ -367,27 +327,11 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		foreach ( array_keys( get_plugins() ) as $installed_plugin_file ) {
 			if ( dirname( $installed_plugin_file ) === $item->slug ) {
-				return $this->is_filter_disabled_for_plugin_file( $installed_plugin_file );
+				return PluginFilterRules::is_filter_disabled_for_plugin_file( $installed_plugin_file );
 			}
 		}
 
 		return false;
-	}
-
-	/**
-	 * Evaluate external plugin-level autoupdate rules.
-	 *
-	 * @param \stdClass $plugin_obj Plugin-like object containing a slug property.
-	 *
-	 * @return bool
-	 */
-	private function is_plugin_allowed_to_autoupdate( \stdClass $plugin_obj ): bool {
-		if ( ! function_exists( 'disable_autoupdate_specific_plugins' ) ) {
-			return true;
-		}
-
-		$callback = 'disable_autoupdate_specific_plugins';
-		return (bool) $callback( true, $plugin_obj );
 	}
 
 	/**
@@ -474,7 +418,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			$plugin_obj        = new \stdClass();
 			$slug              = dirname( $plugin_file );
 			$plugin_obj->slug  = $slug;
-			$plugin_can_update = $this->is_plugin_allowed_to_autoupdate( $plugin_obj );
+			$plugin_can_update = PluginFilterRules::is_plugin_allowed_to_autoupdate( $plugin_obj );
 			if ( false === $plugin_can_update ) {
 				// add notice next to the "update now" link
 				add_filter(

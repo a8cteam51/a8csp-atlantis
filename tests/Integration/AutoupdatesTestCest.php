@@ -39,21 +39,26 @@ class AutoupdatesTestCest {
 		$this->set_current_user_as_admin();
 
 		$disabled_plugin = 'akismet/akismet.php';
+		$previous_disabled_plugins = get_site_option( 'plugin_autoupdate_filter_disabled_plugins', array() );
 		update_site_option( 'plugin_autoupdate_filter_disabled_plugins', array( $disabled_plugin ) );
 
-		$module = new AutoUpdatePluginsFilter();
-		$item   = (object) array(
-			'plugin'      => $disabled_plugin,
-			'slug'        => 'akismet',
-			'new_version' => '1.0.0',
-		);
+		try {
+			$module = new AutoUpdatePluginsFilter();
+			$item   = (object) array(
+				'plugin'      => $disabled_plugin,
+				'slug'        => 'akismet',
+				'new_version' => '1.0.0',
+			);
 
-		Assert::assertTrue( $module->filter_auto_update_specific_times( true, $item ) );
-		Assert::assertTrue( $module->filter_enforce_delay( true, $item ) );
+			Assert::assertTrue( $module->filter_auto_update_specific_times( true, $item ) );
+			Assert::assertTrue( $module->filter_enforce_delay( true, $item ) );
 
-		$admin_ui = new PluginFilterAdminUI();
-		$html     = $admin_ui->filter_custom_setting_html( 'Current setting', $disabled_plugin );
-		Assert::assertStringContainsString( 'Enable PAF updates', $html );
+			$admin_ui = new PluginFilterAdminUI();
+			$html     = $admin_ui->filter_custom_setting_html( 'Current setting', $disabled_plugin, array() );
+			Assert::assertStringContainsString( 'Enable PAF updates', $html );
+		} finally {
+			update_site_option( 'plugin_autoupdate_filter_disabled_plugins', $previous_disabled_plugins );
+		}
 	}
 
 	/**
