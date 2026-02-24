@@ -58,6 +58,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	protected function initialize(): void {
+		$plugin_filter_admin_ui = new PluginFilterAdminUI();
 
 		// get the centralized settings from opsoasis
 		try {
@@ -82,10 +83,12 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		add_filter( 'auto_update_plugin', array( $this, 'filter_enforce_delay' ), 11, 2 );
 
 		// Replace automatic update wording on plugin management page in admin
-		add_filter( 'plugin_auto_update_setting_html', array( $this, 'filter_custom_setting_html' ), 11, 3 );
+		add_filter( 'plugin_auto_update_setting_html', array( $plugin_filter_admin_ui, 'filter_custom_setting_html' ), 11, 3 );
 
 		// Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
 		add_action( 'admin_init', array( $this, 'output_upgrade_message_for_specific_plugins' ) );
+		add_action( 'admin_init', array( $plugin_filter_admin_ui, 'maybe_handle_plugin_filter_toggle_request' ) );
+		add_action( 'admin_notices', array( $plugin_filter_admin_ui, 'output_plugin_filter_toggle_admin_notice' ) );
 
 		// Always send auto-update emails to T51 concierge email address
 		add_filter( 'auto_plugin_theme_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
@@ -201,6 +204,10 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			$update = false;
 		}
 
+		if ( $this->is_filter_disabled_for_plugin( $item ) ) {
+			return $update;
+		}
+
 		// no delay if site is a canary site
 		$site_url = wp_parse_url( home_url(), PHP_URL_HOST );
 		if ( isset( $this->settings->canary_sites ) && in_array( $site_url, $this->settings->canary_sites, true ) ) {
@@ -255,62 +262,15 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_auto_update_specific_times( $update, $item ): bool {
-		$holidays = array(
-			'christmas' => array(
-				'start' => gmdate( 'Y' ) . '-12-23 00:00:00',
-				'end'   => gmdate( 'Y' ) . '-12-31 23:59:59',
-			),
-			'new_years' => array(
-				'start' => gmdate( 'Y' ) . '-01-01 00:00:00',
-				'end'   => gmdate( 'Y' ) . '-01-02 23:59:59',
-			),
-		);
-		$holidays = apply_filters( 'plugin_autoupdate_filter_holidays', $holidays ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-
-		$now = gmdate( 'Y-m-d H:i:s' );
-
-		foreach ( $holidays as $holiday ) {
-			$start = $holiday['start'];
-			$end   = $holiday['end'];
-			if ( $start <= $now && $now <= $end ) {
-				return false;
-			}
+		if ( $this->is_filter_disabled_for_plugin( $item ) ) {
+			return (bool) $update;
 		}
 
-		$hours = array(
-			'start'      => '10', // 6am Eastern
-			'end'        => '23', // 7pm Eastern
-			'friday_end' => '19', // 3pm Eastern on Fridays
-		);
-		$hours = apply_filters( 'plugin_autoupdate_filter_hours', $hours ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-
-		$days_off = array(
-			'Sat',
-			'Sun',
-		);
-		$days_off = apply_filters( 'plugin_autoupdate_filter_days_off', $days_off ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-
-		$hour = gmdate( 'H' ); // Current hour
-		$day  = gmdate( 'D' );  // Current day of the week
-
-		// If outside business hours, disable auto-updates
-		if ( $hour < $hours['start'] ) {
+		if ( $this->is_within_holiday_window() ) {
 			return false;
 		}
 
-		if ( $hour > $hours['end'] ) {
-			return false;
-		}
-
-		if ( in_array( $day, $days_off, true ) ) {
-			return false;
-		}
-
-		if ( 'Fri' === $day && $hour > $hours['friday_end'] ) {
-			return false;
-		}
-
-		return true;
+		return $this->is_within_allowed_update_window();
 	}
 
 	/**
@@ -343,29 +303,102 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	}
 
 	/**
-	 * Customize automatic update setting HTML for plugins page in wp-admin.
+	 * Determine whether this module's filters are disabled for a plugin update item.
 	 *
-	 * @param string $html       HTML for automatic update settings.
-	 * @param string $plugin_file Path to plugin file.
-	 * @param array  $plugin_data Array of plugin data.
+	 * @param object $item The plugin update object.
 	 *
-	 * @return string Customized HTML for automatic update settings.
+	 * @return bool
 	 */
-	public function filter_custom_setting_html( $html, $plugin_file, $plugin_data ): string {
-		// check if updates are explicitly blocked for this plugin
-		if ( function_exists( 'disable_autoupdate_specific_plugins' ) ) {
+	private function is_filter_disabled_for_plugin( $item ): bool {
+		$plugin_file = empty( $item->plugin ) ? '' : plugin_basename( $item->plugin );
 
-			// create a fake object to feed to disable_autoupdate_specific_plugins
-			$plugin_obj        = new \stdClass();
-			$plugin_obj->slug  = dirname( $plugin_file );
-			$plugin_can_update = disable_autoupdate_specific_plugins( true, $plugin_obj );
+		if ( ! empty( $plugin_file ) ) {
+			return PluginFilterRules::is_filter_disabled_for_plugin_file( $plugin_file );
+		}
 
-			if ( false === $plugin_can_update ) {
-				return 'Autoupdates have been explicitly deactivated for this plugin.';
+		if ( empty( $item->slug ) ) {
+			return false;
+		}
+
+		if ( ! function_exists( 'get_plugins' ) ) {
+			/* @phpstan-ignore requireOnce.fileNotFound */
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		foreach ( array_keys( get_plugins() ) as $installed_plugin_file ) {
+			if ( dirname( $installed_plugin_file ) === $item->slug ) {
+				return PluginFilterRules::is_filter_disabled_for_plugin_file( $installed_plugin_file );
 			}
 		}
 
-		return 'Automatic updates managed by <strong>Plugin Autoupdate Filter</strong>';
+		return false;
+	}
+
+	/**
+	 * Determine whether now is within a holiday no-update window.
+	 *
+	 * @return bool
+	 */
+	private function is_within_holiday_window(): bool {
+		$holidays = array(
+			'christmas' => array(
+				'start' => gmdate( 'Y' ) . '-12-23 00:00:00',
+				'end'   => gmdate( 'Y' ) . '-12-31 23:59:59',
+			),
+			'new_years' => array(
+				'start' => gmdate( 'Y' ) . '-01-01 00:00:00',
+				'end'   => gmdate( 'Y' ) . '-01-02 23:59:59',
+			),
+		);
+		$holidays = apply_filters( 'plugin_autoupdate_filter_holidays', $holidays ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+
+		$now = gmdate( 'Y-m-d H:i:s' );
+		foreach ( $holidays as $holiday ) {
+			$start = $holiday['start'];
+			$end   = $holiday['end'];
+			if ( $start <= $now && $now <= $end ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Determine whether current time/day is inside the update window.
+	 *
+	 * @return bool
+	 */
+	private function is_within_allowed_update_window(): bool {
+		$hours = array(
+			'start'      => '10', // 6am Eastern
+			'end'        => '23', // 7pm Eastern
+			'friday_end' => '19', // 3pm Eastern on Fridays
+		);
+		$hours = apply_filters( 'plugin_autoupdate_filter_hours', $hours ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+
+		$days_off = array(
+			'Sat',
+			'Sun',
+		);
+		$days_off = apply_filters( 'plugin_autoupdate_filter_days_off', $days_off ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+
+		$hour = gmdate( 'H' );
+		$day  = gmdate( 'D' );
+
+		if ( $hour < $hours['start'] || $hour > $hours['end'] ) {
+			return false;
+		}
+
+		if ( in_array( $day, $days_off, true ) ) {
+			return false;
+		}
+
+		if ( 'Fri' === $day && $hour > $hours['friday_end'] ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -385,7 +418,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			$plugin_obj        = new \stdClass();
 			$slug              = dirname( $plugin_file );
 			$plugin_obj->slug  = $slug;
-			$plugin_can_update = disable_autoupdate_specific_plugins( true, $plugin_obj );
+			$plugin_can_update = PluginFilterRules::is_plugin_allowed_to_autoupdate( $plugin_obj );
 			if ( false === $plugin_can_update ) {
 				// add notice next to the "update now" link
 				add_filter(
