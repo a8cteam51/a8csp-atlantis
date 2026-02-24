@@ -196,3 +196,62 @@ function a8csp_atlantis_output_requirements_error( $error ) {
 		}
 	);
 }
+
+/**
+ * Checks whether the legacy Plugin Autoupdate Filter plugin is active.
+ *
+ * @return bool
+ */
+function a8csp_atlantis_is_legacy_autoupdate_filter_active(): bool {
+	if ( ! function_exists( 'get_plugins' ) ) {
+		/* @phpstan-ignore requireOnce.fileNotFound */
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+
+	if ( ! function_exists( 'is_plugin_active' ) ) {
+		/* @phpstan-ignore requireOnce.fileNotFound */
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+
+	$plugin_file = 'plugin-autoupdate-filter/plugin-autoupdate-filter.php';
+	$plugins     = get_plugins();
+
+	if ( ! isset( $plugins[ $plugin_file ] ) ) {
+		return false;
+	}
+
+	if ( is_plugin_active( $plugin_file ) ) {
+		return true;
+	}
+
+	return is_multisite() && is_plugin_active_for_network( $plugin_file );
+}
+
+/**
+ * On Atlantis activation, disable the Autoupdates module when legacy PAF is not active.
+ *
+ * @return void
+ */
+function a8csp_atlantis_maybe_disable_autoupdates_module_on_activation(): void {
+	if ( ! function_exists( 'get_plugins' ) ) {
+		/* @phpstan-ignore requireOnce.fileNotFound */
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+	}
+
+	$plugin_file = 'plugin-autoupdate-filter/plugin-autoupdate-filter.php';
+	$plugins     = get_plugins();
+	if ( ! isset( $plugins[ $plugin_file ] ) ) {
+		return;
+	}
+
+	if ( a8csp_atlantis_is_legacy_autoupdate_filter_active() ) {
+		return;
+	}
+
+	$option_key       = a8csp_atlantis_generate_module_settings_key( 'Autoupdates' );
+	$current_settings = get_option( $option_key, array() );
+	$module_settings  = is_array( $current_settings ) ? $current_settings : array();
+
+	$module_settings['enabled'] = '0';
+	update_option( $option_key, $module_settings );
+}

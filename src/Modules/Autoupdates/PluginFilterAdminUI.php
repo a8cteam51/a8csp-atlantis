@@ -15,8 +15,8 @@ class PluginFilterAdminUI {
 	/**
 	 * Customize automatic update setting HTML for plugins page in wp-admin.
 	 *
-	 * @param string $html        HTML for automatic update settings.
-	 * @param string $plugin_file Path to plugin file.
+	 * @param string               $html        HTML for automatic update settings.
+	 * @param string               $plugin_file Path to plugin file.
 	 * @param array<string, mixed> $plugin_data Plugin data for the current row.
 	 *
 	 * @return string Customized HTML for automatic update settings.
