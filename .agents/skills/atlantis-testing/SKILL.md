@@ -11,6 +11,20 @@ Use this skill when:
 - Writing or modifying integration tests in `tests/Integration/`.
 - Debugging CI failures (`phpcs`, `phpmd`, `phpstan`, `npm ci`, Codeception).
 - Updating GitHub workflow behavior.
+- Helping with build/lint/test setup or troubleshooting.
+
+## Prerequisites
+
+| Requirement | Version |
+| ----------- | ------- |
+| PHP | 8.3+ |
+| Node.js | 20+ |
+| npm | 10+ |
+| Docker | Required for integration and e2e tests |
+
+## Build
+
+**Must:** Run `npm run build` before testing or deploying. JS and CSS assets are built from source; the plugin loads from `assets/js/build/` and `assets/css/build/`. Without a build, the Messages form and other UI may fail. For development with live rebuild: `npm run start`.
 
 ## Test & QA Stack
 
@@ -18,8 +32,11 @@ Use this skill when:
 |------|---------|
 | PHP lint stack | `composer run lint:php` |
 | PHPStan only | `composer run lint:php:phpstan` |
-| Integration tests | `composer run tests:run:integration` |
-| Full tests | `npm run tests:run` |
+| JS and CSS lint | `npm run lint` (or `lint:scripts`, `lint:styles`) |
+| Integration tests | `composer run tests:run:integration` (inside wp-env) |
+| Full tests | `npm run tests:run` (starts wp-env + Selenium, runs integration + e2e) |
+
+**Must:** Docker must be running for tests. `npm run tests:run` starts wp-env and Selenium automatically.
 
 ## Current Test Convention
 
@@ -27,6 +44,14 @@ Use this skill when:
 - File naming: `tests/Integration/*TestCest.php`.
 - Use `PHPUnit\Framework\Assert` static assertions.
 - Restore modified options/state in tests to avoid leakage.
+
+## Critical Checks Before Commit
+
+1. **Build:** Run `npm run build` so JS/CSS assets exist.
+2. **Docker:** Start Docker before `npm run tests:run`.
+3. **Autoloader:** If you see `Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found`, run `composer generate-autoloader`.
+4. **Lint:** Run `composer run lint:php` and `npm run lint` before committing.
+5. **Lockfiles:** Commit `composer.lock` and `package-lock.json`; CI and release builds depend on them.
 
 ## CI Workflow Guidance
 
@@ -43,6 +68,8 @@ Use this skill when:
 
 ## Verification
 
+- `npm run build`
 - `composer run lint:php`
-- `composer run tests:run:integration`
+- `npm run lint`
+- `npm run tests:run` (or `composer run tests:run:integration` if wp-env already running)
 - If workflow changed, re-run affected GitHub checks.
