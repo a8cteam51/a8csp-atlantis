@@ -96,25 +96,84 @@ On activation, Atlantis checks legacy `plugin-autoupdate-filter` state:
 
 ---
 
-## Development Workflows
+## Prerequisites
+
+| Requirement | Version |
+| ----------- | ------- |
+| PHP | 8.3+ |
+| Node.js | 20+ |
+| npm | 10+ |
+| Docker | Required for integration and end-to-end tests |
+
+---
+
+## Build
 
 ```bash
 # Install dependencies
 composer install
 npm install
 
-# PHP quality checks
+# Build assets (block editor, JS, CSS) — MUST run before testing or deploying
+npm run build
+```
+
+**Must:** JS and CSS assets are built from source (`assets/js/src/`, `assets/css/src/`, `blocks/src/`). The plugin loads from `assets/js/build/` and `assets/css/build/`. Always run `npm run build` before running tests or deploying.
+
+For development with live rebuild on file changes:
+
+```bash
+npm run start
+```
+
+---
+
+## Lint
+
+```bash
+# PHP (phpcs, phpmd, phpstan)
 composer run lint:php
 
 # PHPStan only
 composer run lint:php:phpstan
 
-# Integration tests
-composer run tests:run:integration
-
-# Full test run
-npm run tests:run
+# JS and CSS
+npm run lint
+# Or individually:
+# npm run lint:scripts
+# npm run lint:styles
 ```
+
+**Must:** Run `composer run lint:php` and `npm run lint` before committing. CI runs these on `trunk` and PRs.
+
+---
+
+## Test
+
+```bash
+# Full test suite (starts wp-env + Selenium, runs integration + e2e)
+# Requires Docker to be running
+npm run tests:run
+
+# Integration tests only (run inside wp-env)
+# Either: start wp-env first, then:
+npm run tests:run:integration
+
+# Or run directly via composer (uses local Codeception; requires wp-env running separately)
+composer run tests:run:integration
+```
+
+**Must:** Docker must be running. The full `npm run tests:run` starts wp-env and Selenium automatically. Integration tests require a WordPress environment (wp-env provides this).
+
+---
+
+## Critical / Must
+
+1. **Build before tests or deploy:** Run `npm run build` so JS/CSS assets exist. Without it, Messages form and other UI may fail.
+2. **Docker for tests:** Integration and e2e tests require Docker. Start Docker Desktop (or equivalent) before `npm run tests:run`.
+3. **Regenerate autoloader:** If you see `Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found`, run `composer generate-autoloader`.
+4. **Lint before commit:** Run `composer run lint:php` and `npm run lint` to avoid CI failures.
+5. **Lockfiles:** Commit `composer.lock` and `package-lock.json`; CI and release builds depend on them.
 
 ---
 
