@@ -58,8 +58,6 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	protected function initialize(): void {
-		$plugin_filter_admin_ui = new PluginFilterAdminUI();
-
 		// get the centralized settings from opsoasis
 		try {
 			$this->settings = $this->get_auto_update_settings();
@@ -74,6 +72,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 				}
 			);
 		}
+
+		$plugin_filter_admin_ui = new PluginFilterAdminUI( $this->settings );
 
 		// setup plugins and core to autoupdate _unless_ it's during specific day/time
 		add_filter( 'auto_update_plugin', array( $this, 'filter_auto_update_specific_times' ), 10, 2 );
@@ -102,7 +102,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		add_filter( 'auto_theme_update_send_email', '__return_true', 11 );
 
 		// "Disable all autoupdates" toggle
-		add_filter( 'auto_update_plugin', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX );
+		add_filter( 'auto_update_plugin', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
 		add_filter( 'auto_update_core', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
 		add_filter( 'auto_update_theme', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
 		add_action( 'admin_init', array( $this, 'output_auto_updates_disabled_admin_notice' ) );
@@ -172,11 +172,16 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * If we have hit the "Disable all autoupdates" toggle switch, or if we can't get the centralized settings, don't autoupdate anything.
 	 *
 	 * @param bool|null $update Whether to update the plugin or not. This can be bool or null as per the docs.
+	 * @param object    $item   The update item object.
 	 *
 	 * @return bool True to update, false to not update.
 	 */
-	public function filter_maybe_disable_all_autoupdates( $update ): bool {
-		if ( isset( $this->settings->disable_all ) ) {
+	public function filter_maybe_disable_all_autoupdates( $update, $item = null ): bool {
+		if ( isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
+			return false;
+		}
+
+		if ( is_object( $item ) && $this->is_plugin_disabled_in_centralized_settings( $item ) ) {
 			return false;
 		}
 
@@ -405,9 +410,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
 	 */
 	public function output_upgrade_message_for_specific_plugins(): void {
-		// check if updates are explicitly blocked for this plugin
 		// don't show if we are already disabling all updates
-		if ( ! function_exists( 'disable_autoupdate_specific_plugins' ) || isset( $this->settings->disable_all ) ) {
+		if ( isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
 			return;
 		}
 
@@ -418,7 +422,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			$plugin_obj        = new \stdClass();
 			$slug              = dirname( $plugin_file );
 			$plugin_obj->slug  = $slug;
-			$plugin_can_update = PluginFilterRules::is_plugin_allowed_to_autoupdate( $plugin_obj );
+			$plugin_obj->plugin = $plugin_file;
+			$plugin_can_update  = ! PluginFilterRules::is_plugin_blocked_from_autoupdates( $plugin_obj, $this->settings );
 			if ( false === $plugin_can_update ) {
 				// add notice next to the "update now" link
 				add_filter(
@@ -444,12 +449,41 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	}
 
 	/**
+	 * Check whether centralized settings disable autoupdates for a plugin item.
+	 *
+	 * @param object $item Plugin update item object.
+	 *
+	 * @return bool
+	 */
+	private function is_plugin_disabled_in_centralized_settings( object $item ): bool {
+		if ( isset( $item->theme ) ) {
+			return false;
+		}
+
+		$plugin_obj = new \stdClass();
+
+		if ( isset( $item->plugin ) && is_string( $item->plugin ) ) {
+			$plugin_obj->plugin = $item->plugin;
+		}
+
+		if ( isset( $item->slug ) && is_string( $item->slug ) ) {
+			$plugin_obj->slug = $item->slug;
+		}
+
+		if ( ! isset( $plugin_obj->plugin ) && ! isset( $plugin_obj->slug ) ) {
+			return false;
+		}
+
+		return PluginFilterRules::is_plugin_disabled_by_centralized_settings( $plugin_obj, $this->settings );
+	}
+
+	/**
 	 * Autoupdates disabled admin notice
 	 */
 	public function output_auto_updates_disabled_admin_notice(): void {
 		// add notice to the top of the screen
 		global $pagenow;
-		if ( 'plugins.php' === $pagenow && isset( $this->settings->disable_all ) ) {
+		if ( 'plugins.php' === $pagenow && isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
 			add_action(
 				'admin_notices',
 				function () {
