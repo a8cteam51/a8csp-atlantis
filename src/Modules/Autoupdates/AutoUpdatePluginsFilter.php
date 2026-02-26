@@ -125,7 +125,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		// Try getting the settings from the transient first
 		$transient_key = 'wpcpmsp_auto_update_settings';
-		$settings      = [];
+		$settings      = get_transient( $transient_key );
 
 		if ( empty( $settings ) ) {
 			$response = wp_safe_remote_get(
