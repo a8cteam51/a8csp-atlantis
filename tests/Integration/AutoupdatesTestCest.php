@@ -87,6 +87,61 @@ class AutoupdatesTestCest {
 	}
 
 	/**
+	 * Plugin-specific centralized settings should disable matching plugin autoupdates only.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function centralized_plugin_blocks_disable_only_selected_plugins( IntegrationTester $i ): void {
+		$module = new AutoUpdatePluginsFilter();
+		$this->set_module_settings(
+			$module,
+			(object) array(
+				'canary_sites'      => array(),
+				'disabled_plugins'  => array(
+					'akismet/akismet.php',
+				),
+			)
+		);
+
+		$blocked_plugin_item = (object) array(
+			'plugin' => 'akismet/akismet.php',
+			'slug'   => 'akismet',
+		);
+		$allowed_plugin_item = (object) array(
+			'plugin' => 'hello-dolly/hello.php',
+			'slug'   => 'hello-dolly',
+		);
+
+		Assert::assertFalse( $module->filter_maybe_disable_all_autoupdates( true, $blocked_plugin_item ) );
+		Assert::assertTrue( $module->filter_maybe_disable_all_autoupdates( true, $allowed_plugin_item ) );
+	}
+
+	/**
+	 * Centrally blocked plugins should not display PAF toggle actions.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function centralized_plugin_blocks_hide_plugin_column_toggle_action( IntegrationTester $i ): void {
+		$this->set_current_user_as_admin();
+
+		$settings = (object) array(
+			'disabled_plugins' => array(
+				'akismet/akismet.php',
+			),
+		);
+
+		$admin_ui = new PluginFilterAdminUI( $settings );
+		$html     = $admin_ui->filter_custom_setting_html( 'Current setting', 'akismet/akismet.php', array() );
+
+		Assert::assertStringContainsString( 'Autoupdates have been explicitly deactivated for this plugin via global OpsOasis settings.', $html );
+		Assert::assertStringNotContainsString( 'Disable PAF updates', $html );
+	}
+
+	/**
 	 * Ensure schedule filters can be controlled through hooks.
 	 *
 	 * @param IntegrationTester $i Tester instance.

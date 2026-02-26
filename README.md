@@ -8,7 +8,7 @@
 - **Requires at least:** 6.5
 - **Tested up to:** 6.8.1
 - **Requires PHP:** 8.3
-- **Stable tag:** 1.0.3
+- **Stable tag:** 1.0.5
 - **License:** GPLv3 or later
 - **License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)
 
@@ -24,6 +24,18 @@ A collection of utilities developed by the WordPress Special Projects team for m
 - **Colophon**: Footer attribution system for site credits ([Readme](./src/Modules/Colophon/README.md))
   
 The plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.  
+
+### Centralized autoupdate settings
+
+The Autoupdates module reads centralized settings from:
+
+- `https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/`
+
+The payload supports:
+
+- `disable_all` to block all automatic updates.
+- `canary_sites` to bypass delay logic on selected sites.
+- `disabled_plugins` to block automatic updates for specific plugins across connected sites.
 
 ## Installation
 

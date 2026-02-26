@@ -11,6 +11,22 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 class PluginFilterAdminUI {
+	/**
+	 * Centralized autoupdate settings payload.
+	 *
+	 * @var \stdClass
+	 */
+	private \stdClass $settings;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param \stdClass|null $settings Centralized settings payload.
+	 */
+	public function __construct( ?\stdClass $settings = null ) {
+		$this->settings = $settings instanceof \stdClass ? $settings : new \stdClass();
+	}
+
 
 	/**
 	 * Customize automatic update setting HTML for plugins page in wp-admin.
@@ -28,19 +44,21 @@ class PluginFilterAdminUI {
 			return $html . $toggle_link_html;
 		}
 
-		// Check if updates are explicitly blocked for this plugin.
-		if ( function_exists( 'disable_autoupdate_specific_plugins' ) ) {
-			$plugin_slug = dirname( $plugin_file );
-			if ( is_array( $plugin_data ) && isset( $plugin_data['TextDomain'] ) && is_string( $plugin_data['TextDomain'] ) && '' !== $plugin_data['TextDomain'] ) {
-				$plugin_slug = sanitize_key( $plugin_data['TextDomain'] );
-			}
+		$plugin_slug = dirname( $plugin_file );
+		if ( is_array( $plugin_data ) && isset( $plugin_data['TextDomain'] ) && is_string( $plugin_data['TextDomain'] ) && '' !== $plugin_data['TextDomain'] ) {
+			$plugin_slug = sanitize_key( $plugin_data['TextDomain'] );
+		}
 
-			$plugin_obj       = new \stdClass();
-			$plugin_obj->slug = $plugin_slug;
+		$plugin_obj         = new \stdClass();
+		$plugin_obj->slug   = $plugin_slug;
+		$plugin_obj->plugin = $plugin_file;
 
-			if ( ! PluginFilterRules::is_plugin_allowed_to_autoupdate( $plugin_obj ) ) {
-				return esc_html__( 'Autoupdates have been explicitly deactivated for this plugin.', 'a8csp-atlantis' ) . $toggle_link_html;
-			}
+		if ( PluginFilterRules::is_plugin_disabled_by_centralized_settings( $plugin_obj, $this->settings ) ) {
+			return esc_html__( 'Autoupdates have been explicitly deactivated for this plugin via global OpsOasis settings.', 'a8csp-atlantis' );
+		}
+
+		if ( PluginFilterRules::is_plugin_blocked_from_autoupdates( $plugin_obj, $this->settings ) ) {
+			return esc_html__( 'Autoupdates have been explicitly deactivated for this plugin.', 'a8csp-atlantis' ) . $toggle_link_html;
 		}
 
 		$managed_message = sprintf(
