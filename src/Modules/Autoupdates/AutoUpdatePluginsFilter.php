@@ -177,7 +177,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_maybe_disable_all_autoupdates( $update, $item = null ): bool {
-		if ( isset( $this->settings->disable_all ) ) {
+		if ( isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
 			return false;
 		}
 
@@ -411,7 +411,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 */
 	public function output_upgrade_message_for_specific_plugins(): void {
 		// don't show if we are already disabling all updates
-		if ( isset( $this->settings->disable_all ) ) {
+		if ( isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
 			return;
 		}
 
@@ -483,7 +483,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	public function output_auto_updates_disabled_admin_notice(): void {
 		// add notice to the top of the screen
 		global $pagenow;
-		if ( 'plugins.php' === $pagenow && isset( $this->settings->disable_all ) ) {
+		if ( 'plugins.php' === $pagenow && isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
 			add_action(
 				'admin_notices',
 				function () {
