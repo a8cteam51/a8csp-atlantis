@@ -27,6 +27,11 @@ class CoreTestCest {
 		wp_set_current_user( $allowed_user_id );
 		Assert::assertTrue( a8csp_atlantis_is_automattician() );
 
+		$mixed_case_allowed_user_id = $this->ensure_admin_user( 'wpcom-admin', 'admin@WordPress.com' );
+		Assert::assertGreaterThan( 0, $mixed_case_allowed_user_id );
+		wp_set_current_user( $mixed_case_allowed_user_id );
+		Assert::assertTrue( a8csp_atlantis_is_automattician() );
+
 		$blocked_user_id = $this->ensure_admin_user( 'site-admin', 'admin@example.com' );
 		Assert::assertGreaterThan( 0, $blocked_user_id );
 		wp_set_current_user( $blocked_user_id );

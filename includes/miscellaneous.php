@@ -20,8 +20,13 @@ function a8csp_atlantis_is_automattician(): bool {
 		return false;
 	}
 
-	$allowed_domains = array( '@a8c.com', '@automattic.com', '@wordpress.com' );
-	$email_domain    = strrchr( $user->user_email, '@' );
+	$allowed_domains = array( 'a8c.com', 'automattic.com', 'wordpress.com' );
+	$email           = strtolower( trim( $user->user_email ) );
+	$email_domain    = strrchr( $email, '@' );
+	if ( false === $email_domain ) {
+		return false;
+	}
+	$email_domain = ltrim( $email_domain, '@' );
 
 	return in_array( $email_domain, $allowed_domains, true );
 }
