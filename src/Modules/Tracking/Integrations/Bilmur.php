@@ -65,23 +65,18 @@ class Bilmur extends AbstractIntegration {
 		// WP Rocket compatibility: prevent "Delay JavaScript Execution" from
 		// blocking the bilmur beacon. The `nowprocket` attribute tells WP Rocket
 		// to skip delaying this script.
-		add_action(
-			'plugins_loaded',
-			static function () {
-				$active_plugins = get_option( 'active_plugins' );
-				if ( is_array( $active_plugins ) && in_array( 'wp-rocket/wp-rocket.php', $active_plugins, true ) ) {
-					add_filter(
-						'wp_script_attributes',
-						static function ( array $attributes ): array {
-							if ( isset( $attributes['id'] ) && 'bilmur-js' === $attributes['id'] ) {
-								$attributes['nowprocket'] = true;
-							}
-							return $attributes;
-						}
-					);
+		$active_plugins = get_option( 'active_plugins' );
+		if ( is_array( $active_plugins ) && in_array( 'wp-rocket/wp-rocket.php', $active_plugins, true ) ) {
+			add_filter(
+				'wp_script_attributes',
+				static function ( array $attributes ): array {
+					if ( isset( $attributes['id'] ) && 'bilmur-js' === $attributes['id'] ) {
+						$attributes['nowprocket'] = true;
+					}
+					return $attributes;
 				}
-			}
-		);
+			);
+		}
 
 		// Output bilmur config as a <meta> tag for the script to pick up.
 		add_action(
