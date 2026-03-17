@@ -24,7 +24,7 @@ class Bilmur extends AbstractIntegration {
 			return false;
 		}
 
-		if ( ! defined( 'WPCOMSP_BILMUR_PROVIDER' ) || ! defined( 'WPCOMSP_BILMUR_SERVICE' ) ) {
+		if ( ! defined( 'WPCOMSP_BILMUR_PROVIDER' ) || ! WPCOMSP_BILMUR_PROVIDER || ! defined( 'WPCOMSP_BILMUR_SERVICE' ) || ! WPCOMSP_BILMUR_SERVICE ) {
 			return false;
 		}
 
