@@ -172,6 +172,11 @@ class ListTable {
 	 * @return  void
 	 */
 	public function handle_bulk_actions(): void {
+		// // Only handle bulk actions on our list screen. WordPress post/CPT saves redirect
+		$page = isset( $_REQUEST['page'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['page'] ) ) : '';
+		if ( 'a8csp-atlantis-messages' !== $page ) {
+			return;
+		}
 		if ( ! isset( $_REQUEST['action'] ) || ! isset( $_REQUEST['message'] ) ) {
 			return;
 		}
