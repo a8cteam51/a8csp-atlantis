@@ -3,7 +3,7 @@
  * The A8CSP Atlantis bootstrap file.
  *
  * @since       1.0.0
- * @version     1.0.7
+ * @version     1.0.8
  * @package     A8C\SpecialProjects\Plugins
  * @author      WordPress.com Special Projects
  * @license     GPL-3.0-or-later
@@ -60,9 +60,15 @@ add_action(
 		}
 
 		$latest_release_info = get_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
-		if ( false === $latest_release_info ) {
+		if (
+			is_array( $latest_release_info ) &&
+			isset( $latest_release_info['tag_name'], $latest_release_info['html_url'], $latest_release_info['assets'][0]['browser_download_url'] )
+		) {
+			$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
+		} elseif ( false === $latest_release_info ) {
 			$latest_release_info = wp_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
 			if ( is_wp_error( $latest_release_info ) || 200 !== wp_remote_retrieve_response_code( $latest_release_info ) ) {
+				set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
 				return $update;
 			}
 
@@ -71,6 +77,7 @@ add_action(
 				! is_array( $latest_release_info ) ||
 				! isset( $latest_release_info['tag_name'], $latest_release_info['html_url'], $latest_release_info['assets'][0]['browser_download_url'] )
 			) {
+				set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
 				return $update;
 			}
 
@@ -79,9 +86,11 @@ add_action(
 				$latest_release_info,
 				HOUR_IN_SECONDS
 			);
+			$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
+		} else {
+			return $update;
 		}
 
-		$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
 		if ( version_compare( $plugin_data['Version'], $latest_release_version, '<' ) ) {
 			$update = array(
 				'slug'    => $plugin_data['TextDomain'],
