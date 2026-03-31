@@ -345,14 +345,17 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return bool
 	 */
 	private function is_within_holiday_window(): bool {
+		$current_year  = gmdate( 'Y' );
+		$new_years_year = 12 === (int) gmdate( 'n' ) ? (int) $current_year + 1 : (int) $current_year;
+
 		$holidays = array(
 			'christmas' => array(
-				'start' => gmdate( 'Y' ) . '-12-23 00:00:00',
-				'end'   => gmdate( 'Y' ) . '-12-31 23:59:59',
+				'start' => $current_year . '-12-23 00:00:00',
+				'end'   => $current_year . '-12-31 23:59:59',
 			),
 			'new_years' => array(
-				'start' => gmdate( 'Y' ) . '-01-01 00:00:00',
-				'end'   => gmdate( 'Y' ) . '-01-02 23:59:59',
+				'start' => $new_years_year . '-01-01 00:00:00',
+				'end'   => $new_years_year . '-01-02 23:59:59',
 			),
 		);
 		$holidays = apply_filters( 'plugin_autoupdate_filter_holidays', $holidays ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
