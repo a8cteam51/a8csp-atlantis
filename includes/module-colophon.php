@@ -19,9 +19,9 @@ if ( ! function_exists( 'team51_credits' ) ) :
 			array(
 				'separator' => ' ',
 				/* translators: %s: WordPress. */
-				'wpcom'     => sprintf( __( 'Designed with %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+				'wpcom'     => sprintf( __( 'Designed with %s.', 'a8csp-atlantis' ), 'WordPress' ),
 				/* translators: %s: Pressable. */
-				'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+				'pressable' => sprintf( __( 'Hosted by %s.', 'a8csp-atlantis' ), 'Pressable' ),
 			)
 		);
 
@@ -104,9 +104,9 @@ if ( ! function_exists( 'team51_credits_shortcode' ) ) :
 		$pairs = array(
 			'separator' => ' ',
 			/* translators: %s: WordPress. */
-			'wpcom'     => sprintf( __( 'Designed with %s.', 'team51' ), 'WordPress' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+			'wpcom'     => sprintf( __( 'Designed with %s.', 'a8csp-atlantis' ), 'WordPress' ),
 			/* translators: %s: Pressable. */
-			'pressable' => sprintf( __( 'Hosted by %s.', 'team51' ), 'Pressable' ), // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch
+			'pressable' => sprintf( __( 'Hosted by %s.', 'a8csp-atlantis' ), 'Pressable' ),
 		);
 
 		$atts = shortcode_atts( $pairs, $atts, 'team51-credits' );
