@@ -37,7 +37,6 @@ define( 'A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY', 'a8csp_atlantis_github_la
 
 // Load the rest of the bootstrap functions.
 require_once A8CSP_ATLANTIS_DIR_PATH . '/functions-bootstrap.php';
-register_activation_hook( __FILE__, 'a8csp_atlantis_maybe_disable_autoupdates_module_on_activation' );
 
 // Load plugin translations so they are available even for the error admin notices.
 add_action(
@@ -121,5 +120,6 @@ if ( is_wp_error( A8CSP_ATLANTIS_REQUIREMENTS ) ) {
 	a8csp_atlantis_output_requirements_error( A8CSP_ATLANTIS_REQUIREMENTS );
 } else {
 	require_once A8CSP_ATLANTIS_DIR_PATH . '/functions.php';
+	register_activation_hook( __FILE__, 'a8csp_atlantis_maybe_disable_autoupdates_module_on_activation' );
 	add_action( 'plugins_loaded', array( a8csp_atlantis_get_plugin_instance(), 'maybe_initialize' ) );
 }
