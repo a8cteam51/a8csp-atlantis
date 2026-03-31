@@ -77,7 +77,7 @@ class Message {
 		return match ( $key ) {
 			'id' => absint( $this->data->id ?? 0 ),
 			'title', 'type', 'status', 'created_at', 'updated_at' => $this->data->$key ?? null,
-			'content' => a8csp_atlantis_decrypt_data( $this->data->content ?? '' ),
+			'content' => $this->decrypt_content(),
 			'locations', 'exclusions' => json_decode( $this->data->$key ?? '{}', true ),
 			default => null,
 		};
@@ -104,7 +104,10 @@ class Message {
 				$this->data->$key = $value;
 				break;
 			case 'content':
-				$this->data->content = a8csp_atlantis_encrypt_data( $value );
+				$encrypted = a8csp_atlantis_encrypt_data( $value );
+				if ( ! is_wp_error( $encrypted ) ) {
+					$this->data->content = $encrypted;
+				}
 				break;
 			case 'locations':
 			case 'exclusions':
@@ -154,6 +157,19 @@ class Message {
 	// region HELPERS
 
 	/**
+	 * Safely decrypts the stored message content.
+	 *
+	 * @since   1.0.9
+	 * @version 1.0.9
+	 *
+	 * @return string The decrypted content, or an empty string on failure.
+	 */
+	protected function decrypt_content(): string {
+		$decrypted = a8csp_atlantis_decrypt_data( $this->data->content ?? '' );
+		return is_wp_error( $decrypted ) ? '' : $decrypted;
+	}
+
+	/**
 	 * Returns the default data structure for a new message.
 	 *
 	 * @since   1.0.0
@@ -162,10 +178,12 @@ class Message {
 	 * @return  \stdClass
 	 */
 	protected function get_default_data(): \stdClass {
+		$encrypted_content = a8csp_atlantis_encrypt_data( '' );
+
 		return (object) array(
 			'id'         => 0,
 			'title'      => '',
-			'content'    => a8csp_atlantis_encrypt_data( '' ),
+			'content'    => is_wp_error( $encrypted_content ) ? '' : $encrypted_content,
 			'type'       => 'info',
 			'status'     => 'active',
 			'locations'  => wp_json_encode( array() ),
