@@ -54,9 +54,9 @@ class Notifications {
 				wp_add_inline_script(
 					'wp-edit-post',
 					wp_sprintf(
-						'wp.data.dispatch("core/notices").createNotice("%s", %s, { isDismissible: false, __unstableHTML: true });',
+						'wp.data.dispatch("core/notices").createNotice("%s", %s, { isDismissible: false });',
 						$message->type,
-						wp_json_encode( wp_kses_post( $message->content ) )
+						wp_json_encode( wp_strip_all_tags( $message->content ) )
 					)
 				);
 			} else {
