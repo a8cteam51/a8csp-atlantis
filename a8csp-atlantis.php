@@ -66,7 +66,14 @@ add_action(
 		) {
 			$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
 		} elseif ( false === $latest_release_info ) {
-			$latest_release_info = wp_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
+			$latest_release_info = wp_remote_get(
+				'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest',
+				array(
+					'headers' => array(
+						'User-Agent' => 'A8CSP-Atlantis',
+					),
+				)
+			);
 			if ( is_wp_error( $latest_release_info ) || 200 !== wp_remote_retrieve_response_code( $latest_release_info ) ) {
 				set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
 				return $update;
