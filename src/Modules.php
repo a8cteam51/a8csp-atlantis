@@ -45,14 +45,38 @@ class Modules {
 	public function initialize(): void {
 		add_action( 'a8csp/atlantis/admin_menu_registered', array( $this, 'register_admin_menu' ) );
 
-		$this->modules = array(
-			'messages'    => new Messages(),
-			'colophon'    => new Colophon(),
-			'tracking'    => new Tracking(),
-			'autoupdates' => new AutoUpdatePluginsFilter(),
-		);
-		foreach ( $this->modules as $module ) {
+		$this->modules = array();
+		$this->try_initialize_module( 'messages', static fn() => new Messages() );
+		$this->try_initialize_module( 'colophon', static fn() => new Colophon() );
+		$this->try_initialize_module( 'tracking', static fn() => new Tracking() );
+		$this->try_initialize_module( 'autoupdates', static fn() => new AutoUpdatePluginsFilter() );
+	}
+
+	/**
+	 * Attempts to initialize a module, catching any errors to prevent
+	 * a single module failure from breaking the entire plugin.
+	 *
+	 * @since   1.0.9
+	 * @version 1.0.9
+	 *
+	 * @param string                     $key     The module key.
+	 * @param callable(): AbstractModule $factory A callable that creates the module instance.
+	 *
+	 * @return void
+	 */
+	private function try_initialize_module( string $key, callable $factory ): void {
+		try {
+			$module = $factory();
 			$module->maybe_initialize();
+			$this->modules[ $key ] = $module;
+		} catch ( \Throwable $throwable ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				sprintf(
+					'[A8CSP Atlantis] Failed to initialize module "%s": %s',
+					$key,
+					$throwable->getMessage()
+				)
+			);
 		}
 	}
 
