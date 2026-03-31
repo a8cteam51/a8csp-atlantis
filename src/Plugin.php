@@ -77,8 +77,8 @@ class Plugin {
 	 *
 	 * @return  void
 	 */
-	public function __wakeup() {
-		/* Empty on purpose. */
+	private function __wakeup(): void {
+		throw new \RuntimeException( 'Cannot unserialize a singleton.' );
 	}
 
 	// endregion
