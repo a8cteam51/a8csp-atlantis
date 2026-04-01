@@ -117,7 +117,7 @@ function a8csp_atlantis_validate_requirements() {
 		$plugin_metadata['RequiresPHP'] = '8.3';
 	}
 	if ( ! isset( $plugin_metadata['RequiresWP'] ) || '' === $plugin_metadata['RequiresWP'] ) {
-		$plugin_metadata['RequiresWP'] = '6.7';
+		$plugin_metadata['RequiresWP'] = '6.8';
 	}
 
 	$is_php_compatible = a8csp_atlantis_is_php_version_compatible( $plugin_metadata['RequiresPHP'] );
