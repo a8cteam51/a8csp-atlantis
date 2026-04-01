@@ -26,9 +26,19 @@ class Modules {
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 *
-	 * @var array<string, ?AbstractModule>
+	 * @var array<string, AbstractModule>
 	 */
-	public array $modules;
+	public array $modules = array();
+
+	/**
+	 * Module initialization errors.
+	 *
+	 * @since   1.0.10
+	 * @version 1.0.10
+	 *
+	 * @var array<string, \WP_Error>
+	 */
+	private array $module_errors = array();
 
 	// endregion
 
@@ -44,8 +54,8 @@ class Modules {
 	 */
 	public function initialize(): void {
 		add_action( 'a8csp/atlantis/admin_menu_registered', array( $this, 'register_admin_menu' ) );
+		add_action( 'admin_notices', array( $this, 'render_module_errors' ) );
 
-		$this->modules = array();
 		$this->try_initialize_module( 'messages', static fn() => new Messages() );
 		$this->try_initialize_module( 'colophon', static fn() => new Colophon() );
 		$this->try_initialize_module( 'tracking', static fn() => new Tracking() );
@@ -70,6 +80,16 @@ class Modules {
 			$module->maybe_initialize();
 			$this->modules[ $key ] = $module;
 		} catch ( \Throwable $throwable ) {
+			$this->module_errors[ $key ] = new \WP_Error(
+				'module_initialization_failed',
+				sprintf(
+					/* translators: 1: Module key, 2: Error message */
+					__( 'Failed to initialize Atlantis module "%1$s": %2$s', 'a8csp-atlantis' ),
+					$key,
+					$throwable->getMessage()
+				)
+			);
+
 			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				sprintf(
 					'[A8CSP Atlantis] Failed to initialize module "%s": %s',
@@ -83,6 +103,23 @@ class Modules {
 	// endregion
 
 	// region HOOKS
+
+	/**
+	 * Render admin notices for module initialization failures.
+	 *
+	 * @since   1.0.10
+	 * @version 1.0.10
+	 *
+	 * @return  void
+	 */
+	public function render_module_errors(): void {
+		foreach ( $this->module_errors as $error ) {
+			wp_admin_notice(
+				esc_html( $error->get_error_message() ),
+				array( 'type' => 'error' )
+			);
+		}
+	}
 
 	/**
 	 * Registers a submenu page for the Atlantis Modules settings.
