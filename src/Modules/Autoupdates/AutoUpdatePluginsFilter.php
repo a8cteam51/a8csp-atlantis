@@ -419,9 +419,9 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		foreach ( array_keys( $all_plugins ) as $plugin_file ) {
 			// create a fake object to feed to disable_autoupdate_specific_plugins
-			$plugin_obj        = new \stdClass();
-			$slug              = dirname( $plugin_file );
-			$plugin_obj->slug  = $slug;
+			$plugin_obj         = new \stdClass();
+			$slug               = dirname( $plugin_file );
+			$plugin_obj->slug   = $slug;
 			$plugin_obj->plugin = $plugin_file;
 			$plugin_can_update  = ! PluginFilterRules::is_plugin_blocked_from_autoupdates( $plugin_obj, $this->settings );
 			if ( false === $plugin_can_update ) {

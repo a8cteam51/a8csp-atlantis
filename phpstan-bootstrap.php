@@ -4,5 +4,7 @@ define( 'A8CSP_ATLANTIS_BASENAME', 'a8csp-atlantis/a8csp-atlantis.php' );
 define( 'A8CSP_ATLANTIS_DIR_PATH', __DIR__ . '/' );
 define( 'A8CSP_ATLANTIS_DIR_URL', '/wp-content/plugins/a8csp-atlantis' );
 define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', 'abcdefghijklmnopqrstuvwxyz0123456789' );
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
 define( 'WPCOMSP_BILMUR_PROVIDER', 'wpcloud' );
+// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
 define( 'WPCOMSP_BILMUR_SERVICE', 'pressable.com' );
