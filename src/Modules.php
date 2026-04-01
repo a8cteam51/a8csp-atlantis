@@ -33,8 +33,8 @@ class Modules {
 	/**
 	 * Module initialization errors.
 	 *
-	 * @since   1.0.10
-	 * @version 1.0.10
+	 * @since   1.0.9
+	 * @version 1.0.9
 	 *
 	 * @var array<string, \WP_Error>
 	 */
@@ -107,8 +107,8 @@ class Modules {
 	/**
 	 * Render admin notices for module initialization failures.
 	 *
-	 * @since   1.0.10
-	 * @version 1.0.10
+	 * @since   1.0.9
+	 * @version 1.0.9
 	 *
 	 * @return  void
 	 */
