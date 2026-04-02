@@ -7,7 +7,7 @@
 - **Tags:** auto-updates, tracking, messages, colophon, site-management
 - **Requires at least:** 6.5
 - **Tested up to:** 6.8.1
-- **Requires PHP:** 8.3
+- **Requires PHP:** 8.2
 - **Stable tag:** 1.0.9
 - **License:** GPLv3 or later
 - **License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)

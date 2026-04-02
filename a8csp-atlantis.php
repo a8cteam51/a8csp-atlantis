@@ -18,7 +18,7 @@
  * Version:                 1.0.9
  * Requires at least:       6.8
  * Tested up to:            6.8.1
- * Requires PHP:            8.3
+ * Requires PHP:            8.2
  * Author:                  Automattic Special Projects
  * Author URI:              https://specialprojects.automattic.com
  * License:                 GPL v3 or later

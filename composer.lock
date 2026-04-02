@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1b83e4342485a9f2de2232f5ad964589",
+    "content-hash": "be7b97c98f069a482ada68d11bd62857",
     "packages": [],
     "packages-dev": [
         {
@@ -24,7 +24,7 @@
             "require": {
                 "ext-json": "*",
                 "johnbillion/wp-compat": "^1",
-                "php": ">=8.3",
+                "php": ">=8.2",
                 "phpcompatibility/phpcompatibility-wp": "*",
                 "phpmd/phpmd": "^2",
                 "phpstan/extension-installer": "^1",
@@ -8326,7 +8326,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=8.3",
+        "php": ">=8.2",
         "ext-json": "*"
     },
     "platform-dev": {},

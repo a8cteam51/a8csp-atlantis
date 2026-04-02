@@ -14,7 +14,7 @@ This file provides AI coding assistants with the context they need to work effec
 
 **Text domain:** `a8csp-atlantis`  
 **Namespace:** `A8C\SpecialProjects\Atlantis\`  
-**Requires:** WordPress 6.8+, PHP 8.3+
+**Requires:** WordPress 6.8+, PHP 8.2+
 
 ---
 
@@ -100,7 +100,7 @@ On activation, Atlantis checks legacy `plugin-autoupdate-filter` state:
 
 | Requirement | Version |
 | ----------- | ------- |
-| PHP | 8.3+ |
+| PHP | 8.2+ |
 | Node.js | 20+ |
 | npm | 10+ |
 | Docker | Required for integration and end-to-end tests |

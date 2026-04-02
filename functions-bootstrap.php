@@ -114,7 +114,7 @@ function a8csp_atlantis_is_php_version_compatible( $min_php_version ) {
 function a8csp_atlantis_validate_requirements() {
 	$plugin_metadata = a8csp_atlantis_get_plugin_metadata();
 	if ( ! isset( $plugin_metadata['RequiresPHP'] ) || '' === $plugin_metadata['RequiresPHP'] ) {
-		$plugin_metadata['RequiresPHP'] = '8.3';
+		$plugin_metadata['RequiresPHP'] = '8.2';
 	}
 	if ( ! isset( $plugin_metadata['RequiresWP'] ) || '' === $plugin_metadata['RequiresWP'] ) {
 		$plugin_metadata['RequiresWP'] = '6.8';

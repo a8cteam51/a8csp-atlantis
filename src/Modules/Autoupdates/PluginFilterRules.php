@@ -17,7 +17,7 @@ class PluginFilterRules {
 	 *
 	 * @var string
 	 */
-	public const string DISABLED_PLUGIN_FILTERS_OPTION = 'plugin_autoupdate_filter_disabled_plugins';
+	public const DISABLED_PLUGIN_FILTERS_OPTION = 'plugin_autoupdate_filter_disabled_plugins';
 
 	/**
 	 * Get a normalized list of plugin files for which filter logic is disabled.
