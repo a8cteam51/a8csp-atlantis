@@ -28,7 +28,8 @@
   ],
   "require": {
     "php": ">=8.3",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-sodium": "*"
   },
   "require-dev": {
     "a8cteam51/team51-configs": "dev-trunk",
