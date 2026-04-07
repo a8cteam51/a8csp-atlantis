@@ -21,7 +21,7 @@ class CustomTable {
 	 *
 	 * @var string
 	 */
-	protected const string TABLE_NAME = 'a8csp_atlantis_messages';
+	protected const TABLE_NAME = 'a8csp_atlantis_messages';
 
 	/**
 	 * Current schema version.
@@ -29,7 +29,7 @@ class CustomTable {
 	 *
 	 * @var string Current schema version
 	 */
-	protected const string SCHEMA_VERSION = '1.0.0';
+	protected const SCHEMA_VERSION = '1.0.0';
 
 	// endregion
 
