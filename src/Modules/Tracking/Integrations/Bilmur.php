@@ -57,7 +57,7 @@ class Bilmur extends AbstractIntegration {
 	/**
 	 * Check if wpcomsh is handling Bilmur output.
 	 *
-	 * wpcomsh hooks its Bilmur output at wp_footer. If this function exists
+	 * Wpcomsh hooks its Bilmur output at wp_footer. If this function exists
 	 * and is hooked, we should not output our own script/meta tag.
 	 *
 	 * @since   1.2.0
@@ -145,7 +145,7 @@ class Bilmur extends AbstractIntegration {
 		add_action(
 			'wp_footer',
 			static function () {
-				$custom_properties = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
+				$custom_properties = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) && is_array( WPCOMSP_BILMUR_CUSTOM_PROPERTIES ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
 
 				$custom_properties['woo_active'] = class_exists( 'WooCommerce' ) ? '1' : '0';
 
