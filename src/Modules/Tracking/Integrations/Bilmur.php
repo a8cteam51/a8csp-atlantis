@@ -10,16 +10,24 @@ defined( 'ABSPATH' ) || exit;
  * Bilmur RUM Integration class.
  *
  * @since   1.0.0
- * @version 1.1.0
+ * @version 1.2.0
  */
 class Bilmur extends AbstractIntegration {
 	/**
 	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
-	 * @version 1.1.0
+	 * @version 1.2.0
 	 */
 	public function is_active(): bool {
+		// On sites where wpcomsh handles Bilmur, we only need custom properties defined.
+		if ( self::is_wpcomsh_bilmur_active() ) {
+			return defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' )
+				&& is_array( WPCOMSP_BILMUR_CUSTOM_PROPERTIES )
+				&& array() !== WPCOMSP_BILMUR_CUSTOM_PROPERTIES;
+		}
+
+		// On non-wpcomsh sites (Pressable), require explicit opt-in.
 		if ( ! defined( 'WPCOMSP_BILMUR_TRACKING' ) || ! WPCOMSP_BILMUR_TRACKING ) {
 			return false;
 		}
@@ -35,9 +43,64 @@ class Bilmur extends AbstractIntegration {
 	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
-	 * @version 1.1.0
+	 * @version 1.2.0
 	 */
 	protected function initialize(): void {
+		// Always register the wpcomsh filter for Atomic compatibility (harmless on non-Atomic sites).
+		add_filter( 'wpcomsh_rum_kv', array( self::class, 'filter_wpcomsh_rum_kv' ), 10, 2 );
+
+		if ( ! self::is_wpcomsh_bilmur_active() ) {
+			$this->initialize_bilmur_output();
+		}
+	}
+
+	/**
+	 * Check if wpcomsh is handling Bilmur output.
+	 *
+	 * wpcomsh hooks its Bilmur output at wp_footer. If this function exists
+	 * and is hooked, we should not output our own script/meta tag.
+	 *
+	 * @since   1.2.0
+	 * @version 1.2.0
+	 *
+	 * @return bool
+	 */
+	private static function is_wpcomsh_bilmur_active(): bool {
+		return function_exists( 'wpcomsh_footer_rum_js' )
+			&& false !== has_action( 'wp_footer', 'wpcomsh_footer_rum_js' );
+	}
+
+	/**
+	 * Filter wpcomsh RUM key-value pairs to add custom properties on Atomic sites.
+	 *
+	 * This filter is provided by wpcomsh and allows us to inject custom properties
+	 * into the Bilmur data without duplicating the script or meta tag.
+	 *
+	 * @since   1.2.0
+	 * @version 1.2.0
+	 *
+	 * @param array<string, string> $kv      The existing key-value pairs.
+	 * @param string                $service The bilmur service name.
+	 *
+	 * @return array<string, string> The modified key-value pairs.
+	 */
+	public static function filter_wpcomsh_rum_kv( array $kv, string $service ): array {
+		$custom_properties = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
+
+		if ( is_array( $custom_properties ) ) {
+			$kv = array_merge( $kv, $custom_properties );
+		}
+
+		return $kv;
+	}
+
+	/**
+	 * Initialize Bilmur script and meta tag output for non-wpcomsh sites.
+	 *
+	 * @since   1.2.0
+	 * @version 1.2.0
+	 */
+	private function initialize_bilmur_output(): void {
 		add_action(
 			'wp_enqueue_scripts',
 			static function () {
