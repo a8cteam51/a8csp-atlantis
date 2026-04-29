@@ -14,17 +14,27 @@ defined( 'ABSPATH' ) || exit;
  */
 class Bilmur extends AbstractIntegration {
 	/**
+	 * Custom properties to inject into wpcomsh's Bilmur RUM data on Atomic sites.
+	 *
+	 * @since   1.2.0
+	 * @version 1.2.0
+	 *
+	 * @var array<string, string>
+	 */
+	private static array $wpcomsh_custom_properties = array(
+		'wpcomsp' => '1',
+	);
+
+	/**
 	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
 	 * @version 1.2.0
 	 */
 	public function is_active(): bool {
-		// On sites where wpcomsh handles Bilmur, we only need custom properties defined.
+		// On Atomic sites where wpcomsh handles Bilmur, always activate to register the filter.
 		if ( self::is_wpcomsh_bilmur_active() ) {
-			return defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' )
-				&& is_array( WPCOMSP_BILMUR_CUSTOM_PROPERTIES )
-				&& array() !== WPCOMSP_BILMUR_CUSTOM_PROPERTIES;
+			return true;
 		}
 
 		// On non-wpcomsh sites (Pressable), require explicit opt-in.
@@ -85,13 +95,7 @@ class Bilmur extends AbstractIntegration {
 	 * @return array<string, string> The modified key-value pairs.
 	 */
 	public static function filter_wpcomsh_rum_kv( array $kv, string $service ): array {
-		$custom_properties = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
-
-		if ( is_array( $custom_properties ) ) {
-			$kv = array_merge( $kv, $custom_properties );
-		}
-
-		return $kv;
+		return array_merge( $kv, self::$wpcomsh_custom_properties );
 	}
 
 	/**
