@@ -2,6 +2,8 @@
 
 namespace A8C\SpecialProjects\Atlantis;
 
+use A8C\SpecialProjects\Atlantis\REST\Status_Controller;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -42,6 +44,16 @@ class Plugin {
 	 * @var Settings
 	 */
 	public Settings $settings;
+
+	/**
+	 * The status REST controller.
+	 *
+	 * @since   1.2.0
+	 * @version 1.2.0
+	 *
+	 * @var Status_Controller
+	 */
+	public Status_Controller $status_controller;
 
 	// endregion
 
@@ -132,6 +144,9 @@ class Plugin {
 
 		$this->settings = new Settings();
 		$this->settings->initialize();
+
+		$this->status_controller = new Status_Controller();
+		$this->status_controller->initialize();
 	}
 
 	// endregion
