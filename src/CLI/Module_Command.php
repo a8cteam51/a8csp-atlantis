@@ -24,8 +24,8 @@ defined( 'ABSPATH' ) || exit;
  *     # Get a single module's state as JSON for scripting.
  *     $ wp atlantis module status autoupdates --format=json
  *
- * @since   1.3.0
- * @version 1.3.0
+ * @since   1.2.0
+ * @version 1.2.0
  */
 class Module_Command {
 	/**
@@ -210,6 +210,7 @@ class Module_Command {
 			$module = $modules[ $key ];
 			if ( $module->is_active() === $enabled ) {
 				\WP_CLI::log( \sprintf( "Module '%s' is already %s.", $key, $verb_ing ) );
+				$this->maybe_warn_environment_disabled( $key, $module, $enabled );
 				continue;
 			}
 
@@ -221,15 +222,34 @@ class Module_Command {
 			}
 
 			\WP_CLI::success( \sprintf( "Module '%s' %s.", $key, $verb_past ) );
-
-			$environment = $module->is_disabled();
-			if ( $enabled && \is_wp_error( $environment ) ) {
-				\WP_CLI::warning( \sprintf( "Module '%s' is environmentally disabled and will stay dormant: %s", $key, $environment->get_error_message() ) );
-			}
+			$this->maybe_warn_environment_disabled( $key, $module, $enabled );
 		}
 
 		if ( 0 < $failures ) {
 			\WP_CLI::halt( 1 );
+		}
+	}
+
+	/**
+	 * Emits a warning when activating a module that is environmentally disabled.
+	 *
+	 * Fired regardless of whether `set_enabled()` changed the stored flag, so
+	 * users see the warning even when the module is already "active" in settings.
+	 *
+	 * @param string         $key     Module key.
+	 * @param AbstractModule $module  Module instance.
+	 * @param bool           $enabled Target state passed to bulk_set_enabled().
+	 *
+	 * @return void
+	 */
+	private function maybe_warn_environment_disabled( string $key, AbstractModule $module, bool $enabled ): void {
+		if ( ! $enabled ) {
+			return;
+		}
+
+		$environment = $module->is_disabled();
+		if ( \is_wp_error( $environment ) ) {
+			\WP_CLI::warning( \sprintf( "Module '%s' is environmentally disabled and will stay dormant: %s", $key, $environment->get_error_message() ) );
 		}
 	}
 

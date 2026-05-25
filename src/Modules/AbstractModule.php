@@ -82,8 +82,8 @@ abstract class AbstractModule {
 	 * toggled — the module just stays dormant at runtime, matching the admin
 	 * settings UI's behavior.
 	 *
-	 * @since   1.3.0
-	 * @version 1.3.0
+	 * @since   1.2.0
+	 * @version 1.2.0
 	 *
 	 * @param   bool $enabled Whether the module should be marked enabled.
 	 *

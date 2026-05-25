@@ -4,6 +4,7 @@ namespace A8C\SpecialProjects\Atlantis\CLI;
 
 use A8C\SpecialProjects\Atlantis\Message;
 use A8C\SpecialProjects\Atlantis\Message_Query;
+use A8C\SpecialProjects\Atlantis\Modules\Messages\CustomTable;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -24,8 +25,8 @@ defined( 'ABSPATH' ) || exit;
  *     # Inspect a single message including its decrypted content.
  *     $ wp atlantis message get 42 --fields=id,title,type,status,content
  *
- * @since   1.3.0
- * @version 1.3.0
+ * @since   1.2.0
+ * @version 1.2.0
  */
 class Message_Command {
 	/**
@@ -139,13 +140,20 @@ class Message_Command {
 	 * @param array<string, string|bool> $assoc_args Flags.
 	 */
 	public function list_( array $args, array $assoc_args ): void {
+		$this->require_messages_table();
+
 		$full = isset( $assoc_args['full'] ) && true === $assoc_args['full'];
+
+		$per_page = isset( $assoc_args['per_page'] ) ? (int) $assoc_args['per_page'] : ( $full ? -1 : 20 );
+		if ( 0 === $per_page || $per_page < -1 ) {
+			\WP_CLI::error( '--per_page must be a positive integer or -1 (no limit).' );
+		}
 
 		$query_args = array(
 			'type'     => $assoc_args['type'] ?? null,
 			'status'   => $assoc_args['status'] ?? null,
 			'search'   => (string) ( $assoc_args['search'] ?? '' ),
-			'per_page' => isset( $assoc_args['per_page'] ) ? (int) $assoc_args['per_page'] : ( $full ? -1 : 20 ),
+			'per_page' => $per_page,
 			'paged'    => (int) ( $assoc_args['paged'] ?? 1 ),
 			'orderby'  => (string) ( $assoc_args['orderby'] ?? 'created_at' ),
 			'order'    => (string) ( $assoc_args['order'] ?? 'DESC' ),
@@ -194,6 +202,8 @@ class Message_Command {
 	 * @param array<string, string|bool> $assoc_args Flags.
 	 */
 	public function get( array $args, array $assoc_args ): void {
+		$this->require_messages_table();
+
 		$id = (int) ( $args[0] ?? 0 );
 		if ( 0 >= $id ) {
 			\WP_CLI::error( 'A positive integer message ID is required.' );
@@ -213,6 +223,18 @@ class Message_Command {
 	// endregion
 
 	// region HELPERS
+
+	/**
+	 * Bails with a clean `WP_CLI::error()` when the messages table is missing,
+	 * preventing a downstream `$wpdb` null result from blowing up `Message_Query`.
+	 *
+	 * @return void
+	 */
+	private function require_messages_table(): void {
+		if ( ! CustomTable::table_exists() ) {
+			\WP_CLI::error( 'The Atlantis messages table does not exist on this site. The Messages module may have failed to initialise.' );
+		}
+	}
 
 	/**
 	 * Resolves and validates the requested field list.
