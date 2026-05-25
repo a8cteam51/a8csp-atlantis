@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis\REST;
 
 use A8C\SpecialProjects\Atlantis\Message_Query;
+use A8C\SpecialProjects\Atlantis\Modules\Messages\CustomTable;
 use A8C\SpecialProjects\Atlantis\Plugin;
 
 defined( 'ABSPATH' ) || exit;
@@ -67,9 +68,14 @@ class Status_Controller {
 	 * Permission check: only site admins (or equivalents authenticated via
 	 * Jetpack-tunneled WPCOM calls) may read the status.
 	 *
+	 * @phpstan-param \WP_REST_Request<array<string, mixed>> $request
+	 *
+	 * @param \WP_REST_Request $request The REST request (unused; declared for the
+	 *                                  conventional REST callback signature).
+	 *
 	 * @return true|\WP_Error
 	 */
-	public function get_item_permissions_check(): true|\WP_Error {
+	public function get_item_permissions_check( \WP_REST_Request $request ): true|\WP_Error { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		if ( ! \current_user_can( 'manage_options' ) ) {
 			return new \WP_Error(
 				'rest_forbidden',
@@ -84,9 +90,14 @@ class Status_Controller {
 	/**
 	 * Returns the plugin and module status payload.
 	 *
+	 * @phpstan-param \WP_REST_Request<array<string, mixed>> $request
+	 *
+	 * @param \WP_REST_Request $request The REST request (unused; declared for the
+	 *                                  conventional REST callback signature).
+	 *
 	 * @return \WP_REST_Response
 	 */
-	public function get_item(): \WP_REST_Response {
+	public function get_item( \WP_REST_Request $request ): \WP_REST_Response { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		$modules = array();
 
 		foreach ( Plugin::get_instance()->modules->modules as $key => $module ) {
@@ -117,6 +128,10 @@ class Status_Controller {
 	 * @return int
 	 */
 	private function count_messages(): int {
+		if ( ! CustomTable::table_exists() ) {
+			return 0;
+		}
+
 		try {
 			$query = new Message_Query( array( 'per_page' => 1 ) );
 			return $query->found_rows;
