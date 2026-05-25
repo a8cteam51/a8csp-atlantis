@@ -2,6 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis\REST;
 
+use A8C\SpecialProjects\Atlantis\Message_Query;
 use A8C\SpecialProjects\Atlantis\Plugin;
 
 defined( 'ABSPATH' ) || exit;
@@ -95,6 +96,10 @@ class Status_Controller {
 			);
 		}
 
+		if ( isset( $modules['messages'] ) ) {
+			$modules['messages']['count'] = $this->count_messages();
+		}
+
 		return \rest_ensure_response(
 			array(
 				'plugin'  => array(
@@ -103,6 +108,21 @@ class Status_Controller {
 				'modules' => $modules,
 			)
 		);
+	}
+
+	/**
+	 * Returns the number of stored custom messages, or 0 if the count cannot
+	 * be determined (table missing, module failed to initialise, etc.).
+	 *
+	 * @return int
+	 */
+	private function count_messages(): int {
+		try {
+			$query = new Message_Query( array( 'per_page' => 1 ) );
+			return $query->found_rows;
+		} catch ( \Throwable $t ) {
+			return 0;
+		}
 	}
 
 	// endregion
