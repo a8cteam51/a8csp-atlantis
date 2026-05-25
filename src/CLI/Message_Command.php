@@ -71,10 +71,7 @@ class Message_Command {
 	 * : Substring match across title, type, status, locations, exclusions.
 	 *
 	 * [--per_page=<n>]
-	 * : Maximum rows to return. Use -1 for no limit.
-	 * ---
-	 * default: 20
-	 * ---
+	 * : Maximum rows to return. Defaults to 20. Use -1 for no limit.
 	 *
 	 * [--paged=<n>]
 	 * : Page number when paginating.
@@ -109,9 +106,7 @@ class Message_Command {
 	 * [--fields=<fields>]
 	 * : Comma-separated list of fields to show. Available: id, title, type,
 	 *   status, content, locations, exclusions, created_at, updated_at.
-	 * ---
-	 * default: id,title,type,status,created_at
-	 * ---
+	 *   Defaults to id,title,type,status,created_at (or all fields with --full).
 	 *
 	 * [--format=<format>]
 	 * : Render output in the given format.
@@ -126,11 +121,17 @@ class Message_Command {
 	 *   - ids
 	 * ---
 	 *
+	 * [--full]
+	 * : Shortcut for "all messages, all columns" — equivalent to
+	 *   `--per_page=-1 --fields=id,title,type,status,content,locations,exclusions,created_at,updated_at`.
+	 *   Explicit `--per_page` or `--fields` overrides the corresponding default.
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     $ wp atlantis message list
 	 *     $ wp atlantis message list --type=warning --format=json
 	 *     $ wp atlantis message list --per_page=-1 --fields=id,title
+	 *     $ wp atlantis message list --full --format=json
 	 *
 	 * @subcommand list
 	 *
@@ -138,11 +139,13 @@ class Message_Command {
 	 * @param array<string, string|bool> $assoc_args Flags.
 	 */
 	public function list_( array $args, array $assoc_args ): void {
+		$full = isset( $assoc_args['full'] ) && true === $assoc_args['full'];
+
 		$query_args = array(
 			'type'     => $assoc_args['type'] ?? null,
 			'status'   => $assoc_args['status'] ?? null,
 			'search'   => (string) ( $assoc_args['search'] ?? '' ),
-			'per_page' => (int) ( $assoc_args['per_page'] ?? 20 ),
+			'per_page' => isset( $assoc_args['per_page'] ) ? (int) $assoc_args['per_page'] : ( $full ? -1 : 20 ),
 			'paged'    => (int) ( $assoc_args['paged'] ?? 1 ),
 			'orderby'  => (string) ( $assoc_args['orderby'] ?? 'created_at' ),
 			'order'    => (string) ( $assoc_args['order'] ?? 'DESC' ),
@@ -150,7 +153,7 @@ class Message_Command {
 
 		$query = new Message_Query( $query_args );
 
-		$fields = $this->resolve_fields( $assoc_args );
+		$fields = $this->resolve_fields( $assoc_args, $full ? self::AVAILABLE_FIELDS : self::DEFAULT_FIELDS );
 		$rows   = \array_map( fn( Message $m ) => $this->message_to_row( $m, $fields ), $query->get_results() );
 
 		$formatter = new \WP_CLI\Formatter( $assoc_args, $fields );
@@ -202,7 +205,7 @@ class Message_Command {
 			\WP_CLI::error( \sprintf( 'No message found with ID %d.', $id ) );
 		}
 
-		$fields    = $this->resolve_fields( $assoc_args );
+		$fields    = $this->resolve_fields( $assoc_args, self::DEFAULT_FIELDS );
 		$formatter = new \WP_CLI\Formatter( $assoc_args, $fields );
 		$formatter->display_items( array( $this->message_to_row( $message, $fields ) ) );
 	}
@@ -215,13 +218,14 @@ class Message_Command {
 	 * Resolves and validates the requested field list.
 	 *
 	 * @param array<string, string|bool> $assoc_args Flags.
+	 * @param array<int, string>         $defaults   Fields to use when `--fields` is absent.
 	 *
 	 * @return array<int, string>
 	 */
-	private function resolve_fields( array $assoc_args ): array {
+	private function resolve_fields( array $assoc_args, array $defaults ): array {
 		$fields = isset( $assoc_args['fields'] )
 			? \array_map( 'trim', \explode( ',', (string) $assoc_args['fields'] ) )
-			: self::DEFAULT_FIELDS;
+			: $defaults;
 
 		$unknown = \array_diff( $fields, self::AVAILABLE_FIELDS );
 		if ( 0 < \count( $unknown ) ) {
