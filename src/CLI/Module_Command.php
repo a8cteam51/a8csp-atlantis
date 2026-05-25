@@ -33,7 +33,7 @@ class Module_Command {
 	 *
 	 * @var array<int, string>
 	 */
-	private const DEFAULT_FIELDS = array( 'key', 'name', 'enabled', 'mandatory', 'environment' );
+	private const DEFAULT_FIELDS = array( 'key', 'status', 'environment' );
 
 	// region SUBCOMMANDS
 
@@ -45,7 +45,7 @@ class Module_Command {
 	 * [--fields=<fields>]
 	 * : Comma-separated list of fields to show.
 	 * ---
-	 * default: key,name,enabled,mandatory,environment
+	 * default: key,status,environment
 	 * ---
 	 *
 	 * [--format=<format>]
@@ -63,15 +63,15 @@ class Module_Command {
 	 * ## AVAILABLE FIELDS
 	 *
 	 * * key         - Module identifier used by activate/deactivate.
-	 * * name        - Human-readable module name.
-	 * * enabled     - Whether the module is currently active.
-	 * * mandatory   - Whether the module is mandatory (cannot be disabled).
+	 * * status      - "Active" or "Inactive".
+	 * * name        - Human-readable module name (opt-in).
+	 * * mandatory   - Whether the module is mandatory and cannot be disabled (opt-in).
 	 * * environment - Reason the module is blocked by environment, if any.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     $ wp atlantis module list
-	 *     $ wp atlantis module list --fields=key,enabled --format=csv
+	 *     $ wp atlantis module list --fields=key,status --format=csv
 	 *
 	 * @subcommand list
 	 *
@@ -103,7 +103,7 @@ class Module_Command {
 	 * [--fields=<fields>]
 	 * : Comma-separated list of fields to show.
 	 * ---
-	 * default: key,name,enabled,mandatory,environment
+	 * default: key,status,environment
 	 * ---
 	 *
 	 * [--format=<format>]
@@ -276,8 +276,8 @@ class Module_Command {
 
 		return array(
 			'key'         => $key,
+			'status'      => $module->is_active() ? 'Active' : 'Inactive',
 			'name'        => $module->get_name(),
-			'enabled'     => $module->is_active(),
 			'mandatory'   => $module->is_mandatory(),
 			'environment' => \is_wp_error( $environment ) ? $environment->get_error_message() : '',
 		);
