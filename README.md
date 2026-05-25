@@ -5,7 +5,7 @@
 
 - **Contributors:** wpcomspecialprojects
 - **Tags:** auto-updates, tracking, messages, colophon, site-management
-- **Requires at least:** 6.5
+- **Requires at least:** 6.8
 - **Tested up to:** 7.0
 - **Requires PHP:** 8.2
 - **Stable tag:** 1.2.0
