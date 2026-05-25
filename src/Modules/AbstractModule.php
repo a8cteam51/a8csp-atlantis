@@ -75,6 +75,43 @@ abstract class AbstractModule {
 	}
 
 	/**
+	 * Persists the module's enabled flag while preserving any other sub-settings.
+	 *
+	 * Mandatory modules cannot be disabled. Environmentally-disabled modules
+	 * (`is_disabled()` returning a `WP_Error`) may still have their stored flag
+	 * toggled — the module just stays dormant at runtime, matching the admin
+	 * settings UI's behavior.
+	 *
+	 * @since   1.2.0
+	 * @version 1.2.0
+	 *
+	 * @param   bool $enabled Whether the module should be marked enabled.
+	 *
+	 * @return  true|\WP_Error True on success, WP_Error if the change is not allowed.
+	 */
+	public function set_enabled( bool $enabled ): true|\WP_Error {
+		if ( ! $enabled && $this->is_mandatory() ) {
+			return new \WP_Error(
+				'a8csp_atlantis_mandatory_module',
+				wp_sprintf(
+					/* translators: %s: module name */
+					__( 'The %s module is mandatory and cannot be disabled.', 'a8csp-atlantis' ),
+					$this->get_name()
+				)
+			);
+		}
+
+		$settings_key = a8csp_atlantis_generate_module_settings_key( $this->get_name() );
+		$settings     = a8csp_atlantis_get_module_settings( $this->get_name() );
+
+		$settings['enabled'] = $enabled ? '1' : '0';
+
+		update_option( $settings_key, $settings );
+
+		return true;
+	}
+
+	/**
 	 * Initializes the module if it is active.
 	 *
 	 * @since   1.0.0
