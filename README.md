@@ -1,141 +1,234 @@
-| :exclamation:  This is a public repository |
-|--------------------------------------------|
+# A8CSP Atlantis
 
-# a8csp-atlantis
+> This is a public repository.
 
-- **Contributors:** wpcomspecialprojects
-- **Tags:** auto-updates, tracking, messages, colophon, site-management
-- **Requires at least:** 6.8
-- **Tested up to:** 7.0
-- **Requires PHP:** 8.2
-- **Stable tag:** 1.2.0
-- **License:** GPLv3 or later
-- **License URI:** [http://www.gnu.org/licenses/gpl-3.0.html](http://www.gnu.org/licenses/gpl-3.0.html)
+A8CSP Atlantis is a WordPress plugin from the Automattic Special Projects team
+for operational management of partner sites. It provides a module framework for
+admin messages, automatic update controls, tracking integrations, and footer
+credit utilities.
 
+Plugin metadata from `a8csp-atlantis.php`:
 
+- Plugin name: `A8CSP Atlantis`
+- Text domain: `a8csp-atlantis`
+- Version: `1.2.0`
+- Requires WordPress: `6.8+`
+- Tested up to WordPress: `7.0`
+- Requires PHP: `8.2+`
+- License: GPL v3 or later
 
-## Description
+## Repository Layout
 
-A collection of utilities developed by the WordPress Special Projects team for managing partner sites. The plugin provides a modular system with the following core modules:  
+- `a8csp-atlantis.php` bootstraps the plugin, validates requirements, loads
+  translations, registers the activation hook, and wires GitHub release update
+  checks.
+- `functions-bootstrap.php` contains bootstrap helpers, requirement notices, and
+  activation-time compatibility with the legacy `plugin-autoupdate-filter`
+  plugin.
+- `functions.php` loads global helper wrappers from `includes/`.
+- `src/` contains the PSR-4 plugin classes, module registry, settings UI,
+  encryption component, REST controller, and WP-CLI commands.
+- `src/Modules/` contains the Messages, Autoupdates, Tracking, and Colophon
+  modules. Each module has a nested README with more detailed behavior notes.
+- `models/` contains the DB-backed message model and query/list-table support.
+- `templates/` contains admin templates, including the message form.
+- `assets/js/src/` and `assets/css/src/` are the editable JS and SCSS sources.
+  Built assets are committed under `assets/js/build/` and `assets/css/build/`.
+- `languages/` contains translation assets.
+- `tests/` contains Codeception integration and end-to-end suites.
+- `.agents/` and `AGENTS.md` contain assistant-facing project guidance.
 
-- **Messages**: Admin notification system with location-based filtering ([Readme](./src/Modules/Messages/README.md))
-- **AutoUpdate Filter**: Manages WordPress plugin and core auto-updates with sophisticated timing controls, business hour restrictions, and delay periods for stability testing ([Readme](./src/Modules/Autoupdates/README.md))
-- **Tracking**: Analytics integration that opts sites into tracking (disabled in development environments) ([Readme](./src/Modules/Tracking/README.md))
-- **Colophon**: Footer attribution system for site credits ([Readme](./src/Modules/Colophon/README.md))
-  
-The plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.  
+## Modules
 
-### Centralized autoupdate settings
+### Messages
 
-The Autoupdates module reads centralized settings from:
+The Messages module is mandatory. It creates the
+`{$wpdb->prefix}a8csp_atlantis_messages` custom table and exposes an Atlantis
+admin submenu for creating, editing, activating, deactivating, and deleting
+messages. Message content is encrypted before storage. Messages can target or
+exclude admin locations and render as admin notices for Automattician users.
 
-- `https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/`
+More detail: `src/Modules/Messages/README.md`.
+
+### Autoupdates
+
+The Autoupdates module manages WordPress core, plugin, and theme automatic
+updates through WordPress update filters. It applies allowed update windows,
+holiday windows, plugin release delays, per-plugin filter toggles, and global
+disable rules.
+
+Centralized settings are fetched from:
+
+```text
+https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/
+```
 
 The payload supports:
 
 - `disable_all` to block all automatic updates.
-- `canary_sites` to bypass delay logic on selected sites.
-- `disabled_plugins` to block automatic updates for specific plugins across connected sites.
+- `canary_sites` to bypass plugin delay logic for selected hostnames.
+- `disabled_plugins` to block specific plugins across connected sites.
 
-## Installation
+On activation, if `plugin-autoupdate-filter/plugin-autoupdate-filter.php` is
+installed but inactive, Atlantis disables the Autoupdates module to avoid
+unexpectedly taking over legacy update behavior.
 
-You may install `a8csp-atlantis` either manually or through your site's plugins page.
+More detail: `src/Modules/Autoupdates/README.md`.
 
-### INSTALL FROM WITHIN WORDPRESS
+### Tracking
 
-1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis).
-2. Visit the plugins page within your dashboard and select `Add New`.
-3. Click on `Upload Plugin` then `Choose File`, select the `a8csp-atlantis.zip` file and click the `Install Now` button.
-4. Click on the `Activate` button.
+The Tracking module only runs in production environments. It automatically opts
+supported integrations into usage or real-user monitoring:
 
-### INSTALL MANUALLY
+- WooCommerce via `option_woocommerce_allow_tracking`.
+- Sensei via the `sensei-settings` option.
+- Bilmur via `https://s0.wp.com/wp-content/js/bilmur.min.js` and related RUM
+  metadata.
 
-1. Download the plugin from [https://github.com/a8cteam51/a8csp-atlantis](https://github.com/a8cteam51/a8csp-atlantis) and unzip the archive.
-2. Upload the `a8csp-atlantis` folder to the `/wp-content/plugins/` directory.
-3. Activate the plugin through the `Plugins` menu in WordPress.
+More detail: `src/Modules/Tracking/README.md`.
 
-### AFTER ACTIVATION
+### Colophon
 
-Settings for the plugin can be found in the wp-admin dashboard under `Atlantis`.
+The Colophon module registers a `team51_credits` action, the
+`[team51-credits]` shortcode, and the `[team51-current-year]` shortcode for
+standard footer credits. Output links can be adjusted with the
+`team51_credit_links` filter.
 
-## Frequently Asked Questions
+More detail: `src/Modules/Colophon/README.md`.
 
-### Why don't I see the Atlantis menu on WP Admin?
+## Runtime Interfaces
 
-Ensure your user is an admin with an `@automattic.com` or `@wordpress.com` email address.
+Atlantis registers an `Atlantis` wp-admin menu for users who pass
+`a8csp_atlantis_is_automattician()` and have the required capabilities. Module
+enablement is managed from the `Atlantis > Modules` submenu.
 
-### Can I disable specific modules?
+The status REST endpoint is available to users who can `manage_options`:
 
-Yes, the plugin uses a modular architecture where individual modules can be enabled or disabled through the WordPress admin interface.
+```text
+GET /wp-json/a8csp-atlantis/v1/status
+```
 
-### How can I get more information on how to use the plugin?
+The payload includes the plugin version, registered module states, and the
+stored message count when the Messages table exists.
 
-You can use the chatbot at [https://deepwiki.com/a8cteam51/a8csp-atlantis](https://deepwiki.com/a8cteam51/a8csp-atlantis) for extensive help related to usability, plugin structure, and development.
+When WP-CLI is available, the plugin registers:
 
-## Development
+```sh
+wp atlantis module list
+wp atlantis module status <key>
+wp atlantis module activate <key>...
+wp atlantis module deactivate <key>...
+wp atlantis message list
+wp atlantis message get <id>
+```
 
-### Setup
+## Development Requirements
 
-1. Install dependencies:
-   ```bash
-   composer install
-   npm install
-   ```
+- PHP `8.2+`; CI currently runs PHP QA on `8.3` and syntax/tests across
+  supported PHP versions.
+- Composer.
+- Node.js `20+`.
+- npm `10+`.
+- Docker for wp-env, integration tests, and end-to-end tests.
 
-2. Build assets:
-   ```bash
-   npm run build
-   ```
+Install dependencies and build assets:
 
-   This will build all JavaScript and CSS assets. The build process includes:
-   - Building block editor assets
-   - Compiling JavaScript files
-   - Processing SCSS to CSS
+```sh
+composer run-script packages-install
+npm ci
+npm run build
+```
 
-3. For development, you can use watch mode:
-   ```bash
-   npm run start
-   ```
-   This will automatically rebuild assets when files change.
+Run watch mode while editing assets:
 
-### Testing
+```sh
+npm run start
+```
+
+Start the wp-env environment:
+
+```sh
+npm run wp-env:start
+```
+
+The current `.wp-env.json` maps this repository into WordPress as
+`wp-content/plugins/a8csp-plugin-scaffold`; the npm test scripts use that same
+path.
+
+## Quality Checks
+
+Run the project lint commands before committing code changes:
+
+```sh
+composer run lint:php
+npm run lint
+```
+
+The root README has an explicit markdown check:
+
+```sh
+npm run lint:readme-md
+```
+
+For README-only changes, also run:
+
+```sh
+git diff --check
+```
+
+## Tests
+
+The Codeception suites are configured in `codeception.dist.yml`,
+`tests/Integration.suite.yml`, and `tests/EndToEnd.suite.yml`. Local setup notes
+are in `tests/README.md`.
+
+Prepare the local test environment:
+
+```sh
+docker run -d --shm-size="2g" --net=host --name="selenium-chromium" selenium/standalone-chromium:latest
+cp tests/.dist.env tests/.env
+npm run wp-env:start
+npm run tests:export-db
+```
 
 Run all tests:
-```bash
+
+```sh
 npm run tests:run
 ```
 
-This includes both integration and end-to-end tests. Make sure Docker is running for the test environment.
+Integration and end-to-end tests require Docker. On macOS, the test README notes
+that Docker host networking must be enabled.
 
-### Creating a Release on GitHub
+## Releases
 
-When creating a new release, follow these steps:
+GitHub releases trigger `.github/workflows/build-release.yml`. The workflow
+validates Composer files, installs production PHP dependencies, runs `npm ci`
+and `npm run build`, copies the plugin runtime files into an
+`a8csp-atlantis/` release directory, and uploads a zip asset to the release.
 
-1. Update version numbers in:
-   - `package.json` ("version" field)
-   - `a8csp-atlantis.php` ("Version" in plugin header)
-   - Update "Tested up to" in both README.md and a8csp-atlantis.php if WordPress compatibility was tested
+Before publishing a release, update the version in:
 
-2. Build a production release (if needed):
-   ```bash
-   composer install --no-dev
-   npm install
-   npm run build
-   ```
-   Commit and merge to trunk via a new feature branch.
+- `a8csp-atlantis.php`
+- `package.json`
 
-3. Create a new release on GitHub:
-   - Go to the Releases page at `https://github.com/a8cteam51/a8csp-atlantis/releases` and create a new release.
-   - Create a new tag following semantic versioning (e.g., v1.0.1)
-   - Title the release and add a description, or, click on the "Generate release notes" button. Edit as needed.
-   - Click on the "Publish release" button.
-   - After a few minutes the new plugin `zip` file will be available for download.
+Run `composer generate-autoloader` if local development reports missing
+classmap-backed classes after changing generated/autoloaded PHP symbols.
 
-### Development FAQs
+## Maintenance Notes
 
-#### What to do if I get the 500 error `"Uncaught Error: Class "A8C\SpecialProjects\Atlantis\MessagesSchema" not found"` during development?
+- Edit source assets in `assets/js/src/` and `assets/css/src/`, then run
+  `npm run build` so the committed build files stay current.
+- Keep `composer.lock` and `package-lock.json` with dependency changes; CI and
+  releases use both lockfiles.
+- Do not edit generated dependency directories such as `vendor/` or
+  `node_modules/`.
+- Update `AGENTS.md` when architecture, module behavior, workflow commands, or
+  assistant-facing project rules change.
 
-Run `composer generate-autoloader` from the root.
+## License
 
+The plugin header and bundled `LICENSE` file identify this project as GPL v3 or
+later.
 
 
