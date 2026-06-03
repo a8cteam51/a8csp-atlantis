@@ -121,5 +121,19 @@ if ( is_wp_error( A8CSP_ATLANTIS_REQUIREMENTS ) ) {
 } else {
 	require_once A8CSP_ATLANTIS_DIR_PATH . '/functions.php';
 	register_activation_hook( __FILE__, 'a8csp_atlantis_maybe_disable_autoupdates_module_on_activation' );
-	add_action( 'plugins_loaded', array( a8csp_atlantis_get_plugin_instance(), 'maybe_initialize' ) );
+	add_action(
+		'plugins_loaded',
+		static function () {
+			// A plugin self-update temporarily removes files between clear_destination()
+			// and the move into place. A concurrent request can hit this window with
+			// Plugin.php still in OPcache but an autoload target missing on disk,
+			// producing a "Class not found" fatal. Swallow that one request rather
+			// than WSOD; the next request — post-update — will boot normally.
+			try {
+				a8csp_atlantis_get_plugin_instance()->maybe_initialize();
+			} catch ( \Throwable $t ) {
+				error_log( sprintf( '[a8csp-atlantis] maybe_initialize() failed: %s in %s:%d', $t->getMessage(), $t->getFile(), $t->getLine() ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+		}
+	);
 }
