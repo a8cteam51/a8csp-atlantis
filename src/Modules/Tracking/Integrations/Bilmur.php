@@ -59,7 +59,9 @@ class Bilmur extends AbstractIntegration {
 		// Always register the wpcomsh filter for Atomic compatibility (harmless on non-Atomic sites).
 		add_filter( 'wpcomsh_rum_kv', array( self::class, 'filter_wpcomsh_rum_kv' ), 10, 2 );
 
-		if ( ! self::is_wpcomsh_bilmur_active() ) {
+		if ( self::is_wpcomsh_bilmur_active() ) {
+			$this->register_atomic_host_guard();
+		} else {
 			$this->initialize_bilmur_output();
 		}
 	}
@@ -101,13 +103,26 @@ class Bilmur extends AbstractIntegration {
 	/**
 	 * Initialize Bilmur script and meta tag output for non-wpcomsh sites.
 	 *
+	 * The meta and script are not emitted statically. Instead, a small inline
+	 * guard injects both at runtime, but only when the visitor's hostname matches
+	 * the canonical site host. Scraped/copied sites therefore never load bilmur
+	 * and never report to Grafana.
+	 *
 	 * @since   1.2.0
-	 * @version 1.2.0
+	 * @version 1.3.0
 	 */
 	private function initialize_bilmur_output(): void {
 		add_action(
-			'wp_enqueue_scripts',
+			'wp_footer',
 			static function () {
+				$expected_host = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
+				if ( '' === $expected_host ) {
+					return;
+				}
+
+				$custom_properties               = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) && is_array( WPCOMSP_BILMUR_CUSTOM_PROPERTIES ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
+				$custom_properties['woo_active'] = class_exists( 'WooCommerce' ) ? '1' : '0';
+
 				// Request a new version of bilmur every week.
 				// This keeps bilmur up-to-date independently of CDN caching times.
 				$weekly_cachebust = 'm=' . gmdate( 'YW' );
@@ -116,55 +131,80 @@ class Bilmur extends AbstractIntegration {
 				// Just increment this number if that's the case.
 				$manual_version = '1';
 
-				wp_enqueue_script(
-					'bilmur',
-					'https://s0.wp.com/wp-content/js/bilmur.min.js?' . $weekly_cachebust,
-					array(),
-					$manual_version,
-					array(
-						'strategy'  => 'defer',
-						'in_footer' => true,
-					)
+				$config = array(
+					'host'        => $expected_host,
+					'provider'    => (string) WPCOMSP_BILMUR_PROVIDER,
+					'service'     => (string) WPCOMSP_BILMUR_SERVICE,
+					'customProps' => (string) wp_json_encode( $custom_properties ),
+					'siteTz'      => self::get_timezone_string(),
+					'src'         => 'https://s0.wp.com/wp-content/js/bilmur.min.js?' . $weekly_cachebust . '&ver=' . $manual_version,
 				);
+				?>
+				<script id="bilmur-host-guard" nowprocket>
+				(function () {
+					var cfg = <?php echo wp_json_encode( $config ); ?>;
+					if ( window.location.hostname !== cfg.host ) {
+						return;
+					}
+					var meta = document.createElement( 'meta' );
+					meta.id = 'bilmur';
+					meta.setAttribute( 'property', 'bilmur:data' );
+					meta.setAttribute( 'content', '' );
+					meta.setAttribute( 'data-provider', cfg.provider );
+					meta.setAttribute( 'data-service', cfg.service );
+					meta.setAttribute( 'data-custom-props', cfg.customProps );
+					meta.setAttribute( 'data-site-tz', cfg.siteTz );
+					( document.head || document.documentElement ).appendChild( meta );
+
+					var s = document.createElement( 'script' );
+					s.id = 'bilmur-js';
+					s.src = cfg.src;
+					s.defer = true;
+					document.body.appendChild( s );
+				})();
+				</script>
+				<?php
 			}
 		);
+	}
 
-		// WP Rocket compatibility: prevent "Delay JavaScript Execution" from
-		// blocking the bilmur beacon. The `nowprocket` attribute tells WP Rocket
-		// to skip delaying this script.
-		$active_plugins = get_option( 'active_plugins' );
-		if ( is_array( $active_plugins ) && in_array( 'wp-rocket/wp-rocket.php', $active_plugins, true ) ) {
-			add_filter(
-				'wp_script_attributes',
-				static function ( array $attributes ): array {
-					if ( isset( $attributes['id'] ) && 'bilmur-js' === $attributes['id'] ) {
-						$attributes['nowprocket'] = true;
-					}
-					return $attributes;
-				}
-			);
-		}
-
-		// Output bilmur config as a <meta> tag for the script to pick up.
+	/**
+	 * Register a client-side host guard for Atomic sites where wpcomsh emits the
+	 * bilmur tags directly. Since wpcomsh's output can't be suppressed from here,
+	 * the guard removes the meta tag (and best-effort the script element) when
+	 * the visitor's hostname doesn't match the canonical site host. Without the
+	 * meta tag, bilmur has no provider/service to report to.
+	 *
+	 * @since   1.3.0
+	 * @version 1.3.0
+	 */
+	private function register_atomic_host_guard(): void {
 		add_action(
 			'wp_footer',
 			static function () {
-				$custom_properties = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) && is_array( WPCOMSP_BILMUR_CUSTOM_PROPERTIES ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
-
-				$custom_properties['woo_active'] = class_exists( 'WooCommerce' ) ? '1' : '0';
-
+				$expected_host = (string) wp_parse_url( (string) home_url(), PHP_URL_HOST );
+				if ( '' === $expected_host ) {
+					return;
+				}
 				?>
-				<meta
-					id="bilmur"
-					property="bilmur:data"
-					content=""
-					data-provider="<?php echo esc_attr( WPCOMSP_BILMUR_PROVIDER ); ?>"
-					data-service="<?php echo esc_attr( WPCOMSP_BILMUR_SERVICE ); ?>"
-					data-custom-props="<?php echo esc_attr( (string) wp_json_encode( $custom_properties ) ); ?>"
-					data-site-tz="<?php echo esc_attr( self::get_timezone_string() ); ?>"
-				>
+				<script id="bilmur-host-guard" nowprocket>
+				(function () {
+					if ( window.location.hostname === <?php echo wp_json_encode( $expected_host ); ?> ) {
+						return;
+					}
+					var meta = document.getElementById( 'bilmur' );
+					if ( meta && meta.parentNode ) {
+						meta.parentNode.removeChild( meta );
+					}
+					var script = document.getElementById( 'bilmur-js' );
+					if ( script && script.parentNode ) {
+						script.parentNode.removeChild( script );
+					}
+				})();
+				</script>
 				<?php
-			}
+			},
+			PHP_INT_MAX
 		);
 	}
 
