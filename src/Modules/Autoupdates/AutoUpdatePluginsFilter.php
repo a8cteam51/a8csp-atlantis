@@ -508,6 +508,20 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 				foreach ( $options['plugins'] as $plugin ) {
 					$helpers->clear_plugin_delay( $plugin );
 				}
+
+				// Prune stale delay entries for plugins that are no longer installed.
+				$delays = get_option( 'plugin_update_delays', array() );
+				if ( is_array( $delays ) && array() !== $delays ) {
+					$installed_plugins = array_keys( get_plugins() );
+					$stale_keys        = array_diff( array_keys( $delays ), $installed_plugins );
+
+					if ( array() !== $stale_keys ) {
+						foreach ( $stale_keys as $stale_key ) {
+							unset( $delays[ $stale_key ] );
+						}
+						update_option( 'plugin_update_delays', $delays );
+					}
+				}
 			}
 		}
 	}
