@@ -207,6 +207,9 @@ class Bilmur extends AbstractIntegration {
 			// For integer hour offsets, use "Etc/GMT(+|-)N".
 			// The sign is flipped to match how the Etc area is specced.
 			// This codepath is also the fallback when no city matches a fractional offset.
+			if ( 0 === $hours ) {
+				return 'UTC';
+			}
 			return 'Etc/GMT' . ( -1 === $sign ? '+' : '-' ) . $hours;
 		}
 
@@ -215,6 +218,9 @@ class Bilmur extends AbstractIntegration {
 			$sign  = '-' === $matches[1] ? -1 : 1;
 			$hours = intval( $matches[2], 10 );
 
+			if ( 0 === $hours ) {
+				return 'UTC';
+			}
 			return 'Etc/GMT' . ( -1 === $sign ? '+' : '-' ) . $hours;
 		}
 
