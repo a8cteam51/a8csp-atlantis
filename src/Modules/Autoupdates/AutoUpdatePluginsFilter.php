@@ -165,6 +165,17 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			$settings = $decoded_body;
 		}
 
+		// Normalize types to prevent issues with API responses that use strings instead of proper types.
+		if ( isset( $settings->disable_all ) ) {
+			$settings->disable_all = filter_var( $settings->disable_all, FILTER_VALIDATE_BOOLEAN );
+		}
+		if ( isset( $settings->canary_sites ) && ! is_array( $settings->canary_sites ) ) {
+			$settings->canary_sites = array();
+		}
+		if ( isset( $settings->disabled_plugins ) && ! is_array( $settings->disabled_plugins ) ) {
+			$settings->disabled_plugins = array();
+		}
+
 		return $settings;
 	}
 
