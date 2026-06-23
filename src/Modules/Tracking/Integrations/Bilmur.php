@@ -156,6 +156,7 @@ class Bilmur extends AbstractIntegration {
 				$custom_properties = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) && is_array( WPCOMSP_BILMUR_CUSTOM_PROPERTIES ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
 
 				$custom_properties['woo_active'] = class_exists( 'WooCommerce' ) ? '1' : '0';
+				$custom_properties['site-v']     = self::get_site_hash();
 
 				?>
 				<meta
@@ -166,7 +167,6 @@ class Bilmur extends AbstractIntegration {
 					data-service="<?php echo esc_attr( WPCOMSP_BILMUR_SERVICE ); ?>"
 					data-custom-props="<?php echo esc_attr( (string) wp_json_encode( $custom_properties ) ); ?>"
 					data-site-tz="<?php echo esc_attr( self::get_timezone_string() ); ?>"
-					data-site-v="<?php echo esc_attr( self::get_site_hash() ); ?>"
 				>
 				<?php
 			}
@@ -174,10 +174,14 @@ class Bilmur extends AbstractIntegration {
 	}
 
 	/**
-	 * Returns an MD5 hash of the site's host (e.g. "example.com").
+	 * Returns an MD5 hash of the site's host (e.g. md5( "example.com" )).
 	 *
-	 * Used as the `site-v` Bilmur property so a single site can be identified
-	 * across page views without exposing the full URL.
+	 * Emitted as the `site-v` Bilmur custom property so a single site can be
+	 * identified across page views without exposing the full URL. Bilmur reads
+	 * `site-v` from the custom-props JSON blob, not as a top-level data
+	 * attribute, so this value is injected into custom-props on both code
+	 * paths (the `wpcomsh_rum_kv` filter for Atomic, and the meta tag we
+	 * render directly on non-wpcomsh sites).
 	 *
 	 * @since   1.3.0
 	 * @version 1.3.0
