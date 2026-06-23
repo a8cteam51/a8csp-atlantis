@@ -87,7 +87,7 @@ class Bilmur extends AbstractIntegration {
 	 * into the Bilmur data without duplicating the script or meta tag.
 	 *
 	 * @since   1.2.0
-	 * @version 1.2.0
+	 * @version 1.3.0
 	 *
 	 * @param array<string, string> $kv      The existing key-value pairs.
 	 * @param string                $service The bilmur service name.
@@ -95,7 +95,11 @@ class Bilmur extends AbstractIntegration {
 	 * @return array<string, string> The modified key-value pairs.
 	 */
 	public static function filter_wpcomsh_rum_kv( array $kv, string $service ): array {
-		return array_merge( $kv, self::$wpcomsh_custom_properties );
+		return array_merge(
+			$kv,
+			self::$wpcomsh_custom_properties,
+			array( 'site-v' => self::get_site_hash() )
+		);
 	}
 
 	/**
@@ -162,10 +166,27 @@ class Bilmur extends AbstractIntegration {
 					data-service="<?php echo esc_attr( WPCOMSP_BILMUR_SERVICE ); ?>"
 					data-custom-props="<?php echo esc_attr( (string) wp_json_encode( $custom_properties ) ); ?>"
 					data-site-tz="<?php echo esc_attr( self::get_timezone_string() ); ?>"
+					data-site-v="<?php echo esc_attr( self::get_site_hash() ); ?>"
 				>
 				<?php
 			}
 		);
+	}
+
+	/**
+	 * Returns an MD5 hash of the site's host (e.g. "example.com").
+	 *
+	 * Used as the `site-v` Bilmur property so a single site can be identified
+	 * across page views without exposing the full URL.
+	 *
+	 * @since   1.3.0
+	 * @version 1.3.0
+	 *
+	 * @return string
+	 */
+	private static function get_site_hash(): string {
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+		return md5( is_string( $host ) ? $host : '' );
 	}
 
 	/**
