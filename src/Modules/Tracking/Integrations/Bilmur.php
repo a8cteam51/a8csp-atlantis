@@ -86,6 +86,10 @@ class Bilmur extends AbstractIntegration {
 	 * This filter is provided by wpcomsh and allows us to inject custom properties
 	 * into the Bilmur data without duplicating the script or meta tag.
 	 *
+	 * Note: this filter feeds the `data-custom-props` JSON blob only. Values
+	 * that must surface as top-level `data-*` attributes on the meta tag
+	 * (e.g. `site-v`) cannot be injected here and must be handled wpcomsh-side.
+	 *
 	 * @since   1.2.0
 	 * @version 1.3.0
 	 *
@@ -95,11 +99,7 @@ class Bilmur extends AbstractIntegration {
 	 * @return array<string, string> The modified key-value pairs.
 	 */
 	public static function filter_wpcomsh_rum_kv( array $kv, string $service ): array {
-		return array_merge(
-			$kv,
-			self::$wpcomsh_custom_properties,
-			array( 'site-v' => self::get_site_hash() )
-		);
+		return array_merge( $kv, self::$wpcomsh_custom_properties );
 	}
 
 	/**
@@ -156,7 +156,6 @@ class Bilmur extends AbstractIntegration {
 				$custom_properties = defined( 'WPCOMSP_BILMUR_CUSTOM_PROPERTIES' ) && is_array( WPCOMSP_BILMUR_CUSTOM_PROPERTIES ) ? WPCOMSP_BILMUR_CUSTOM_PROPERTIES : array();
 
 				$custom_properties['woo_active'] = class_exists( 'WooCommerce' ) ? '1' : '0';
-				$custom_properties['site-v']     = self::get_site_hash();
 
 				?>
 				<meta
@@ -167,6 +166,7 @@ class Bilmur extends AbstractIntegration {
 					data-service="<?php echo esc_attr( WPCOMSP_BILMUR_SERVICE ); ?>"
 					data-custom-props="<?php echo esc_attr( (string) wp_json_encode( $custom_properties ) ); ?>"
 					data-site-tz="<?php echo esc_attr( self::get_timezone_string() ); ?>"
+					data-site-v="<?php echo esc_attr( self::get_site_hash() ); ?>"
 				>
 				<?php
 			}
@@ -176,12 +176,13 @@ class Bilmur extends AbstractIntegration {
 	/**
 	 * Returns an MD5 hash of the site's host (e.g. md5( "example.com" )).
 	 *
-	 * Emitted as the `site-v` Bilmur custom property so a single site can be
-	 * identified across page views without exposing the full URL. Bilmur reads
-	 * `site-v` from the custom-props JSON blob, not as a top-level data
-	 * attribute, so this value is injected into custom-props on both code
-	 * paths (the `wpcomsh_rum_kv` filter for Atomic, and the meta tag we
-	 * render directly on non-wpcomsh sites).
+	 * Emitted as the `site-v` Bilmur property so a single site can be
+	 * identified across page views without exposing the full URL. Rendered as
+	 * a top-level `data-site-v` attribute on the meta tag, alongside
+	 * `data-provider` and `data-service`. Only applied on the non-wpcomsh
+	 * code path; on Atomic, wpcomsh is responsible for emitting `data-site-v`
+	 * on its own meta tag (the `wpcomsh_rum_kv` filter only feeds custom
+	 * props and cannot set top-level data attributes).
 	 *
 	 * @since   1.3.0
 	 * @version 1.3.0
