@@ -214,6 +214,77 @@ class AutoupdatesTestCest {
 	}
 
 	/**
+	 * A failed OpsOasis fetch negative-caches the fail-safe default instead of refetching on every request.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function failed_settings_fetch_negative_caches_safe_default( IntegrationTester $i ): void {
+		delete_transient( 'wpcpmsp_auto_update_settings' );
+
+		$force_failure = static function () {
+			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+		};
+		add_filter( 'pre_http_request', $force_failure, 10, 3 );
+
+		try {
+			$module = new AutoUpdatePluginsFilter();
+			$method = new ReflectionMethod( $module, 'get_auto_update_settings' );
+			$method->setAccessible( true );
+
+			$threw = false;
+			try {
+				$method->invoke( $module );
+			} catch ( \Exception $exception ) {
+				$threw = true;
+			}
+
+			Assert::assertTrue( $threw, 'A failed remote fetch should surface an exception to the caller.' );
+
+			$cached = get_transient( 'wpcpmsp_auto_update_settings' );
+			Assert::assertIsObject( $cached );
+			Assert::assertTrue( ! empty( $cached->disable_all ) );
+		} finally {
+			remove_filter( 'pre_http_request', $force_failure, 10 );
+			delete_transient( 'wpcpmsp_auto_update_settings' );
+		}
+	}
+
+	/**
+	 * A warm settings transient is returned without making a remote request.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function warm_settings_transient_skips_remote_request( IntegrationTester $i ): void {
+		set_transient( 'wpcpmsp_auto_update_settings', (object) array( 'disable_all' => true ), 5 * MINUTE_IN_SECONDS );
+
+		$http_calls = 0;
+		$count_http = static function ( $pre ) use ( &$http_calls ) {
+			++$http_calls;
+			return new WP_Error( 'unexpected_http', 'No remote request should be made when the transient is warm.' );
+		};
+		add_filter( 'pre_http_request', $count_http, 10, 3 );
+
+		try {
+			$module = new AutoUpdatePluginsFilter();
+			$method = new ReflectionMethod( $module, 'get_auto_update_settings' );
+			$method->setAccessible( true );
+
+			$settings = $method->invoke( $module );
+
+			Assert::assertIsObject( $settings );
+			Assert::assertTrue( ! empty( $settings->disable_all ) );
+			Assert::assertSame( 0, $http_calls, 'A warm transient must not trigger a remote request.' );
+		} finally {
+			remove_filter( 'pre_http_request', $count_http, 10 );
+			delete_transient( 'wpcpmsp_auto_update_settings' );
+		}
+	}
+
+	/**
 	 * Set current user as admin to satisfy capability checks.
 	 *
 	 * @return void
