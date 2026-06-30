@@ -3,7 +3,7 @@
  * The A8CSP Atlantis bootstrap file.
  *
  * @since       1.0.0
- * @version     1.2.0
+ * @version     1.2.1
  * @package     A8C\SpecialProjects\Plugins
  * @author      WordPress.com Special Projects
  * @license     GPL-3.0-or-later
@@ -15,7 +15,7 @@
  * Plugin URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Update URI:              https://github.com/a8cteam51/a8csp-atlantis
  * Description:             Centralized site management for Team51.
- * Version:                 1.2.0
+ * Version:                 1.2.1
  * Requires at least:       6.8
  * Tested up to:            7.0
  * Requires PHP:            8.2
