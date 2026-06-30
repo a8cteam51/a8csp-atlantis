@@ -285,6 +285,65 @@ class AutoupdatesTestCest {
 	}
 
 	/**
+	 * Auto-update context gating returns false on a front-end request and true during cron.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function autoupdate_context_gating_distinguishes_request_types( IntegrationTester $i ): void {
+		$module = new AutoUpdatePluginsFilter();
+		$method = new ReflectionMethod( $module, 'is_autoupdate_context' );
+		$method->setAccessible( true );
+
+		// Front-end request: none of the three contexts apply.
+		Assert::assertFalse( is_admin(), 'Test precondition: not an admin request.' );
+		Assert::assertFalse( wp_doing_cron(), 'Test precondition: not a cron request.' );
+		Assert::assertFalse( defined( 'WP_CLI' ) && WP_CLI, 'Test precondition: not a WP-CLI request.' );
+		Assert::assertFalse( $method->invoke( $module ), 'A front-end request is not an autoupdate context.' );
+
+		// Cron request: wp_doing_cron() is filterable, so simulate it without loading admin includes.
+		add_filter( 'wp_doing_cron', '__return_true' );
+		try {
+			Assert::assertTrue( $method->invoke( $module ), 'A cron request is an autoupdate context.' );
+		} finally {
+			remove_filter( 'wp_doing_cron', '__return_true' );
+		}
+	}
+
+	/**
+	 * On a front-end request, initialize() short-circuits before fetching OpsOasis settings.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function front_end_initialize_makes_no_remote_request( IntegrationTester $i ): void {
+		Assert::assertFalse( is_admin(), 'Test precondition: not an admin request.' );
+		delete_transient( 'wpcpmsp_auto_update_settings' );
+
+		$http_calls = 0;
+		$count_http = static function ( $pre ) use ( &$http_calls ) {
+			++$http_calls;
+			return new WP_Error( 'unexpected_http', 'initialize() must not call OpsOasis on a front-end request.' );
+		};
+		add_filter( 'pre_http_request', $count_http, 10, 3 );
+
+		try {
+			$module = new AutoUpdatePluginsFilter();
+			$method = new ReflectionMethod( $module, 'initialize' );
+			$method->setAccessible( true );
+			$method->invoke( $module );
+
+			Assert::assertSame( 0, $http_calls, 'No remote request should be made on a front-end request.' );
+			Assert::assertFalse( get_transient( 'wpcpmsp_auto_update_settings' ), 'No settings transient should be written on a front-end request.' );
+		} finally {
+			remove_filter( 'pre_http_request', $count_http, 10 );
+			delete_transient( 'wpcpmsp_auto_update_settings' );
+		}
+	}
+
+	/**
 	 * Set current user as admin to satisfy capability checks.
 	 *
 	 * @return void

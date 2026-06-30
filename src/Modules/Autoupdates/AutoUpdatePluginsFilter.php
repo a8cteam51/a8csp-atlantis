@@ -58,6 +58,11 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	protected function initialize(): void {
+		// Autoupdate hooks only fire in admin or during cron/CLI update runs — skip front-end requests entirely.
+		if ( ! $this->is_autoupdate_context() ) {
+			return;
+		}
+
 		// get the centralized settings from opsoasis
 		try {
 			$this->settings = $this->get_auto_update_settings();
@@ -112,6 +117,15 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	}
 
 	// endregion
+
+	/**
+	 * Whether WordPress evaluates auto-update decisions in the current request (admin, WP-Cron, or WP-CLI).
+	 *
+	 * @return  bool
+	 */
+	private function is_autoupdate_context(): bool {
+		return is_admin() || wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI );
+	}
 
 	/**
 	 * Load settings from the centralized settings page
