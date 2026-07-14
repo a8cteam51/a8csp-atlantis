@@ -58,6 +58,11 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @version 1.0.0
 	 */
 	protected function initialize(): void {
+		// Autoupdate hooks only fire in admin or during cron/CLI update runs — skip front-end requests entirely.
+		if ( ! $this->is_autoupdate_context() ) {
+			return;
+		}
+
 		// get the centralized settings from opsoasis
 		try {
 			$this->settings = $this->get_auto_update_settings();
@@ -114,6 +119,15 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	// endregion
 
 	/**
+	 * Whether WordPress evaluates auto-update decisions in the current request (admin, WP-Cron, or WP-CLI).
+	 *
+	 * @return  bool
+	 */
+	private function is_autoupdate_context(): bool {
+		return is_admin() || wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI );
+	}
+
+	/**
 	 * Load settings from the centralized settings page
 	 *
 	 * @throws  \RuntimeException If the settings cannot be loaded.
@@ -128,41 +142,46 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		$settings      = get_transient( $transient_key );
 
 		if ( empty( $settings ) ) {
-			$response = wp_safe_remote_get(
-				'https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/',
-				array( 'headers' => array( 'Accept' => 'application/json' ) )
-			);
-
-			if ( is_wp_error( $response ) ) {
-				throw new \RuntimeException( wp_kses_post( $response->get_error_message() ) );
-			}
-
-			$response_code = wp_remote_retrieve_response_code( $response );
-			$response_body = wp_remote_retrieve_body( $response );
-
-			// Check that the response code is a 2xx code.
-			if ( ! \str_starts_with( (string) $response_code, '2' ) ) {
-				$response_message = wp_remote_retrieve_response_message( $response );
-				throw new \RuntimeException( wp_kses_post( $response_message ), absint( $response_code ) );
-			}
-
 			try {
+				$response = wp_safe_remote_get(
+					'https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/',
+					array(
+						'timeout' => 2,
+						'headers' => array( 'Accept' => 'application/json' ),
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					throw new \RuntimeException( wp_kses_post( $response->get_error_message() ) );
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+				$response_body = wp_remote_retrieve_body( $response );
+
+				// Check that the response code is a 2xx code.
+				if ( ! \str_starts_with( (string) $response_code, '2' ) ) {
+					$response_message = wp_remote_retrieve_response_message( $response );
+					throw new \RuntimeException( wp_kses_post( $response_message ), absint( $response_code ) );
+				}
+
 				$decoded_body = json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR );
-			} catch ( \JsonException $exception ) {
+
+				// if the settings are empty, we still need to return an object
+				if ( ! is_object( $decoded_body ) ) {
+					$object              = new \stdClass();
+					$object->placeholder = $decoded_body;
+					$decoded_body        = $object;
+				}
+
+				// Save the settings in a transient for 5 minutes
+				set_transient( $transient_key, $decoded_body, 5 * MINUTE_IN_SECONDS );
+
+				$settings = $decoded_body;
+			} catch ( \Exception $exception ) {
+				// Negative-cache the fail-safe so a slow/down OpsOasis cannot block every uncached page load.
+				set_transient( $transient_key, (object) array( 'disable_all' => true ), 5 * MINUTE_IN_SECONDS );
 				throw $exception;
 			}
-
-			// if the settings are empty, we still need to return an object
-			if ( ! is_object( $decoded_body ) ) {
-				$object              = new \stdClass();
-				$object->placeholder = $decoded_body;
-				$decoded_body        = $object;
-			}
-
-			// Save the settings in a transient for 5 minutes
-			set_transient( $transient_key, $decoded_body, 5 * MINUTE_IN_SECONDS );
-
-			$settings = $decoded_body;
 		}
 
 		return $settings;
