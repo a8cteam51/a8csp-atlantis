@@ -138,6 +138,8 @@ class Plugin {
 	 * @return  void
 	 */
 	protected function initialize(): void {
+		$this->register_core_compat_filters();
+
 		$this->encryption = new Encryption();
 		$this->encryption->initialize();
 
@@ -154,6 +156,26 @@ class Plugin {
 			\WP_CLI::add_command( 'atlantis module', Module_Command::class );
 			\WP_CLI::add_command( 'atlantis message', Message_Command::class );
 		}
+	}
+
+	/**
+	 * Registers temporary WordPress-core compatibility filters.
+	 *
+	 * These mitigations run on every active install, independent of module
+	 * settings, so they can be rolled out fleet-wide quickly. Remove each
+	 * filter once the corresponding upstream fix has shipped.
+	 *
+	 * @since   1.2.2
+	 * @version 1.2.2
+	 *
+	 * @return  void
+	 */
+	private function register_core_compat_filters(): void {
+		// Disable the `sizes="auto"` attribute WordPress 6.7+ adds to lazy-loaded
+		// images. Mitigates a Gutenberg bug affecting partner sites until the
+		// upstream fix is released. Remove once that ships.
+		// See: https://github.com/WordPress/gutenberg/pull/80386
+		add_filter( 'wp_img_tag_add_auto_sizes', '__return_false' );
 	}
 
 	// endregion
