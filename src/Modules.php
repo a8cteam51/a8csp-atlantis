@@ -7,6 +7,7 @@ use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
 use A8C\SpecialProjects\Atlantis\Modules\Autoupdates\AutoUpdatePluginsFilter;
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\Messages;
+use A8C\SpecialProjects\Atlantis\Modules\Snippets\Snippets;
 
 
 defined( 'ABSPATH' ) || exit;
@@ -60,6 +61,7 @@ class Modules {
 		$this->try_initialize_module( 'colophon', static fn() => new Colophon() );
 		$this->try_initialize_module( 'tracking', static fn() => new Tracking() );
 		$this->try_initialize_module( 'autoupdates', static fn() => new AutoUpdatePluginsFilter() );
+		$this->try_initialize_module( 'snippets', static fn() => new Snippets() );
 	}
 
 	/**
