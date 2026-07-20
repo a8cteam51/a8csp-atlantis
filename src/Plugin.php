@@ -186,7 +186,7 @@ class Plugin {
 	 * Initializes the plugin components if all prerequisites are met.
 	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.2.3
 	 *
 	 * @return  void
 	 */
@@ -197,7 +197,16 @@ class Plugin {
 			return;
 		}
 
-		$this->initialize();
+		try {
+			$this->initialize();
+		} catch ( \Throwable $e ) {
+			// A plugin/core update replaces files one at a time, so the autoloader
+			// can briefly fail to resolve a class mid-copy (or against stale
+			// opcache right after). Skip init for this request rather than taking
+			// down the whole site; the next request initializes normally once the
+			// files have settled.
+			error_log( 'A8CSP Atlantis: initialization skipped this request — ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		}
 	}
 
 	// endregion
