@@ -161,21 +161,22 @@ class Plugin {
 	/**
 	 * Registers temporary WordPress-core compatibility filters.
 	 *
-	 * These mitigations run on every active install, independent of module
-	 * settings, so they can be rolled out fleet-wide quickly. Remove each
-	 * filter once the corresponding upstream fix has shipped.
+	 * A home for always-on mitigations that must roll out fleet-wide during an
+	 * incident, independent of module settings. Add filters here when needed and
+	 * remove them once the corresponding upstream fix has shipped.
+	 *
+	 * Currently empty — no mitigations are active. (The previous
+	 * `wp_img_tag_add_auto_sizes` disable was removed once the upstream
+	 * Gutenberg fix shipped.)
 	 *
 	 * @since   1.2.2
-	 * @version 1.2.2
+	 * @version 1.2.4
 	 *
 	 * @return  void
 	 */
 	private function register_core_compat_filters(): void {
-		// Disable the `sizes="auto"` attribute WordPress 6.7+ adds to lazy-loaded
-		// images. Mitigates a Gutenberg bug affecting partner sites until the
-		// upstream fix is released. Remove once that ships.
-		// See: https://github.com/WordPress/gutenberg/pull/80386
-		add_filter( 'wp_img_tag_add_auto_sizes', '__return_false' );
+		// Intentionally empty. Register temporary core-compatibility filters here
+		// during an incident, then remove them once the upstream fix is released.
 	}
 
 	// endregion
