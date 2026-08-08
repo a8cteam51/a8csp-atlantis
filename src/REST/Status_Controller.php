@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis\REST;
 
 use A8C\SpecialProjects\Atlantis\Message_Query;
+use A8C\SpecialProjects\Atlantis\Modules\BotProtection\BotProtection;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\CustomTable;
 use A8C\SpecialProjects\Atlantis\Plugin;
 
@@ -109,6 +110,12 @@ class Status_Controller {
 
 		if ( isset( $modules['messages'] ) ) {
 			$modules['messages']['count'] = $this->count_messages();
+		}
+
+		if ( isset( $modules['bot-protection'] ) ) {
+			$modules['bot-protection']['state']             = BotProtection::get_configured_state();
+			$modules['bot-protection']['wp_cloud']          = BotProtection::is_wp_cloud();
+			$modules['bot-protection']['mu_plugin_present'] = BotProtection::is_mu_plugin_present();
 		}
 
 		return \rest_ensure_response(
