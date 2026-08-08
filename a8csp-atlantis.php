@@ -121,5 +121,11 @@ if ( is_wp_error( A8CSP_ATLANTIS_REQUIREMENTS ) ) {
 } else {
 	require_once A8CSP_ATLANTIS_DIR_PATH . '/functions.php';
 	register_activation_hook( __FILE__, 'a8csp_atlantis_maybe_disable_autoupdates_module_on_activation' );
+	register_deactivation_hook(
+		__FILE__,
+		static function (): void {
+			wp_clear_scheduled_hook( \A8C\SpecialProjects\Atlantis\Modules\ForceUpdateCheck\ForceUpdateCheck::CRON_HOOK );
+		}
+	);
 	add_action( 'plugins_loaded', array( a8csp_atlantis_get_plugin_instance(), 'maybe_initialize' ) );
 }
