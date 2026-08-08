@@ -79,6 +79,16 @@ class BotProtection extends AbstractModule {
 	public const STATE_OFF = 'off';
 
 	/**
+	 * All valid enforcement states.
+	 *
+	 * @since   1.4.0
+	 * @version 1.4.0
+	 *
+	 * @var array<int, string>
+	 */
+	public const VALID_STATES = array( self::STATE_INHERIT, self::STATE_ON, self::STATE_OFF );
+
+	/**
 	 * The WP Cloud filter that gates bot protection enablement.
 	 *
 	 * @since   1.4.0
@@ -236,9 +246,45 @@ class BotProtection extends AbstractModule {
 		$settings = a8csp_atlantis_get_module_settings( self::NAME );
 		$state    = isset( $settings['state'] ) ? (string) $settings['state'] : self::STATE_INHERIT;
 
-		return in_array( $state, array( self::STATE_INHERIT, self::STATE_ON, self::STATE_OFF ), true )
-			? $state
-			: self::STATE_INHERIT;
+		return in_array( $state, self::VALID_STATES, true ) ? $state : self::STATE_INHERIT;
+	}
+
+	/**
+	 * Persists the enforcement state, preserving any other stored sub-settings.
+	 *
+	 * Exposed statically as the single write path for the setting, shared by the
+	 * settings form and the `wp atlantis bot-protection set` command.
+	 *
+	 * @since   1.4.0
+	 * @version 1.4.0
+	 *
+	 * @param   string $state One of the STATE_* constants.
+	 *
+	 * @return  true|\WP_Error True on success, WP_Error if the state is invalid.
+	 */
+	public static function set_state( string $state ): true|\WP_Error {
+		if ( ! in_array( $state, self::VALID_STATES, true ) ) {
+			return new \WP_Error(
+				'a8csp_atlantis_invalid_bot_protection_state',
+				wp_sprintf(
+					/* translators: 1: provided value, 2: comma-separated list of valid values */
+					__( 'Invalid enforcement state "%1$s". Valid values: %2$s.', 'a8csp-atlantis' ),
+					$state,
+					implode( ', ', self::VALID_STATES )
+				)
+			);
+		}
+
+		$settings_key      = a8csp_atlantis_generate_module_settings_key( self::NAME );
+		$settings          = a8csp_atlantis_get_module_settings( self::NAME );
+		$settings['state'] = $state;
+		if ( ! isset( $settings['enabled'] ) ) {
+			$settings['enabled'] = '1';
+		}
+
+		update_option( $settings_key, $settings );
+
+		return true;
 	}
 
 	/**

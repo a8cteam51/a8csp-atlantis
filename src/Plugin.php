@@ -2,6 +2,7 @@
 
 namespace A8C\SpecialProjects\Atlantis;
 
+use A8C\SpecialProjects\Atlantis\CLI\BotProtection_Command;
 use A8C\SpecialProjects\Atlantis\CLI\Message_Command;
 use A8C\SpecialProjects\Atlantis\CLI\Module_Command;
 use A8C\SpecialProjects\Atlantis\REST\Status_Controller;
@@ -155,6 +156,7 @@ class Plugin {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			\WP_CLI::add_command( 'atlantis module', Module_Command::class );
 			\WP_CLI::add_command( 'atlantis message', Message_Command::class );
+			\WP_CLI::add_command( 'atlantis bot-protection', BotProtection_Command::class );
 		}
 	}
 
