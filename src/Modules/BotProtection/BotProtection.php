@@ -303,15 +303,18 @@ class BotProtection extends AbstractModule {
 	/**
 	 * Persists the enforcement state, preserving any other stored sub-settings.
 	 *
-	 * Exposed statically as the single write path for the setting, shared by the
-	 * settings form and the `wp atlantis bot-protection set` command.
+	 * The programmatic write path, used by the `wp atlantis bot-protection set`
+	 * command. (The settings form writes through the option's sanitize_callback,
+	 * self::sanitize_settings(), instead.) Validates $state, keeps the stored
+	 * `enabled` flag, and reports a genuine persistence failure.
 	 *
 	 * @since   1.4.0
 	 * @version 1.4.0
 	 *
 	 * @param   string $state One of the STATE_* constants.
 	 *
-	 * @return  true|\WP_Error True on success, WP_Error if the state is invalid.
+	 * @return  true|\WP_Error True on success, WP_Error if the state is invalid
+	 *                         or could not be persisted.
 	 */
 	public static function set_state( string $state ): true|\WP_Error {
 		if ( ! in_array( $state, self::VALID_STATES, true ) ) {
@@ -327,13 +330,23 @@ class BotProtection extends AbstractModule {
 		}
 
 		$settings_key      = a8csp_atlantis_generate_module_settings_key( self::NAME );
-		$settings          = a8csp_atlantis_get_module_settings( self::NAME );
+		$current           = a8csp_atlantis_get_module_settings( self::NAME );
+		$settings          = $current;
 		$settings['state'] = $state;
 		if ( ! isset( $settings['enabled'] ) ) {
 			$settings['enabled'] = '1';
 		}
 
-		update_option( $settings_key, $settings );
+		if ( $settings === $current ) {
+			return true; // Already persisted; nothing to write.
+		}
+
+		if ( ! update_option( $settings_key, $settings ) ) {
+			return new \WP_Error(
+				'a8csp_atlantis_bot_protection_save_failed',
+				__( 'Failed to persist the bot protection enforcement state.', 'a8csp-atlantis' )
+			);
+		}
 
 		return true;
 	}

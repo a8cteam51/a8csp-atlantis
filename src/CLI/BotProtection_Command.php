@@ -76,10 +76,13 @@ class BotProtection_Command {
 	 * @param array<string, string|bool> $assoc_args Flags.
 	 */
 	public function status( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		// Booleans (not yes/no strings) to match the /status REST payload and the
+		// `mandatory` field of `wp atlantis module`, so a fleet consumer reading
+		// either surface gets the same types.
 		$row = array(
 			'state'             => BotProtection::get_configured_state(),
-			'wp_cloud'          => BotProtection::is_wp_cloud() ? 'yes' : 'no',
-			'mu_plugin_present' => BotProtection::is_mu_plugin_present() ? 'yes' : 'no',
+			'wp_cloud'          => BotProtection::is_wp_cloud(),
+			'mu_plugin_present' => BotProtection::is_mu_plugin_present(),
 		);
 
 		$fields = isset( $assoc_args['fields'] )
@@ -120,12 +123,9 @@ class BotProtection_Command {
 	public function set( array $args, array $assoc_args ): void { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$state = (string) ( $args[0] ?? '' );
 
-		if ( BotProtection::get_configured_state() === $state ) {
-			\WP_CLI::log( \sprintf( "Bot protection enforcement is already '%s'; no change.", $state ) );
-			$this->maybe_warn_no_effect( $state );
-			return;
-		}
-
+		// Always persist rather than short-circuit on the normalized current
+		// state: a bogus stored value reads as `inherit`, so a `set inherit`
+		// must still rewrite it to a clean value.
 		$result = BotProtection::set_state( $state );
 		if ( \is_wp_error( $result ) ) {
 			\WP_CLI::error( $result->get_error_message() );
@@ -148,8 +148,14 @@ class BotProtection_Command {
 	 */
 	private function maybe_warn_no_effect( string $state ): void {
 		$forces = \in_array( $state, array( BotProtection::STATE_ON, BotProtection::STATE_OFF ), true );
-		if ( $forces && ! BotProtection::is_wp_cloud() ) {
+		if ( ! $forces ) {
+			return;
+		}
+
+		if ( ! BotProtection::is_wp_cloud() ) {
 			\WP_CLI::warning( 'This site is not a WP Cloud site, so this setting has no effect here.' );
+		} elseif ( ! BotProtection::is_mu_plugin_present() ) {
+			\WP_CLI::warning( 'The WP Cloud bot protection mu-plugin is not present on this site, so this setting has no effect here.' );
 		}
 	}
 
