@@ -28,8 +28,9 @@ Plugin metadata from `a8csp-atlantis.php`:
 - `functions.php` loads global helper wrappers from `includes/`.
 - `src/` contains the PSR-4 plugin classes, module registry, settings UI,
   encryption component, REST controller, and WP-CLI commands.
-- `src/Modules/` contains the Messages, Autoupdates, Tracking, and Colophon
-  modules. Each module has a nested README with more detailed behavior notes.
+- `src/Modules/` contains the Messages, Autoupdates, Tracking, Colophon, and Bot
+  Protection modules. Each module has a nested README with more detailed
+  behavior notes.
 - `models/` contains the DB-backed message model and query/list-table support.
 - `templates/` contains admin templates, including the message form.
 - `assets/js/src/` and `assets/css/src/` are the editable JS and SCSS sources.
@@ -96,6 +97,24 @@ standard footer credits. Output links can be adjusted with the
 
 More detail: `src/Modules/Colophon/README.md`.
 
+### Bot Protection
+
+The Bot Protection module is the control plane for WP Cloud Bot Protection (the
+external name for "blackbox") — login and password-reset gating shipped as the
+`wpcloud-bot-protection` mu-plugin on WP Cloud sites. The module drives the
+mu-plugin's `wpcloud_bot_protection_enable` filter from a single mandatory
+`state` setting:
+
+- `inherit` (default) registers nothing and leaves WP Cloud's own tiers to
+  decide, so shipping the module changes no behavior.
+- `on` forces protection enabled.
+- `off` forces protection disabled — a hard override even against a client-level
+  rollout.
+
+The setting is a no-op on non-WP-Cloud sites and where the mu-plugin is absent.
+
+More detail: `src/Modules/BotProtection/README.md`.
+
 ## Runtime Interfaces
 
 Atlantis registers an `Atlantis` wp-admin menu for users who pass
@@ -120,6 +139,8 @@ wp atlantis module activate <key>...
 wp atlantis module deactivate <key>...
 wp atlantis message list
 wp atlantis message get <id>
+wp atlantis bot-protection status
+wp atlantis bot-protection set <inherit|on|off>
 ```
 
 ## Development Requirements

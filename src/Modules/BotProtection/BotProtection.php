@@ -181,7 +181,11 @@ class BotProtection extends AbstractModule {
 	 */
 	public function register_settings(): void {
 		$option_name = a8csp_atlantis_generate_module_settings_key( $this->get_name() );
-		register_setting( 'a8csp_modules_group', $option_name );
+		register_setting(
+			'a8csp_modules_group',
+			$option_name,
+			array( 'sanitize_callback' => array( self::class, 'sanitize_settings' ) )
+		);
 
 		add_settings_section(
 			"{$option_name}_section",
@@ -197,7 +201,8 @@ class BotProtection extends AbstractModule {
 			__( 'Enforcement', 'a8csp-atlantis' ),
 			function ( array $args ): void {
 				$settings = a8csp_atlantis_get_module_settings( $this->get_name() );
-				$state    = isset( $settings['state'] ) ? (string) $settings['state'] : self::STATE_INHERIT;
+				$state    = isset( $settings['state'] ) && is_string( $settings['state'] ) ? $settings['state'] : self::STATE_INHERIT;
+				$field_id = (string) ( $args['label_for'] ?? $args['option_name'] . '_state' );
 
 				$choices = array(
 					self::STATE_INHERIT => __( 'Inherit — leave the WP Cloud default untouched', 'a8csp-atlantis' ),
@@ -205,7 +210,7 @@ class BotProtection extends AbstractModule {
 					self::STATE_OFF     => __( 'Off — force bot protection disabled', 'a8csp-atlantis' ),
 				);
 
-				echo '<select name="' . esc_attr( $args['option_name'] ) . '[state]">';
+				echo '<select id="' . esc_attr( $field_id ) . '" name="' . esc_attr( $args['option_name'] ) . '[state]">';
 				foreach ( $choices as $value => $label ) {
 					printf(
 						'<option value="%s" %s>%s</option>',
@@ -216,13 +221,27 @@ class BotProtection extends AbstractModule {
 				}
 				echo '</select>';
 
+				// The dropdown is a no-op unless a listener is actually hooked to
+				// the filter: that requires both WP Cloud credentials and the
+				// mu-plugin. Name whichever precondition is missing so an operator
+				// reacting to a lockout is not misled into thinking Off took effect.
+				$notice = '';
 				if ( ! self::is_wp_cloud() ) {
-					echo '<p class="description">' . esc_html__( 'This site is not a WP Cloud site, so this setting has no effect here.', 'a8csp-atlantis' ) . '</p>';
+					$notice = __( 'This site is not a WP Cloud site, so this setting has no effect here.', 'a8csp-atlantis' );
+				} elseif ( ! self::is_mu_plugin_present() ) {
+					$notice = __( 'The WP Cloud bot protection mu-plugin is not present on this site, so this setting has no effect here.', 'a8csp-atlantis' );
+				}
+
+				if ( '' !== $notice ) {
+					echo '<p class="description">' . esc_html( $notice ) . '</p>';
 				}
 			},
 			'a8csp-atlantis-modules',
 			"{$option_name}_section",
-			array( 'option_name' => $option_name )
+			array(
+				'option_name' => $option_name,
+				'label_for'   => "{$option_name}_state",
+			)
 		);
 	}
 
@@ -244,9 +263,41 @@ class BotProtection extends AbstractModule {
 	 */
 	public static function get_configured_state(): string {
 		$settings = a8csp_atlantis_get_module_settings( self::NAME );
-		$state    = isset( $settings['state'] ) ? (string) $settings['state'] : self::STATE_INHERIT;
+		$state    = isset( $settings['state'] ) && is_string( $settings['state'] ) ? $settings['state'] : self::STATE_INHERIT;
 
 		return in_array( $state, self::VALID_STATES, true ) ? $state : self::STATE_INHERIT;
+	}
+
+	/**
+	 * Sanitizes the module settings on save.
+	 *
+	 * Registered as the option's `sanitize_callback`. Whitelists `state` against
+	 * the STATE_* constants (falling back to `inherit`) and carries the stored
+	 * `enabled` flag forward — this module's form intentionally omits the base
+	 * Enabled checkbox, which would otherwise drop that key on every save.
+	 *
+	 * @since   1.4.0
+	 * @version 1.4.0
+	 *
+	 * @param   mixed $input The raw option value submitted by the settings form.
+	 *
+	 * @return  array<string, string>
+	 */
+	public static function sanitize_settings( mixed $input ): array {
+		$input = is_array( $input ) ? $input : array();
+
+		$state = isset( $input['state'] ) && is_string( $input['state'] ) ? $input['state'] : self::STATE_INHERIT;
+		if ( ! in_array( $state, self::VALID_STATES, true ) ) {
+			$state = self::STATE_INHERIT;
+		}
+
+		$stored  = a8csp_atlantis_get_module_settings( self::NAME );
+		$enabled = isset( $stored['enabled'] ) && is_string( $stored['enabled'] ) ? $stored['enabled'] : '1';
+
+		return array(
+			'enabled' => $enabled,
+			'state'   => $state,
+		);
 	}
 
 	/**
