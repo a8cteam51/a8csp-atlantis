@@ -38,15 +38,16 @@ final class ForceUpdateCheck extends AbstractModule {
 	 *
 	 * @var string
 	 */
-	private const CRON_SCHEDULE = 'a8csp_atlantis_every_two_minutes';
+	private const CRON_SCHEDULE = 'a8csp_atlantis_every_five_minutes';
 
 	/**
-	 * The cron interval, in seconds. Kept short so an urgent security update propagates across the
-	 * fleet within a couple of minutes; the poll itself is a single cached option read on OpsOasis.
+	 * The cron interval, in seconds. Matches the cadence the fleet already sustains for the Autoupdates
+	 * settings poll, so the lever adds no more polling pressure than the existing baseline; the poll
+	 * itself is a single (cacheable) read on OpsOasis.
 	 *
 	 * @var int
 	 */
-	private const CRON_INTERVAL = 2 * MINUTE_IN_SECONDS;
+	private const CRON_INTERVAL = 5 * MINUTE_IN_SECONDS;
 
 	/**
 	 * The option storing the highest refresh epoch this site has already acted on.
@@ -102,7 +103,7 @@ final class ForceUpdateCheck extends AbstractModule {
 	// region HOOKS
 
 	/**
-	 * Registers the custom two-minute cron schedule used to poll the refresh directive.
+	 * Registers the custom five-minute cron schedule used to poll the refresh directive.
 	 *
 	 * @param   array<string,array{interval:int,display:string}> $schedules The existing cron schedules.
 	 *
@@ -112,7 +113,7 @@ final class ForceUpdateCheck extends AbstractModule {
 		if ( ! isset( $schedules[ self::CRON_SCHEDULE ] ) ) {
 			$schedules[ self::CRON_SCHEDULE ] = array(
 				'interval' => self::CRON_INTERVAL,
-				'display'  => __( 'Every two minutes (Atlantis force update-check)', 'a8csp-atlantis' ),
+				'display'  => __( 'Every five minutes (Atlantis force update-check)', 'a8csp-atlantis' ),
 			);
 		}
 
