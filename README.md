@@ -117,6 +117,11 @@ but does not *enable* — `off` is the dependable lever, while `on` only forces 
 where a tier (the constant or the client rollout) has already armed the loader.
 See `src/Modules/BotProtection/README.md` for the full matrix.
 
+On non-production environments (`wp_get_environment_type()` other than
+`production`), protection is forced off unless `state` is explicitly `on`, so
+staging/dev sites that run login automation aren't gated — mirroring the
+Tracking module's production gating.
+
 More detail: `src/Modules/BotProtection/README.md`.
 
 ## Runtime Interfaces

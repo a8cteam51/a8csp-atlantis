@@ -120,6 +120,7 @@ class Status_Controller {
 			$modules['bot-protection']['state']             = BotProtection::get_configured_state();
 			$modules['bot-protection']['wp_cloud']          = BotProtection::is_wp_cloud();
 			$modules['bot-protection']['mu_plugin_present'] = BotProtection::is_mu_plugin_present();
+			$modules['bot-protection']['environment']       = \function_exists( 'wp_get_environment_type' ) ? \wp_get_environment_type() : 'production';
 		}
 
 		return \rest_ensure_response(

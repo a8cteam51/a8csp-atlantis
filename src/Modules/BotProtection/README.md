@@ -55,6 +55,22 @@ So:
 In short: `off` is the dependable lever, `inherit` respects the platform
 decision, and `on` means "force-on where the loader is already armed."
 
+## Non-production environments
+
+On any environment where `wp_get_environment_type()` is not `production`,
+protection is **forced off** unless the state is explicitly `on`. Staging and
+development sites routinely run login automation — CI/e2e suites, uptime and
+synthetic-login monitors, scripted provisioning — that bot protection would
+challenge or block, so this keeps those sites clear by default (mirroring the
+Tracking module's production gating).
+
+- non-production + `inherit` or `off` → forced off
+- non-production + `on` → on (deliberate opt-in, e.g. to test protection)
+- production → states behave as described above
+
+The determination is filterable via `a8csp_atlantis_bot_protection_is_production`
+(return `true`/`false`) for sites where the environment type isn't set reliably.
+
 ## WP Cloud precondition
 
 The mu-plugin only loads where the WP Cloud credentials `ATOMIC_SITE_ID` and
@@ -76,6 +92,8 @@ wp atlantis bot-protection set <inherit|on|off>
 - `state` — `inherit` / `on` / `off`. The authoritative enforcement signal.
 - `wp_cloud` — whether the WP Cloud credentials are present.
 - `mu_plugin_present` — whether the mu-plugin is loaded.
+- `environment` — the site's environment type; non-production forces protection
+  off unless `state` is `on`.
 
 The shared `enabled` field is always `true` for this mandatory module and does
 not indicate enforcement; read `state` instead.

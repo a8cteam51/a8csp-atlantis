@@ -31,7 +31,7 @@ class BotProtection_Command {
 	 *
 	 * @var array<int, string>
 	 */
-	private const DEFAULT_FIELDS = array( 'state', 'wp_cloud', 'mu_plugin_present' );
+	private const DEFAULT_FIELDS = array( 'state', 'wp_cloud', 'mu_plugin_present', 'environment' );
 
 	// region SUBCOMMANDS
 
@@ -46,7 +46,7 @@ class BotProtection_Command {
 	 * [--fields=<fields>]
 	 * : Comma-separated list of fields to show.
 	 * ---
-	 * default: state,wp_cloud,mu_plugin_present
+	 * default: state,wp_cloud,mu_plugin_present,environment
 	 * ---
 	 *
 	 * [--format=<format>]
@@ -65,6 +65,7 @@ class BotProtection_Command {
 	 * * state             - Enforcement state: inherit, on, or off.
 	 * * wp_cloud          - Whether WP Cloud credentials (ATOMIC_SITE_ID / ATOMIC_SITE_API_KEY) are present.
 	 * * mu_plugin_present - Whether the wpcloud-bot-protection mu-plugin is loaded.
+	 * * environment       - The site's environment type; non-production forces protection off unless state is `on`.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -83,6 +84,7 @@ class BotProtection_Command {
 			'state'             => BotProtection::get_configured_state(),
 			'wp_cloud'          => BotProtection::is_wp_cloud(),
 			'mu_plugin_present' => BotProtection::is_mu_plugin_present(),
+			'environment'       => \function_exists( 'wp_get_environment_type' ) ? \wp_get_environment_type() : 'production',
 		);
 
 		$fields = isset( $assoc_args['fields'] )

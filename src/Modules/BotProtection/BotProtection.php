@@ -153,7 +153,19 @@ class BotProtection extends AbstractModule {
 	 * @version 1.4.0
 	 */
 	protected function initialize(): void {
-		switch ( self::get_configured_state() ) {
+		$state = self::get_configured_state();
+
+		// Non-production safety: staging/dev sites frequently run login
+		// automation (CI/e2e suites, uptime and synthetic-login monitors,
+		// scripted provisioning) that bot protection would challenge or block,
+		// so force it off there by default. An explicit `on` still wins, so a
+		// site can be opted in deliberately (e.g. to test bot protection).
+		if ( self::STATE_ON !== $state && ! self::is_production() ) {
+			add_filter( self::FILTER, '__return_false', PHP_INT_MAX );
+			return;
+		}
+
+		switch ( $state ) {
 			case self::STATE_ON:
 				add_filter( self::FILTER, '__return_true', PHP_INT_MAX );
 				break;
@@ -230,6 +242,8 @@ class BotProtection extends AbstractModule {
 					$notice = __( 'This site is not a WP Cloud site, so this setting has no effect here.', 'a8csp-atlantis' );
 				} elseif ( ! self::is_mu_plugin_present() ) {
 					$notice = __( 'The WP Cloud bot protection mu-plugin is not present on this site, so this setting has no effect here.', 'a8csp-atlantis' );
+				} elseif ( self::STATE_ON !== $state && ! self::is_production() ) {
+					$notice = __( 'This is a non-production environment, so bot protection is forced off here unless Enforcement is set to On.', 'a8csp-atlantis' );
 				}
 
 				if ( '' !== $notice ) {
@@ -374,6 +388,35 @@ class BotProtection extends AbstractModule {
 	 */
 	public static function is_mu_plugin_present(): bool {
 		return function_exists( self::LOADER_FUNCTION );
+	}
+
+	/**
+	 * Whether the current environment should be treated as production.
+	 *
+	 * On non-production environments bot protection is forced off unless the
+	 * state is explicitly `on` (see initialize()), since staging/dev sites
+	 * commonly run login automation that protection would break.
+	 *
+	 * @since   1.4.0
+	 * @version 1.4.0
+	 *
+	 * @return  bool
+	 */
+	public static function is_production(): bool {
+		$is_production = ! function_exists( 'wp_get_environment_type' ) || 'production' === wp_get_environment_type();
+
+		/**
+		 * Filters whether Bot Protection treats the current site as production.
+		 *
+		 * Return false to have protection forced off here (unless the state is
+		 * `on`); return true to opt a non-production site back into the normal
+		 * enablement tiers.
+		 *
+		 * @since 1.4.0
+		 *
+		 * @param bool $is_production Whether the environment type is `production`.
+		 */
+		return (bool) apply_filters( 'a8csp_atlantis_bot_protection_is_production', $is_production );
 	}
 
 	// endregion
