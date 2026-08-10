@@ -107,20 +107,20 @@ mu-plugin's `wpcloud_bot_protection_enable` filter from a single mandatory
 
 - `inherit` (default) registers nothing and leaves WP Cloud's own tiers to
   decide, so shipping the module changes no behavior.
-- `on` forces protection enabled.
 - `off` forces protection disabled — a hard override even against a client-level
   rollout.
 
-The setting is a no-op on non-WP-Cloud sites and where the mu-plugin is absent.
-Note: in the currently deployed WP Cloud loader the filter reliably *disables*
-but does not *enable* — `off` is the dependable lever, while `on` only forces on
-where a tier (the constant or the client rollout) has already armed the loader.
-See `src/Modules/BotProtection/README.md` for the full matrix.
+There is deliberately no `on`: in the currently deployed WP Cloud loader the
+filter reliably *disables* but does not *enable*, so an `on` would be
+indistinguishable from `inherit`. To enable a site, arm a tier — set
+`WPC_BOT_PROTECTION_ENABLED = true` or have the client enabled via the platform
+percentage rollout. The `off` setting is a no-op on non-WP-Cloud sites and where
+the mu-plugin is absent.
 
 On non-production environments (`wp_get_environment_type()` other than
-`production`), protection is forced off unless `state` is explicitly `on`, so
-staging/dev sites that run login automation aren't gated — mirroring the
-Tracking module's production gating.
+`production`), protection is forced off regardless of `state`, so staging/dev
+sites that run login automation aren't gated — mirroring the Tracking module's
+production gating.
 
 More detail: `src/Modules/BotProtection/README.md`.
 
@@ -149,7 +149,7 @@ wp atlantis module deactivate <key>...
 wp atlantis message list
 wp atlantis message get <id>
 wp atlantis bot-protection status
-wp atlantis bot-protection set <inherit|on|off>
+wp atlantis bot-protection set <inherit|off>
 ```
 
 ## Development Requirements

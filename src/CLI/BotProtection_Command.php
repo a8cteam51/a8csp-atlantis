@@ -17,8 +17,7 @@ defined( 'ABSPATH' ) || exit;
  *     # Output just the state (for scripting).
  *     $ wp atlantis bot-protection status --field=state
  *
- *     # Force bot protection on / off, or defer to WP Cloud's default.
- *     $ wp atlantis bot-protection set on
+ *     # Force bot protection off on a site, or defer to WP Cloud's default.
  *     $ wp atlantis bot-protection set off
  *     $ wp atlantis bot-protection set inherit
  *
@@ -62,7 +61,7 @@ class BotProtection_Command {
 	 *
 	 * ## AVAILABLE FIELDS
 	 *
-	 * * state             - Enforcement state: inherit, on, or off.
+	 * * state             - Enforcement state: inherit or off.
 	 * * wp_cloud          - Whether WP Cloud credentials (ATOMIC_SITE_ID / ATOMIC_SITE_API_KEY) are present.
 	 * * mu_plugin_present - Whether the wpcloud-bot-protection mu-plugin is loaded.
 	 * * environment       - The site's environment type; non-production forces protection off unless state is `on`.
@@ -98,9 +97,11 @@ class BotProtection_Command {
 	/**
 	 * Sets the bot protection enforcement state.
 	 *
-	 * `inherit` leaves WP Cloud's own enablement tiers untouched; `on` and `off`
-	 * force the state via the `wpcloud_bot_protection_enable` filter, overriding
-	 * every other tier (including any client-level percentage rollout).
+	 * `inherit` leaves WP Cloud's own enablement tiers untouched; `off` forces
+	 * protection disabled via the `wpcloud_bot_protection_enable` filter,
+	 * overriding every other tier (including any client-level percentage
+	 * rollout). There is no `on`: the filter cannot enable a site that no tier
+	 * has armed — enable via the constant or a client-level rollout instead.
 	 *
 	 * ## OPTIONS
 	 *
@@ -109,13 +110,11 @@ class BotProtection_Command {
 	 * ---
 	 * options:
 	 *   - inherit
-	 *   - on
 	 *   - off
 	 * ---
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     $ wp atlantis bot-protection set on
 	 *     $ wp atlantis bot-protection set off
 	 *     $ wp atlantis bot-protection set inherit
 	 *
@@ -142,15 +141,15 @@ class BotProtection_Command {
 	// region HELPERS
 
 	/**
-	 * Warns that a force on/off has no effect when the site is not WP Cloud.
+	 * Warns that a force-off has no effect when the site is not WP Cloud or the
+	 * mu-plugin is absent.
 	 *
 	 * @param string $state The enforcement state that was requested.
 	 *
 	 * @return void
 	 */
 	private function maybe_warn_no_effect( string $state ): void {
-		$forces = \in_array( $state, array( BotProtection::STATE_ON, BotProtection::STATE_OFF ), true );
-		if ( ! $forces ) {
+		if ( BotProtection::STATE_OFF !== $state ) {
 			return;
 		}
 

@@ -54,25 +54,13 @@ class BotProtectionTestCest {
 				update_option( $option_name, array( 'state' => 'bogus' ) );
 				Assert::assertSame( BotProtection::STATE_INHERIT, BotProtection::get_configured_state() );
 
+				// The removed `on` value is no longer valid and falls back too.
+				update_option( $option_name, array( 'state' => 'on' ) );
+				Assert::assertSame( BotProtection::STATE_INHERIT, BotProtection::get_configured_state() );
+
 				// A malformed (non-string) value must not trigger a string cast.
 				update_option( $option_name, array( 'state' => array( 'not', 'a', 'string' ) ) );
 				Assert::assertSame( BotProtection::STATE_INHERIT, BotProtection::get_configured_state() );
-			}
-		);
-	}
-
-	/**
-	 * The `on` state forces the filter to return true.
-	 *
-	 * @param IntegrationTester $i Tester instance.
-	 *
-	 * @return void
-	 */
-	public function on_state_forces_filter_true( IntegrationTester $i ): void {
-		$this->with_state(
-			BotProtection::STATE_ON,
-			static function (): void {
-				Assert::assertTrue( apply_filters( self::FILTER, false ) );
 			}
 		);
 	}
@@ -110,14 +98,14 @@ class BotProtectionTestCest {
 	}
 
 	/**
-	 * On non-production environments, protection is forced off unless the state
-	 * is explicitly `on`.
+	 * On non-production environments, protection is forced off regardless of the
+	 * stored state.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
 	 * @return void
 	 */
-	public function non_production_forces_off_unless_on( IntegrationTester $i ): void {
+	public function non_production_forces_off( IntegrationTester $i ): void {
 		// `inherit` on non-production forces off instead of deferring.
 		$this->with_state(
 			BotProtection::STATE_INHERIT,
@@ -132,15 +120,6 @@ class BotProtectionTestCest {
 			BotProtection::STATE_OFF,
 			static function (): void {
 				Assert::assertFalse( apply_filters( self::FILTER, true ) );
-			},
-			false
-		);
-
-		// Explicit `on` still wins on non-production (deliberate opt-in).
-		$this->with_state(
-			BotProtection::STATE_ON,
-			static function (): void {
-				Assert::assertTrue( apply_filters( self::FILTER, false ) );
 			},
 			false
 		);
@@ -160,15 +139,18 @@ class BotProtectionTestCest {
 		$this->restore_option(
 			$option_name,
 			static function (): void {
-				Assert::assertTrue( BotProtection::set_state( BotProtection::STATE_ON ) );
-				Assert::assertSame( BotProtection::STATE_ON, BotProtection::get_configured_state() );
+				Assert::assertTrue( BotProtection::set_state( BotProtection::STATE_OFF ) );
+				Assert::assertSame( BotProtection::STATE_OFF, BotProtection::get_configured_state() );
 
-				$result = BotProtection::set_state( 'nonsense' );
-				Assert::assertInstanceOf( WP_Error::class, $result );
-				Assert::assertSame( 'a8csp_atlantis_invalid_bot_protection_state', $result->get_error_code() );
+				// The removed `on` value is rejected like any other invalid input.
+				foreach ( array( 'on', 'nonsense' ) as $invalid ) {
+					$result = BotProtection::set_state( $invalid );
+					Assert::assertInstanceOf( WP_Error::class, $result );
+					Assert::assertSame( 'a8csp_atlantis_invalid_bot_protection_state', $result->get_error_code() );
+				}
 
-				// The rejected write left the prior value intact.
-				Assert::assertSame( BotProtection::STATE_ON, BotProtection::get_configured_state() );
+				// The rejected writes left the prior value intact.
+				Assert::assertSame( BotProtection::STATE_OFF, BotProtection::get_configured_state() );
 			}
 		);
 	}
@@ -225,7 +207,6 @@ class BotProtectionTestCest {
 					try {
 						$assertions();
 					} finally {
-						remove_filter( self::FILTER, '__return_true', PHP_INT_MAX );
 						remove_filter( self::FILTER, '__return_false', PHP_INT_MAX );
 					}
 				}
