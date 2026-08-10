@@ -153,7 +153,12 @@ final class ForceUpdateCheck extends AbstractModule {
 	 * @return  void
 	 */
 	public function maybe_schedule_cron(): void {
-		if ( is_multisite() && ! is_main_site() ) {
+		// On multisite, when Atlantis is network-activated the lever should run once per network — from
+		// the main site, matching the network scope of the caches it clears. A non-main subsite skips
+		// scheduling and drains any event an earlier version left behind. Per-site activations fall
+		// through and schedule their own event, since the network's main site may not run Atlantis.
+		if ( is_multisite() && ! is_main_site() && $this->is_network_active() ) {
+			wp_clear_scheduled_hook( self::CRON_HOOK );
 			return;
 		}
 
@@ -170,15 +175,27 @@ final class ForceUpdateCheck extends AbstractModule {
 	}
 
 	/**
+	 * Whether Atlantis is network-activated on this multisite install.
+	 *
+	 * @return  bool
+	 */
+	private function is_network_active(): bool {
+		$network_plugins = get_network_option( null, 'active_sitewide_plugins', array() );
+
+		return is_array( $network_plugins ) && isset( $network_plugins[ A8CSP_ATLANTIS_BASENAME ] );
+	}
+
+	/**
 	 * Polls the refresh directive and, on a newer epoch, forces a fresh plugin update-check.
 	 *
 	 * @return  void
 	 */
 	public function run_directive_check(): void {
 		/**
-		 * Filters whether the force-update-check lever runs on this site.
+		 * Filters whether the force-update-check lever polls and refreshes on this site.
 		 *
-		 * Return false to opt a production site out of the otherwise-mandatory lever.
+		 * Return false to stop an otherwise-mandatory site from polling OpsOasis and refreshing updates.
+		 * The lightweight cron event still fires on schedule but returns immediately.
 		 *
 		 * @since 1.2.4
 		 *
@@ -210,9 +227,10 @@ final class ForceUpdateCheck extends AbstractModule {
 			return; // Already acted on this epoch (or a newer one).
 		}
 
-		// Record the epoch *before* doing the work so a transient failure downstream cannot make this
-		// site clear its cache on every single tick. A missed directive is re-tried by the next
-		// (higher-epoch) refresh, and the site still re-checks on its own schedule.
+		// Record the epoch *before* doing the work so a failure downstream cannot make this site clear
+		// its cache on every single tick. If the refresh itself partially fails the epoch is still
+		// banked, but the `update_plugins` transient was already deleted, so core's own next update
+		// check picks up the new version — and the operator can raise a fresh (higher) epoch to retry.
 		update_site_option( self::LAST_EPOCH_OPTION, $epoch );
 
 		$this->force_update_check();
