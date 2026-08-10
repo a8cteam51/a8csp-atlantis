@@ -124,7 +124,9 @@ if ( is_wp_error( A8CSP_ATLANTIS_REQUIREMENTS ) ) {
 	register_deactivation_hook(
 		__FILE__,
 		static function (): void {
-			wp_clear_scheduled_hook( \A8C\SpecialProjects\Atlantis\Modules\ForceUpdateCheck\ForceUpdateCheck::CRON_HOOK );
+			// Literal hook name (kept in sync with ForceUpdateCheck::CRON_HOOK) so cleanup does not
+			// depend on the autoloader resolving the module class at deactivation time.
+			wp_clear_scheduled_hook( 'a8csp_atlantis_force_update_check' );
 		}
 	);
 	add_action( 'plugins_loaded', array( a8csp_atlantis_get_plugin_instance(), 'maybe_initialize' ) );

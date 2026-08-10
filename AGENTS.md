@@ -11,6 +11,7 @@ This file provides AI coding assistants with the context they need to work effec
 - Auto-update control (timing windows, rollout delays, centralized settings, per-plugin filter toggles).
 - Tracking integrations (WooCommerce, Sensei, Bilmur).
 - Colophon utilities (credits action + shortcodes).
+- Force Update Check (on-demand, fleet-wide plugin update-check refresh driven by an OpsOasis directive).
 
 **Text domain:** `a8csp-atlantis`  
 **Namespace:** `A8C\SpecialProjects\Atlantis\`  
@@ -56,7 +57,8 @@ a8csp-atlantis/
 │       ├── Messages/
 │       ├── Autoupdates/
 │       ├── Tracking/
-│       └── Colophon/
+│       ├── Colophon/
+│       └── ForceUpdateCheck/
 │
 └── tests/Integration/            ← Module and core integration Cest tests
 ```
