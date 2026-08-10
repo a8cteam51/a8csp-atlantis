@@ -6,7 +6,6 @@ use A8C\SpecialProjects\Atlantis\Modules\Colophon\Colophon;
 use A8C\SpecialProjects\Atlantis\Modules\Tracking\Tracking;
 use A8C\SpecialProjects\Atlantis\Modules\Autoupdates\AutoUpdatePluginsFilter;
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
-use A8C\SpecialProjects\Atlantis\Modules\ForceUpdateCheck\ForceUpdateCheck;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\Messages;
 
 
@@ -61,7 +60,6 @@ class Modules {
 		$this->try_initialize_module( 'colophon', static fn() => new Colophon() );
 		$this->try_initialize_module( 'tracking', static fn() => new Tracking() );
 		$this->try_initialize_module( 'autoupdates', static fn() => new AutoUpdatePluginsFilter() );
-		$this->try_initialize_module( 'force_update_check', static fn() => new ForceUpdateCheck() );
 	}
 
 	/**

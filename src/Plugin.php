@@ -4,6 +4,7 @@ namespace A8C\SpecialProjects\Atlantis;
 
 use A8C\SpecialProjects\Atlantis\CLI\Message_Command;
 use A8C\SpecialProjects\Atlantis\CLI\Module_Command;
+use A8C\SpecialProjects\Atlantis\REST\Force_Update_Check_Controller;
 use A8C\SpecialProjects\Atlantis\REST\Status_Controller;
 
 defined( 'ABSPATH' ) || exit;
@@ -56,6 +57,16 @@ class Plugin {
 	 * @var Status_Controller
 	 */
 	public Status_Controller $status_controller;
+
+	/**
+	 * The force-update-check REST controller.
+	 *
+	 * @since   1.2.4
+	 * @version 1.2.4
+	 *
+	 * @var Force_Update_Check_Controller
+	 */
+	public Force_Update_Check_Controller $force_update_check_controller;
 
 	// endregion
 
@@ -151,6 +162,9 @@ class Plugin {
 
 		$this->status_controller = new Status_Controller();
 		$this->status_controller->initialize();
+
+		$this->force_update_check_controller = new Force_Update_Check_Controller();
+		$this->force_update_check_controller->initialize();
 
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			\WP_CLI::add_command( 'atlantis module', Module_Command::class );

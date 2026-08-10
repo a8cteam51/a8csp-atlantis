@@ -35,7 +35,6 @@ Current module registry:
 - `colophon`
 - `tracking`
 - `autoupdates`
-- `force_update_check`
 
 ## Settings Model
 
