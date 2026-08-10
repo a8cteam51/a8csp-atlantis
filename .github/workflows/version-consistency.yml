@@ -1,0 +1,46 @@
+name: Version Consistency
+
+on:
+  push:
+    branches: [ trunk, develop ]
+  pull_request:
+    branches: [ trunk, develop ]
+
+jobs:
+  check-versions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version sources are in sync
+        run: |
+          set -euo pipefail
+
+          extract() {
+            grep -m1 -oE '[0-9]+\.[0-9]+\.[0-9]+' "$1" || true
+          }
+
+          # Plugin header: " * Version:                 1.2.4"
+          header="$(grep -m1 -iE '^\s*\*\s*Version:' a8csp-atlantis.php | extract /dev/stdin)"
+          # package.json: "  "version": "1.2.4","
+          package="$(grep -m1 -E '"version"\s*:' package.json | extract /dev/stdin)"
+          # README.md: "- Version: `1.2.4`"
+          readme="$(grep -m1 -E '^- Version:' README.md | extract /dev/stdin)"
+
+          echo "a8csp-atlantis.php : ${header:-<none>}"
+          echo "package.json       : ${package:-<none>}"
+          echo "README.md          : ${readme:-<none>}"
+
+          if [ -z "$header" ] || [ -z "$package" ] || [ -z "$readme" ]; then
+            echo "::error::Could not read a version from one or more sources."
+            exit 1
+          fi
+
+          if [ "$header" != "$package" ] || [ "$header" != "$readme" ]; then
+            echo "::error::Version mismatch. Update a8csp-atlantis.php, package.json, and README.md to the same version before merging."
+            exit 1
+          fi
+
+          echo "All version sources agree on $header."

@@ -213,6 +213,9 @@ Before publishing a release, update the version in:
 - `package.json`
 - `README.md` (the `Version:` line above)
 
+The `Version Consistency` workflow (`.github/workflows/version-consistency.yml`)
+fails CI if these three sources disagree.
+
 Run `composer generate-autoloader` if local development reports missing
 classmap-backed classes after changing generated/autoloaded PHP symbols.
 
