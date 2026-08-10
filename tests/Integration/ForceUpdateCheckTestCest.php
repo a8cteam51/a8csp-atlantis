@@ -16,7 +16,7 @@ class ForceUpdateCheckTestCest {
 	private const EPOCH_OPTION = 'a8csp_atlantis_last_force_check_epoch';
 
 	/**
-	 * Clears the epoch marker before each test so cases don't leak state.
+	 * Clears the state the tests touch before each case so they don't leak into one another.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -24,6 +24,19 @@ class ForceUpdateCheckTestCest {
 	 */
 	public function _before( IntegrationTester $i ): void {
 		delete_site_option( self::EPOCH_OPTION );
+		delete_site_transient( 'update_plugins' );
+	}
+
+	/**
+	 * Restores the state the tests touch after each case.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _after( IntegrationTester $i ): void {
+		delete_site_option( self::EPOCH_OPTION );
+		delete_site_transient( 'update_plugins' );
 	}
 
 	/**
@@ -55,22 +68,28 @@ class ForceUpdateCheckTestCest {
 	}
 
 	/**
-	 * With a directive served, the first poll seeds the epoch (and does not act on a pre-existing pulse).
+	 * The first poll seeds the epoch and does NOT refresh (the sentinel transient survives).
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
 	 * @return void
 	 */
-	public function seeds_on_first_poll( IntegrationTester $i ): void {
-		$stub = $this->stub_directive( 123 );
-		( new ForceUpdateCheck() )->run_directive_check();
-		$this->remove_stub( $stub );
+	public function seeds_on_first_poll_without_refreshing( IntegrationTester $i ): void {
+		set_site_transient( 'update_plugins', (object) array( 'sentinel' => true ) );
 
-		Assert::assertSame( 123, (int) get_site_option( self::EPOCH_OPTION ) );
+		$stub = $this->stub_directive( 123 );
+		try {
+			( new ForceUpdateCheck() )->run_directive_check();
+
+			Assert::assertSame( 123, (int) get_site_option( self::EPOCH_OPTION ) );
+			Assert::assertTrue( $this->has_update_plugins_sentinel(), 'Seed-and-return must not clear update_plugins.' );
+		} finally {
+			$this->remove_stub( $stub );
+		}
 	}
 
 	/**
-	 * A directive whose epoch is not newer than the stored one is ignored.
+	 * An epoch that is not newer than the stored one is ignored (no seed change, no refresh).
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -78,36 +97,46 @@ class ForceUpdateCheckTestCest {
 	 */
 	public function ignores_not_newer_epoch( IntegrationTester $i ): void {
 		update_site_option( self::EPOCH_OPTION, 200 );
+		set_site_transient( 'update_plugins', (object) array( 'sentinel' => true ) );
 
 		$stub = $this->stub_directive( 123 );
-		( new ForceUpdateCheck() )->run_directive_check();
-		$this->remove_stub( $stub );
+		try {
+			( new ForceUpdateCheck() )->run_directive_check();
 
-		Assert::assertSame( 200, (int) get_site_option( self::EPOCH_OPTION ) );
+			Assert::assertSame( 200, (int) get_site_option( self::EPOCH_OPTION ) );
+			Assert::assertTrue( $this->has_update_plugins_sentinel(), 'A not-newer epoch must not clear update_plugins.' );
+		} finally {
+			$this->remove_stub( $stub );
+		}
 	}
 
 	/**
-	 * A newer epoch advances the high-water mark (and triggers the refresh).
+	 * A newer epoch advances the marker AND refreshes (the sentinel transient is cleared).
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
 	 * @return void
 	 */
-	public function advances_on_newer_epoch( IntegrationTester $i ): void {
+	public function advances_and_refreshes_on_newer_epoch( IntegrationTester $i ): void {
 		update_site_option( self::EPOCH_OPTION, 100 );
+		set_site_transient( 'update_plugins', (object) array( 'sentinel' => true ) );
 
 		$stub = $this->stub_directive( 123 );
-		( new ForceUpdateCheck() )->run_directive_check();
-		$this->remove_stub( $stub );
+		try {
+			( new ForceUpdateCheck() )->run_directive_check();
 
-		Assert::assertSame( 123, (int) get_site_option( self::EPOCH_OPTION ) );
+			Assert::assertSame( 123, (int) get_site_option( self::EPOCH_OPTION ) );
+			Assert::assertFalse( $this->has_update_plugins_sentinel(), 'A newer epoch must clear update_plugins.' );
+		} finally {
+			$this->remove_stub( $stub );
+		}
 	}
 
 	/**
 	 * The kill-switch filter short-circuits before any polling — even with a directive served.
 	 *
 	 * The served epoch (123) must NOT be recorded, which proves the guard runs before the fetch: if the
-	 * `apply_filters()` guard were removed, the stub below would seed the option and this test would fail.
+	 * `apply_filters()` guard were removed, the stub would seed the option and this test would fail.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -117,17 +146,32 @@ class ForceUpdateCheckTestCest {
 		$stub = $this->stub_directive( 123 );
 		add_filter( 'a8csp_atlantis_force_update_check_enabled', '__return_false' );
 
-		( new ForceUpdateCheck() )->run_directive_check();
+		try {
+			( new ForceUpdateCheck() )->run_directive_check();
 
-		remove_filter( 'a8csp_atlantis_force_update_check_enabled', '__return_false' );
-		$this->remove_stub( $stub );
-
-		Assert::assertFalse( get_site_option( self::EPOCH_OPTION, false ) );
+			Assert::assertFalse( get_site_option( self::EPOCH_OPTION, false ) );
+		} finally {
+			remove_filter( 'a8csp_atlantis_force_update_check_enabled', '__return_false' );
+			$this->remove_stub( $stub );
+		}
 	}
 
 	/**
-	 * Registers a `pre_http_request` stub that serves `{ "epoch": N }` for the directive URL and a
+	 * Whether the `update_plugins` site transient still carries the test sentinel.
+	 *
+	 * @return bool
+	 */
+	private function has_update_plugins_sentinel(): bool {
+		$transient = get_site_transient( 'update_plugins' );
+
+		return is_object( $transient ) && isset( $transient->sentinel );
+	}
+
+	/**
+	 * Registers a `pre_http_request` stub that serves `{ "epoch": N }` for the OpsOasis host and a
 	 * benign empty 200 for everything else (so a triggered `wp_update_plugins()` stays offline).
+	 *
+	 * Matching on the host — not the route path — keeps this working if the route is renamed.
 	 *
 	 * @param int $epoch The epoch to serve.
 	 *
@@ -135,7 +179,7 @@ class ForceUpdateCheckTestCest {
 	 */
 	private function stub_directive( int $epoch ): callable {
 		$stub = static function ( $preempt, $args, $url ) use ( $epoch ) {
-			$body = str_contains( (string) $url, 'sites/batch/plugin-refresh' )
+			$body = str_contains( (string) $url, 'opsoasis.wpspecialprojects.com' )
 				? (string) wp_json_encode( array( 'epoch' => $epoch ) )
 				: '';
 

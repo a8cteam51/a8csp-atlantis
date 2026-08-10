@@ -146,9 +146,10 @@ final class ForceUpdateCheck extends AbstractModule {
 	/**
 	 * Ensures the polling event is scheduled once, at the intended cadence.
 	 *
-	 * On multisite the lever runs a single time from the main site, matching the network scope of the
-	 * caches it clears. If the event is already scheduled under a different (e.g. earlier) cadence, it is
-	 * rescheduled so a cadence change actually takes effect.
+	 * On multisite, a network-activated Atlantis schedules the lever once, from the main site, matching
+	 * the network scope of the caches it clears; a per-site activation schedules its own event. If the
+	 * event is already scheduled under a different (e.g. earlier) cadence, it is rescheduled so a cadence
+	 * change actually takes effect.
 	 *
 	 * @return  void
 	 */
