@@ -201,17 +201,19 @@ final class ForceUpdateCheck extends AbstractModule {
 	}
 
 	/**
-	 * Deletes the throttled plugin-update cache and re-runs the update check.
+	 * Deletes the throttled plugin-update caches and re-runs the update check.
 	 *
 	 * We delete only the `update_plugins` transient — not Atlantis's own cached GitHub release
 	 * lookup. Clearing `update_plugins` forces WordPress.org-hosted plugins to be re-fetched (they
 	 * have no per-plugin shield), while Update-URI/GitHub plugins keep serving their still-cached
 	 * release info, so a fleet-wide refresh does not stampede GitHub's unauthenticated rate limit.
+	 * WooCommerce.com-managed plugins have their own shield, flushed separately below.
 	 *
 	 * @return  void
 	 */
 	private function force_update_check(): void {
 		delete_site_transient( 'update_plugins' );
+		$this->flush_woocommerce_update_cache();
 
 		if ( ! function_exists( 'wp_update_plugins' ) ) {
 			/* @phpstan-ignore requireOnce.fileNotFound */
@@ -219,6 +221,27 @@ final class ForceUpdateCheck extends AbstractModule {
 		}
 
 		wp_update_plugins();
+	}
+
+	/**
+	 * Flushes WooCommerce.com's separate plugin-update cache when WooCommerce is present.
+	 *
+	 * WooCommerce.com-managed plugins are shielded by WC Helper's own ~12h update cache
+	 * (`_woocommerce_helper_updates`): its `pre_set_site_transient_update_plugins` hook re-injects
+	 * updates from that cache, so clearing core's `update_plugins` transient alone re-serves stale Woo
+	 * data. `WC_Helper_Updater::flush_updates_cache()` drops that cache (and the core update transients)
+	 * so the re-check re-fetches fresh versions from WooCommerce.com. The helper and its injection hook
+	 * are wired up on every request via `WC_WCCOM_Site`, so this works from the cron context this module
+	 * runs in. A no-op on non-WooCommerce sites; on sites not connected to a WooCommerce.com account it
+	 * simply refreshes the public update data. Installing the update still requires the woo-update-manager
+	 * plugin (which injects the authenticated package URL) and an active subscription.
+	 *
+	 * @return  void
+	 */
+	private function flush_woocommerce_update_cache(): void {
+		if ( class_exists( 'WC_Helper_Updater' ) && method_exists( 'WC_Helper_Updater', 'flush_updates_cache' ) ) {
+			\WC_Helper_Updater::flush_updates_cache();
+		}
 	}
 
 	// endregion
