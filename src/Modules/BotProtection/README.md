@@ -4,10 +4,12 @@ Team 51's control plane for **WP Cloud Bot Protection** (the external name for
 "blackbox") — the login and password-reset gating shipped as the
 `wpcloud-bot-protection` mu-plugin on WP Cloud sites.
 
-The mu-plugin resolves enablement through the `wpcloud_bot_protection_enable`
-filter, evaluated late on `plugins_loaded`. That filter overrides every other
-tier: the `WPC_BOT_PROTECTION_ENABLED` constant, the platform define, and the
-client-level percentage rollout. This module drives that filter.
+The mu-plugin resolves enablement from a set of tiers — the per-site
+`WPC_BOT_PROTECTION_ENABLED` constant, a platform define, and a client-level
+percentage rollout — and exposes the `wpcloud_bot_protection_enable` filter
+(evaluated late on `plugins_loaded`) as a per-request override. This module
+drives that filter. See **Enable vs. disable** below for an important
+limitation of the currently deployed loader.
 
 ## Enforcement states
 
@@ -16,7 +18,9 @@ under **Atlantis → Modules → Bot Protection**:
 
 - `inherit` (default) — register nothing; WP Cloud's own tiers decide. Shipping
   the module changes no behavior.
-- `on` — force enabled (`__return_true`).
+- `on` — force enabled (`__return_true`). **Caveat:** in the deployed loader
+  this only forces on where a tier has already armed the loader; it does not
+  enable a site that has no enabling tier (see **Enable vs. disable**).
 - `off` — force disabled (`__return_false`); a hard override for a site where
   protection is causing problems, even against a client-level rollout.
 
@@ -24,6 +28,32 @@ The filter is registered at `PHP_INT_MAX` priority so Atlantis's verdict is the
 final say, and only on the `on` / `off` states. Registration happens during the
 plugin's `plugins_loaded` init (priority 10), before the mu-plugin loader
 evaluates the filter at `PHP_INT_MAX`.
+
+## Enable vs. disable (important)
+
+WP Cloud's *enablement* comes from the loader's tiers (the constant, a platform
+define, and the client-level percentage rollout). The
+`wpcloud_bot_protection_enable` filter this module drives is an **override**
+layered on top — and in the currently deployed loader that override reliably
+**disables** but does **not enable**. Verified in a live WP Cloud environment:
+
+| `WPC_BOT_PROTECTION_ENABLED` | Atlantis `state` | Result                  |
+| ---------------------------- | ---------------- | ----------------------- |
+| `true`                       | `inherit`        | on                      |
+| `true`                       | `on`             | on                      |
+| `true`                       | `off`            | **off** (override wins) |
+| absent / `false`             | `on`             | **off** (no arming tier)|
+
+So:
+
+- **To disable a site — use `off`.** This is the module's primary, reliable
+  job: the per-site "escape hatch", including exempting automation/test sites.
+- **To enable a site — set `WPC_BOT_PROTECTION_ENABLED = true`** (or have the
+  client enabled via the platform percentage rollout). `on` alone cannot arm a
+  site that no tier has enabled.
+
+In short: `off` is the dependable lever, `inherit` respects the platform
+decision, and `on` means "force-on where the loader is already armed."
 
 ## WP Cloud precondition
 

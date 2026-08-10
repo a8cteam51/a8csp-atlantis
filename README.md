@@ -112,6 +112,10 @@ mu-plugin's `wpcloud_bot_protection_enable` filter from a single mandatory
   rollout.
 
 The setting is a no-op on non-WP-Cloud sites and where the mu-plugin is absent.
+Note: in the currently deployed WP Cloud loader the filter reliably *disables*
+but does not *enable* — `off` is the dependable lever, while `on` only forces on
+where a tier (the constant or the client rollout) has already armed the loader.
+See `src/Modules/BotProtection/README.md` for the full matrix.
 
 More detail: `src/Modules/BotProtection/README.md`.
 
