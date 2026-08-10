@@ -211,6 +211,7 @@ Before publishing a release, update the version in:
 
 - `a8csp-atlantis.php`
 - `package.json`
+- `README.md` (the `Version:` line above)
 
 Run `composer generate-autoloader` if local development reports missing
 classmap-backed classes after changing generated/autoloaded PHP symbols.
