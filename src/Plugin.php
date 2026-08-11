@@ -61,8 +61,8 @@ class Plugin {
 	/**
 	 * The force-update-check REST controller.
 	 *
-	 * @since   1.2.4
-	 * @version 1.2.4
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @var Force_Update_Check_Controller
 	 */

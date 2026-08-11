@@ -13,8 +13,8 @@ defined( 'ABSPATH' ) || exit;
  * clear a site's `update_plugins` transient, so only code running on the site can; this route does it
  * and re-runs the update check. The caller then installs via the normal (version-checked) update path.
  *
- * @since   1.2.4
- * @version 1.2.4
+ * @since   1.3.0
+ * @version 1.3.0
  */
 class Force_Update_Check_Controller {
 	/**
