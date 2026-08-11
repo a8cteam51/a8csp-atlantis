@@ -97,9 +97,7 @@ class Force_Update_Check_Controller {
 	 * @return \WP_REST_Response
 	 */
 	public function create_item( \WP_REST_Request $request ): \WP_REST_Response { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-		$this->force_update_check();
-
-		return \rest_ensure_response( array( 'refreshed' => true ) );
+		return \rest_ensure_response( $this->force_update_check() );
 	}
 
 	// endregion
@@ -115,13 +113,33 @@ class Force_Update_Check_Controller {
 	 * so a fleet-wide refresh does not stampede GitHub's unauthenticated rate limit (those are pushed via
 	 * the CLI `--force` path). WooCommerce.com-managed plugins have their own shield, flushed separately.
 	 *
-	 * @return void
+	 * Returns an honest outcome rather than an unconditional success: `wp_update_plugins()` is `void` and
+	 * swallows a transport error / non-200 from api.wordpress.org inside core, so we read `update_plugins`
+	 * back afterwards. If core did not repopulate it the re-check did not complete, and we report
+	 * `refreshed => false` so the caller does not install against a stale check and silently find nothing.
+	 *
+	 * @return array{refreshed: bool, last_checked?: int, updates?: int, woocommerce: bool|null}
 	 */
-	private function force_update_check(): void {
+	private function force_update_check(): array {
 		\delete_site_transient( 'update_plugins' );
-		$this->flush_woocommerce_update_cache();
+		$woocommerce = $this->flush_woocommerce_update_cache();
 
 		\wp_update_plugins();
+
+		$updates = \get_site_transient( 'update_plugins' );
+		if ( ! \is_object( $updates ) ) {
+			return array(
+				'refreshed'   => false,
+				'woocommerce' => $woocommerce,
+			);
+		}
+
+		return array(
+			'refreshed'    => true,
+			'last_checked' => (int) ( $updates->last_checked ?? 0 ),
+			'updates'      => \count( (array) ( $updates->response ?? array() ) ),
+			'woocommerce'  => $woocommerce,
+		);
 	}
 
 	/**
@@ -134,18 +152,21 @@ class Force_Update_Check_Controller {
 	 * re-check re-fetches fresh versions from WooCommerce.com. A no-op on non-WooCommerce sites; installing
 	 * a detected update still requires the woo-update-manager plugin and an active subscription.
 	 *
-	 * @return void
+	 * @return bool|null `null` when the WooCommerce.com updater is not present (nothing to flush), `true`
+	 *                   when the flush ran, `false` when it threw (logged, so the caller can observe it).
 	 */
-	private function flush_woocommerce_update_cache(): void {
+	private function flush_woocommerce_update_cache(): ?bool {
 		if ( ! \is_callable( array( 'WC_Helper_Updater', 'flush_updates_cache' ) ) ) {
-			return;
+			return null;
 		}
 
 		try {
 			\WC_Helper_Updater::flush_updates_cache();
+			return true;
 		} catch ( \Throwable $throwable ) {
 			// Never let a WooCommerce helper failure abort the core refresh.
 			\error_log( '[A8CSP Atlantis] WooCommerce update-cache flush failed: ' . $throwable->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			return false;
 		}
 	}
 

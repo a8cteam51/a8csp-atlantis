@@ -111,6 +111,20 @@ GET /wp-json/a8csp-atlantis/v1/status
 The payload includes the plugin version, registered module states, and the
 stored message count when the Messages table exists.
 
+A force-update-check REST endpoint, also gated on `manage_options`, lets
+OpsOasis (and the team51 CLI) make the site re-detect a just-published plugin
+release on demand — it clears the throttled `update_plugins` transient, flushes
+WooCommerce.com's separate update cache, and re-runs the update check:
+
+```text
+POST /wp-json/a8csp-atlantis/v1/force-update-check
+```
+
+The payload reports whether the re-check repopulated the update data
+(`refreshed`), its `last_checked` timestamp and the number of available
+`updates`, and whether the WooCommerce.com flush ran (`woocommerce`: `true`,
+`false`, or `null` when WooCommerce is not present).
+
 When WP-CLI is available, the plugin registers:
 
 ```sh
