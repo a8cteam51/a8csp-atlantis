@@ -12,14 +12,14 @@ defined( 'ABSPATH' ) || exit;
  * ## EXAMPLES
  *
  *     # Show the current enforcement state and WP Cloud context.
- *     $ wp atlantis bot-protection status
+ *     $ wp atlantis module bot-protection status
  *
  *     # Output just the state (for scripting).
- *     $ wp atlantis bot-protection status --field=state
+ *     $ wp atlantis module bot-protection status --field=state
  *
  *     # Force bot protection off on a site, or defer to WP Cloud's default.
- *     $ wp atlantis bot-protection set off
- *     $ wp atlantis bot-protection set inherit
+ *     $ wp atlantis module bot-protection set off
+ *     $ wp atlantis module bot-protection set inherit
  *
  * @since   1.4.0
  * @version 1.4.0
@@ -68,9 +68,9 @@ class BotProtection_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     $ wp atlantis bot-protection status
-	 *     $ wp atlantis bot-protection status --field=state
-	 *     $ wp atlantis bot-protection status --format=json
+	 *     $ wp atlantis module bot-protection status
+	 *     $ wp atlantis module bot-protection status --field=state
+	 *     $ wp atlantis module bot-protection status --format=json
 	 *
 	 * @param array<int, string>         $args       Positional args (unused).
 	 * @param array<string, string|bool> $assoc_args Flags.
@@ -115,8 +115,8 @@ class BotProtection_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     $ wp atlantis bot-protection set off
-	 *     $ wp atlantis bot-protection set inherit
+	 *     $ wp atlantis module bot-protection set off
+	 *     $ wp atlantis module bot-protection set inherit
 	 *
 	 * @param array<int, string>         $args       Positional args: <state>.
 	 * @param array<string, string|bool> $assoc_args Flags (unused).

@@ -156,7 +156,11 @@ class Plugin {
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			\WP_CLI::add_command( 'atlantis module', Module_Command::class );
 			\WP_CLI::add_command( 'atlantis message', Message_Command::class );
-			\WP_CLI::add_command( 'atlantis bot-protection', BotProtection_Command::class );
+			// Nested under `module`: bot-protection's `state` is module
+			// configuration (a sibling of activate/deactivate), so it lives with
+			// the module registry rather than as a top-level command. Registered
+			// after the parent `atlantis module` so the composite command exists.
+			\WP_CLI::add_command( 'atlantis module bot-protection', BotProtection_Command::class );
 		}
 	}
 

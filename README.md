@@ -147,8 +147,8 @@ wp atlantis module activate <key>...
 wp atlantis module deactivate <key>...
 wp atlantis message list
 wp atlantis message get <id>
-wp atlantis bot-protection status
-wp atlantis bot-protection set <inherit|off>
+wp atlantis module bot-protection status
+wp atlantis module bot-protection set <inherit|off>
 ```
 
 ## Development Requirements

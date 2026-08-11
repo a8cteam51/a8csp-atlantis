@@ -292,7 +292,7 @@ class BotProtection extends AbstractModule {
 	/**
 	 * Persists the enforcement state, preserving any other stored sub-settings.
 	 *
-	 * The programmatic write path, used by the `wp atlantis bot-protection set`
+	 * The programmatic write path, used by the `wp atlantis module bot-protection set`
 	 * command. (The settings form writes through the option's sanitize_callback,
 	 * self::sanitize_settings(), instead.) Validates $state, keeps the stored
 	 * `enabled` flag, and reports a genuine persistence failure.

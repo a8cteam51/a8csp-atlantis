@@ -61,9 +61,15 @@ that has not yet received the mu-plugin — nothing listens on the filter, so
 ## WP-CLI
 
 ```sh
-wp atlantis bot-protection status
-wp atlantis bot-protection set <inherit|off>
+wp atlantis module bot-protection status
+wp atlantis module bot-protection set <inherit|off>
 ```
+
+These live under `wp atlantis module` (not as a top-level command): the
+`state` is module configuration, a sibling of `module activate`/`deactivate`.
+Note that `wp atlantis module status bot-protection` (generic module status)
+and `wp atlantis module bot-protection status` (the state-specific view) are
+distinct commands with different output.
 
 ## Status endpoint
 
