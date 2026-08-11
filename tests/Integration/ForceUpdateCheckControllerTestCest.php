@@ -27,10 +27,11 @@ class ForceUpdateCheckControllerTestCest {
 		// Keep the fixture self-contained: drop the admin created by the allow-path case.
 		$admin = get_user_by( 'login', 'force_check_admin' );
 		if ( $admin instanceof WP_User ) {
-			require_once ABSPATH . 'wp-admin/includes/user.php';
 			if ( is_multisite() ) {
+				require_once ABSPATH . 'wp-admin/includes/ms.php';
 				wpmu_delete_user( $admin->ID );
 			} else {
+				require_once ABSPATH . 'wp-admin/includes/user.php';
 				wp_delete_user( $admin->ID );
 			}
 		}
@@ -166,6 +167,64 @@ class ForceUpdateCheckControllerTestCest {
 			Assert::assertTrue( isset( $restored->no_update['foo/foo.php'] ) );
 		} finally {
 			remove_filter( 'pre_http_request', $stub, 10 );
+		}
+	}
+
+	/**
+	 * A WooCommerce.com injector populating `no_update` on core's bare defensive pre-write must not mask a
+	 * failed re-check as success: the missing `translations` still marks it as failed and rolls back.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function create_item_does_not_treat_woo_injected_no_update_as_a_successful_check( IntegrationTester $i ): void {
+		$previous = (object) array(
+			'last_checked' => 1000,
+			'response'     => array(),
+			'translations' => array(),
+			'no_update'    => array( 'foo/foo.php' => (object) array( 'new_version' => '1.0.0' ) ),
+		);
+		set_site_transient( 'update_plugins', $previous );
+
+		// Mimic WC_Helper_Updater: inject `no_update` on every write of the transient, but never `translations`.
+		$inject = static function ( $value ) {
+			if ( is_object( $value ) ) {
+				$value->no_update                = isset( $value->no_update ) ? $value->no_update : array();
+				$value->no_update['woo/woo.php'] = (object) array( 'new_version' => '2.0.0' );
+			}
+			return $value;
+		};
+		add_filter( 'pre_set_site_transient_update_plugins', $inject, 10, 1 );
+
+		// Fail the re-check so core leaves only its bare (now Woo-injected) defensive pre-write behind.
+		$stub = static function () {
+			return array(
+				'headers'  => array(),
+				'body'     => '',
+				'response' => array(
+					'code'    => 500,
+					'message' => 'Internal Server Error',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $stub, 10, 3 );
+
+		try {
+			$response = ( new Force_Update_Check_Controller() )->create_item( new WP_REST_Request( 'POST' ) );
+
+			// Despite the injected `no_update`, the absent `translations` still marks this a failed check.
+			Assert::assertFalse( $response->get_data()['refreshed'] );
+
+			// And the previous list is restored rather than left wiped.
+			$restored = get_site_transient( 'update_plugins' );
+			Assert::assertIsObject( $restored );
+			Assert::assertTrue( isset( $restored->no_update['foo/foo.php'] ) );
+		} finally {
+			remove_filter( 'pre_http_request', $stub, 10 );
+			remove_filter( 'pre_set_site_transient_update_plugins', $inject, 10 );
 		}
 	}
 }

@@ -120,10 +120,12 @@ WooCommerce.com's separate update cache, and re-runs the update check:
 POST /wp-json/a8csp-atlantis/v1/force-update-check
 ```
 
-The payload reports whether the re-check repopulated the update data
-(`refreshed`), its `last_checked` timestamp and the number of available
-`updates`, and whether the WooCommerce.com flush ran (`woocommerce`: `true`,
-`false`, or `null` when WooCommerce is not present).
+The payload reports whether the re-check completed (`refreshed`) and whether the
+WooCommerce.com flush ran (`woocommerce`: `true`, `false`, or `null` when
+WooCommerce is not present). When `refreshed` is `true` it also includes the
+`last_checked` timestamp and the number of available `updates`; both keys are
+omitted when `refreshed` is `false` (the re-check failed and the previous update
+list was restored).
 
 When WP-CLI is available, the plugin registers:
 

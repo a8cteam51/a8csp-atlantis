@@ -117,11 +117,15 @@ class Force_Update_Check_Controller {
 	 * swallows a transport error / non-200 from api.wordpress.org inside core. Crucially, core writes
 	 * `update_plugins` *defensively* (a bare object holding only `last_checked`, "to prevent multiple
 	 * blocking requests if request hangs") *before* the remote call and then returns early on failure, so a
-	 * mere object left behind is not proof the check completed. Only the success path assigns `no_update`
-	 * (alongside `response`/`translations`), so we key success off that. Because we deleted the transient
-	 * first, a failed re-check would otherwise leave the site with *no* update data at all, so we snapshot
-	 * the previous list and restore it on failure — and report `refreshed => false` so the caller does not
-	 * install against a wiped check and silently find nothing.
+	 * mere object left behind is not proof the check completed. Core assigns `response`, `translations` and
+	 * `no_update` together only in its closing write, so we key success off those — but not off `no_update`
+	 * alone: that defensive pre-write passes through `pre_set_site_transient_update_plugins`, the same hook
+	 * `WC_Helper_Updater` uses (see below), and a WooCommerce.com injector populates `response`/`no_update`
+	 * on it without touching `translations`. So we additionally require `translations`, which only core
+	 * sets, or a failed check on a Woo-connected site would score as success. Because we deleted the
+	 * transient first, a failed re-check would otherwise leave the site with *no* update data at all, so we
+	 * snapshot the previous list and restore it on failure — and report `refreshed => false` so the caller
+	 * does not install against a wiped check and silently find nothing.
 	 *
 	 * @return array{refreshed: bool, last_checked?: int, updates?: int, woocommerce: bool|null}
 	 */
@@ -134,7 +138,7 @@ class Force_Update_Check_Controller {
 		\wp_update_plugins();
 
 		$updates = \get_site_transient( 'update_plugins' );
-		if ( ! \is_object( $updates ) || ! isset( $updates->no_update ) ) {
+		if ( ! \is_object( $updates ) || ! isset( $updates->no_update, $updates->translations ) ) {
 			// The re-check did not complete. Roll back to the pre-refresh list rather than leave it wiped.
 			if ( false !== $previous ) {
 				\set_site_transient( 'update_plugins', $previous );
