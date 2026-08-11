@@ -94,6 +94,10 @@ class BotProtection_Command {
 		$formatter->display_items( array( $row ) );
 	}
 
+	// The `<state>` options list below quotes "off" on purpose: WP-CLI parses the
+	// `---` synopsis block as YAML, where the bare word `off` coerces to boolean
+	// false (the YAML "Norway problem"), leaving the allowed list as
+	// [ 'inherit', false ] so `set off` fails synopsis validation. Do not unquote.
 	/**
 	 * Sets the bot protection enforcement state.
 	 *
@@ -110,7 +114,7 @@ class BotProtection_Command {
 	 * ---
 	 * options:
 	 *   - inherit
-	 *   - off
+	 *   - "off"
 	 * ---
 	 *
 	 * ## EXAMPLES
