@@ -114,20 +114,32 @@ class Force_Update_Check_Controller {
 	 * the CLI `--force` path). WooCommerce.com-managed plugins have their own shield, flushed separately.
 	 *
 	 * Returns an honest outcome rather than an unconditional success: `wp_update_plugins()` is `void` and
-	 * swallows a transport error / non-200 from api.wordpress.org inside core, so we read `update_plugins`
-	 * back afterwards. If core did not repopulate it the re-check did not complete, and we report
-	 * `refreshed => false` so the caller does not install against a stale check and silently find nothing.
+	 * swallows a transport error / non-200 from api.wordpress.org inside core. Crucially, core writes
+	 * `update_plugins` *defensively* (a bare object holding only `last_checked`, "to prevent multiple
+	 * blocking requests if request hangs") *before* the remote call and then returns early on failure, so a
+	 * mere object left behind is not proof the check completed. Only the success path assigns `no_update`
+	 * (alongside `response`/`translations`), so we key success off that. Because we deleted the transient
+	 * first, a failed re-check would otherwise leave the site with *no* update data at all, so we snapshot
+	 * the previous list and restore it on failure — and report `refreshed => false` so the caller does not
+	 * install against a wiped check and silently find nothing.
 	 *
 	 * @return array{refreshed: bool, last_checked?: int, updates?: int, woocommerce: bool|null}
 	 */
 	private function force_update_check(): array {
+		$previous = \get_site_transient( 'update_plugins' );
+
 		\delete_site_transient( 'update_plugins' );
 		$woocommerce = $this->flush_woocommerce_update_cache();
 
 		\wp_update_plugins();
 
 		$updates = \get_site_transient( 'update_plugins' );
-		if ( ! \is_object( $updates ) ) {
+		if ( ! \is_object( $updates ) || ! isset( $updates->no_update ) ) {
+			// The re-check did not complete. Roll back to the pre-refresh list rather than leave it wiped.
+			if ( false !== $previous ) {
+				\set_site_transient( 'update_plugins', $previous );
+			}
+
 			return array(
 				'refreshed'   => false,
 				'woocommerce' => $woocommerce,

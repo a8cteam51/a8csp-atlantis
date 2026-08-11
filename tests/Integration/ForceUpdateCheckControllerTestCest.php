@@ -23,6 +23,17 @@ class ForceUpdateCheckControllerTestCest {
 	public function _after( IntegrationTester $i ): void {
 		delete_site_transient( 'update_plugins' );
 		wp_set_current_user( 0 );
+
+		// Keep the fixture self-contained: drop the admin created by the allow-path case.
+		$admin = get_user_by( 'login', 'force_check_admin' );
+		if ( $admin instanceof WP_User ) {
+			require_once ABSPATH . 'wp-admin/includes/user.php';
+			if ( is_multisite() ) {
+				wpmu_delete_user( $admin->ID );
+			} else {
+				wp_delete_user( $admin->ID );
+			}
+		}
 	}
 
 	/**
@@ -103,6 +114,56 @@ class ForceUpdateCheckControllerTestCest {
 			Assert::assertSame( 0, $data['updates'] );
 			Assert::assertNull( $data['woocommerce'] );
 			Assert::assertSame( (int) $transient->last_checked, $data['last_checked'] );
+		} finally {
+			remove_filter( 'pre_http_request', $stub, 10 );
+		}
+	}
+
+	/**
+	 * A failed re-check (non-200 from api.wordpress.org) is reported as `refreshed => false`, and the
+	 * previous update list is restored rather than left wiped.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function create_item_reports_failed_refresh_and_restores_the_list( IntegrationTester $i ): void {
+		// A realistic prior list: it carries `no_update`, so it looks like a completed check.
+		$previous = (object) array(
+			'last_checked' => 1000,
+			'response'     => array(),
+			'translations' => array(),
+			'no_update'    => array( 'foo/foo.php' => (object) array( 'new_version' => '1.0.0' ) ),
+		);
+		set_site_transient( 'update_plugins', $previous );
+
+		// Force the wp_update_plugins() re-check to fail: core writes only a bare object and returns early.
+		$stub = static function () {
+			return array(
+				'headers'  => array(),
+				'body'     => '',
+				'response' => array(
+					'code'    => 500,
+					'message' => 'Internal Server Error',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $stub, 10, 3 );
+
+		try {
+			$response = ( new Force_Update_Check_Controller() )->create_item( new WP_REST_Request( 'POST' ) );
+
+			// The failure is surfaced, not masked as success.
+			$data = $response->get_data();
+			Assert::assertFalse( $data['refreshed'] );
+			Assert::assertArrayNotHasKey( 'updates', $data );
+
+			// The previous update list is restored, not left empty.
+			$restored = get_site_transient( 'update_plugins' );
+			Assert::assertIsObject( $restored );
+			Assert::assertTrue( isset( $restored->no_update['foo/foo.php'] ) );
 		} finally {
 			remove_filter( 'pre_http_request', $stub, 10 );
 		}
