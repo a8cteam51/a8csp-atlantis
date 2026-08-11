@@ -83,7 +83,7 @@ class BotProtection_Command {
 			'state'             => BotProtection::get_configured_state(),
 			'wp_cloud'          => BotProtection::is_wp_cloud(),
 			'mu_plugin_present' => BotProtection::is_mu_plugin_present(),
-			'environment'       => \function_exists( 'wp_get_environment_type' ) ? \wp_get_environment_type() : 'production',
+			'environment'       => \wp_get_environment_type(),
 		);
 
 		$fields = isset( $assoc_args['fields'] )

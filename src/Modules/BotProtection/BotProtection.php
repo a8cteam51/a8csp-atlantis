@@ -125,7 +125,7 @@ class BotProtection extends AbstractModule {
 	 * @version 1.4.0
 	 */
 	public function get_description(): string {
-		return __( 'Controls WP Cloud Bot Protection (login and password-reset gating) on WP Cloud sites. Use the enforcement control to force it on or off; "Inherit" leaves the WP Cloud default untouched.', 'a8csp-atlantis' );
+		return __( 'Controls WP Cloud Bot Protection (login and password-reset gating) on WP Cloud sites. Use the enforcement control to force it off; "Inherit" leaves the WP Cloud default untouched.', 'a8csp-atlantis' );
 	}
 
 	/**
@@ -164,7 +164,7 @@ class BotProtection extends AbstractModule {
 	 *
 	 * Renders a single "Enforcement" dropdown as the module's only control.
 	 * The base Enabled checkbox is intentionally omitted — the module is
-	 * mandatory, so the dropdown (inherit/on/off) is the one meaningful setting.
+	 * mandatory, so the dropdown (inherit/off) is the one meaningful setting.
 	 *
 	 * @since   1.4.0
 	 * @version 1.4.0

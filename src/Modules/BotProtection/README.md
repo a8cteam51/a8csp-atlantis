@@ -35,11 +35,12 @@ init (priority 10), before the mu-plugin loader evaluates the filter at
 
 Verified matrix:
 
-| `WPC_BOT_PROTECTION_ENABLED` | Atlantis `state` | Result                  |
-| ---------------------------- | ---------------- | ----------------------- |
-| `true`                       | `inherit`        | on                      |
-| `true`                       | `off`            | **off** (override wins) |
-| absent / `false`             | `inherit`        | off (no arming tier)    |
+| `WPC_BOT_PROTECTION_ENABLED` | Atlantis `state` | Result                    |
+| ---------------------------- | ---------------- | ------------------------- |
+| `true`                       | `inherit`        | on                        |
+| `true`                       | `off`            | **off** (override wins)   |
+| absent / `false`             | `inherit`        | off (no arming tier)      |
+| absent / `false`             | `off`            | off (nothing to override) |
 
 ## Environments
 
