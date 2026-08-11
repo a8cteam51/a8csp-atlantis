@@ -114,8 +114,8 @@ class Status_Controller {
 
 		// Bot Protection is mandatory, so its shared `enabled` flag (from
 		// is_active(), set above) is always true and does NOT indicate whether
-		// protection is being forced. `state` (inherit|on|off) is the
-		// authoritative enforcement signal — fleet tooling should read that.
+		// protection is being forced. `state` (inherit|off) is the authoritative
+		// enforcement signal — fleet tooling should read that.
 		if ( isset( $modules['bot-protection'] ) ) {
 			$modules['bot-protection']['state']             = BotProtection::get_configured_state();
 			$modules['bot-protection']['wp_cloud']          = BotProtection::is_wp_cloud();

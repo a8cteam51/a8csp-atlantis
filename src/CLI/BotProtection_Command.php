@@ -64,7 +64,7 @@ class BotProtection_Command {
 	 * * state             - Enforcement state: inherit or off.
 	 * * wp_cloud          - Whether WP Cloud credentials (ATOMIC_SITE_ID / ATOMIC_SITE_API_KEY) are present.
 	 * * mu_plugin_present - Whether the wpcloud-bot-protection mu-plugin is loaded.
-	 * * environment       - The site's environment type; non-production forces protection off unless state is `on`.
+	 * * environment       - The site's environment type (informational; enforcement is driven by state).
 	 *
 	 * ## EXAMPLES
 	 *

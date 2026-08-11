@@ -41,18 +41,14 @@ Verified matrix:
 | `true`                       | `off`            | **off** (override wins) |
 | absent / `false`             | `inherit`        | off (no arming tier)    |
 
-## Non-production environments
+## Environments
 
-On any environment where `wp_get_environment_type()` is not `production`,
-protection is **forced off** regardless of `state`. Staging and development
-sites routinely run login automation — CI/e2e suites, uptime and
-synthetic-login monitors, scripted provisioning — that bot protection would
-challenge or block, so this keeps those sites clear by default (mirroring the
-Tracking module's production gating).
-
-To opt a specific non-production site back in (e.g. to test protection),
-override the determination via the `a8csp_atlantis_bot_protection_is_production`
-filter (`return true`) — and arm an enabling tier as above.
+The `state` applies uniformly across environments — staging and development
+sites `inherit` by default just like production, so their protection tracks
+whatever WP Cloud's tiers decide. A non-production site that runs login
+automation (CI/e2e suites, uptime and synthetic-login monitors, scripted
+provisioning) and must stay clear is set to `off` explicitly, not gated on the
+environment type.
 
 ## WP Cloud precondition
 
@@ -75,8 +71,8 @@ wp atlantis bot-protection set <inherit|off>
 - `state` — `inherit` / `off`. The authoritative enforcement signal.
 - `wp_cloud` — whether the WP Cloud credentials are present.
 - `mu_plugin_present` — whether the mu-plugin is loaded.
-- `environment` — the site's environment type; non-production forces protection
-  off regardless of `state`.
+- `environment` — the site's environment type (informational; enforcement is
+  driven by `state`, not the environment).
 
 The shared `enabled` field is always `true` for this mandatory module and does
 not indicate enforcement; read `state` instead.

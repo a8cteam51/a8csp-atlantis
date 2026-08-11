@@ -28,8 +28,10 @@ defined( 'ABSPATH' ) || exit;
  *   where protection is causing problems, even if a client-level rollout
  *   would otherwise enable it.
  *
- * Additionally, on non-production environments protection is forced off (see
- * initialize()), since staging/dev sites commonly run login automation.
+ * The `state` applies uniformly across environments: staging/dev sites inherit
+ * by default just like production, so their protection tracks whatever WP
+ * Cloud's tiers decide. A site that must stay clear for login automation is
+ * set to `off` explicitly.
  *
  * The filter is registered at `PHP_INT_MAX` priority so our verdict is the
  * final say. Registration happens during `plugins_loaded` (priority 10, via
@@ -147,19 +149,11 @@ class BotProtection extends AbstractModule {
 	 * @version 1.4.0
 	 */
 	protected function initialize(): void {
-		// Non-production safety: staging/dev sites frequently run login
-		// automation (CI/e2e suites, uptime and synthetic-login monitors,
-		// scripted provisioning) that bot protection would challenge or block,
-		// so force it off there. Opt a specific non-production site back in with
-		// the `a8csp_atlantis_bot_protection_is_production` filter.
-		if ( ! self::is_production() ) {
-			add_filter( self::FILTER, '__return_false', PHP_INT_MAX );
-			return;
-		}
-
 		// `off` forces protection off (a hard override, even against a
 		// client-level rollout). `inherit` registers nothing and lets WP Cloud's
-		// own enablement tiers decide.
+		// own enablement tiers decide. This applies uniformly across
+		// environments — a staging site that runs login automation is set to
+		// `off` explicitly rather than gated on the environment type.
 		if ( self::STATE_OFF === self::get_configured_state() ) {
 			add_filter( self::FILTER, '__return_false', PHP_INT_MAX );
 		}
@@ -225,8 +219,6 @@ class BotProtection extends AbstractModule {
 					$notice = __( 'This site is not a WP Cloud site, so this setting has no effect here.', 'a8csp-atlantis' );
 				} elseif ( ! self::is_mu_plugin_present() ) {
 					$notice = __( 'The WP Cloud bot protection mu-plugin is not present on this site, so this setting has no effect here.', 'a8csp-atlantis' );
-				} elseif ( ! self::is_production() ) {
-					$notice = __( 'This is a non-production environment, so bot protection is forced off here regardless of this setting.', 'a8csp-atlantis' );
 				}
 
 				if ( '' !== $notice ) {
@@ -371,35 +363,6 @@ class BotProtection extends AbstractModule {
 	 */
 	public static function is_mu_plugin_present(): bool {
 		return function_exists( self::LOADER_FUNCTION );
-	}
-
-	/**
-	 * Whether the current environment should be treated as production.
-	 *
-	 * On non-production environments bot protection is forced off unless the
-	 * state is explicitly `on` (see initialize()), since staging/dev sites
-	 * commonly run login automation that protection would break.
-	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
-	 *
-	 * @return  bool
-	 */
-	public static function is_production(): bool {
-		$is_production = ! function_exists( 'wp_get_environment_type' ) || 'production' === wp_get_environment_type();
-
-		/**
-		 * Filters whether Bot Protection treats the current site as production.
-		 *
-		 * Return false to have protection forced off here (unless the state is
-		 * `on`); return true to opt a non-production site back into the normal
-		 * enablement tiers.
-		 *
-		 * @since 1.4.0
-		 *
-		 * @param bool $is_production Whether the environment type is `production`.
-		 */
-		return (bool) apply_filters( 'a8csp_atlantis_bot_protection_is_production', $is_production );
 	}
 
 	// endregion

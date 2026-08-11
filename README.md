@@ -117,10 +117,9 @@ indistinguishable from `inherit`. To enable a site, arm a tier — set
 percentage rollout. The `off` setting is a no-op on non-WP-Cloud sites and where
 the mu-plugin is absent.
 
-On non-production environments (`wp_get_environment_type()` other than
-`production`), protection is forced off regardless of `state`, so staging/dev
-sites that run login automation aren't gated — mirroring the Tracking module's
-production gating.
+The `state` applies uniformly across environments — staging/dev sites `inherit`
+by default like production. A non-production site that runs login automation and
+must stay clear is set to `off` explicitly.
 
 More detail: `src/Modules/BotProtection/README.md`.
 

@@ -98,34 +98,6 @@ class BotProtectionTestCest {
 	}
 
 	/**
-	 * On non-production environments, protection is forced off regardless of the
-	 * stored state.
-	 *
-	 * @param IntegrationTester $i Tester instance.
-	 *
-	 * @return void
-	 */
-	public function non_production_forces_off( IntegrationTester $i ): void {
-		// `inherit` on non-production forces off instead of deferring.
-		$this->with_state(
-			BotProtection::STATE_INHERIT,
-			static function (): void {
-				Assert::assertFalse( apply_filters( self::FILTER, true ) );
-			},
-			false
-		);
-
-		// `off` on non-production stays off.
-		$this->with_state(
-			BotProtection::STATE_OFF,
-			static function (): void {
-				Assert::assertFalse( apply_filters( self::FILTER, true ) );
-			},
-			false
-		);
-	}
-
-	/**
 	 * set_state() persists a valid state and rejects an invalid one without
 	 * clobbering the stored value.
 	 *
@@ -185,35 +157,29 @@ class BotProtectionTestCest {
 	 *
 	 * @return void
 	 */
-	private function with_state( string $state, callable $assertions, bool $is_production = true ): void {
+	private function with_state( string $state, callable $assertions ): void {
 		$option_name = a8csp_atlantis_generate_module_settings_key( 'Bot Protection' );
-		$prod_filter = static fn(): bool => $is_production;
-		add_filter( 'a8csp_atlantis_bot_protection_is_production', $prod_filter );
 
-		try {
-			$this->restore_option(
-				$option_name,
-				function () use ( $state, $assertions, $option_name ): void {
-					update_option(
-						$option_name,
-						array(
-							'enabled' => '1',
-							'state'   => $state,
-						)
-					);
+		$this->restore_option(
+			$option_name,
+			function () use ( $state, $assertions, $option_name ): void {
+				update_option(
+					$option_name,
+					array(
+						'enabled' => '1',
+						'state'   => $state,
+					)
+				);
 
-					( new BotProtection() )->maybe_initialize();
+				( new BotProtection() )->maybe_initialize();
 
-					try {
-						$assertions();
-					} finally {
-						remove_filter( self::FILTER, '__return_false', PHP_INT_MAX );
-					}
+				try {
+					$assertions();
+				} finally {
+					remove_filter( self::FILTER, '__return_false', PHP_INT_MAX );
 				}
-			);
-		} finally {
-			remove_filter( 'a8csp_atlantis_bot_protection_is_production', $prod_filter );
-		}
+			}
+		);
 	}
 
 	/**
