@@ -40,6 +40,24 @@ jobs:
           mkdir a8csp-atlantis
           cp -r a8csp-atlantis.php functions.php functions-bootstrap.php index.php LICENSE src includes assets languages models templates vendor a8csp-atlantis/
 
+      # Pre-release zips ship a plain `1.3.0` header (version-consistency.yml
+      # forbids a suffix in-repo), so a site that installs an RC would report
+      # the same version as the final release and the self-updater's
+      # `version_compare( Version, latest, '<' )` in a8csp-atlantis.php would
+      # never fire — stranding it on the RC. Stamp the tag (e.g. `1.3.0-rc1`)
+      # into the STAGED header only for pre-releases, so those sites upgrade to
+      # the final build. Full releases are untouched.
+      - name: Stamp pre-release version into staged header
+        if: ${{ github.event.release.prerelease }}
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          export VERSION
+          perl -i -pe 's|^(\s*\* Version:\s+).*|${1}$ENV{VERSION}|' a8csp-atlantis/a8csp-atlantis.php
+          echo "Stamped pre-release version into staged header: ${VERSION}"
+          grep -m1 -E '^\s*\* Version:' a8csp-atlantis/a8csp-atlantis.php
+
       - name: Zip Release
         run: |
           zip -r ${{ github.event.repository.name }}.zip ./a8csp-atlantis
