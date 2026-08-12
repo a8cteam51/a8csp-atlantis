@@ -38,8 +38,8 @@ defined( 'ABSPATH' ) || exit;
  * the plugin bootstrap), which is before the mu-plugin loader evaluates the
  * filter at `PHP_INT_MAX` priority, so the timing is guaranteed.
  *
- * @since   1.4.0
- * @version 1.4.0
+ * @since   1.3.0
+ * @version 1.3.0
  */
 class BotProtection extends AbstractModule {
 	// region FIELDS AND CONSTANTS
@@ -47,8 +47,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * The module's human-readable name. Drives the settings option key.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @var string
 	 */
@@ -57,8 +57,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * Enforcement state: defer to WP Cloud's own enablement tiers.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @var string
 	 */
@@ -67,8 +67,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * Enforcement state: force bot protection off.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @var string
 	 */
@@ -77,8 +77,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * All valid enforcement states.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @var array<int, string>
 	 */
@@ -87,8 +87,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * The WP Cloud filter that gates bot protection enablement.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @var string
 	 */
@@ -97,8 +97,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * The WP Cloud mu-plugin loader function, used to detect the mu-plugin.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @var string
 	 */
@@ -111,8 +111,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 */
 	public function get_name(): string {
 		return self::NAME;
@@ -121,8 +121,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 */
 	public function get_description(): string {
 		return __( 'Controls WP Cloud Bot Protection (login and password-reset gating) on WP Cloud sites. Use the enforcement control to force it off; "Inherit" leaves the WP Cloud default untouched.', 'a8csp-atlantis' );
@@ -135,8 +135,8 @@ class BotProtection extends AbstractModule {
 	 * the single control is the `state` setting (defaulting to `inherit`, a
 	 * no-op), not an enable/disable toggle.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 */
 	public function is_mandatory(): bool {
 		return true;
@@ -145,8 +145,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 */
 	protected function initialize(): void {
 		// `off` forces protection off (a hard override, even against a
@@ -166,8 +166,8 @@ class BotProtection extends AbstractModule {
 	 * The base Enabled checkbox is intentionally omitted — the module is
 	 * mandatory, so the dropdown (inherit/off) is the one meaningful setting.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 */
 	public function register_settings(): void {
 		$option_name = a8csp_atlantis_generate_module_settings_key( $this->get_name() );
@@ -245,8 +245,8 @@ class BotProtection extends AbstractModule {
 	 * companion Team 51 CLI command) can report the site's state without a
 	 * module instance.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @return  string One of the STATE_* constants.
 	 */
@@ -265,8 +265,8 @@ class BotProtection extends AbstractModule {
 	 * `enabled` flag forward — this module's form intentionally omits the base
 	 * Enabled checkbox, which would otherwise drop that key on every save.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @param   mixed $input The raw option value submitted by the settings form.
 	 *
@@ -297,8 +297,8 @@ class BotProtection extends AbstractModule {
 	 * self::sanitize_settings(), instead.) Validates $state, keeps the stored
 	 * `enabled` flag, and reports a genuine persistence failure.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @param   string $state One of the STATE_* constants.
 	 *
@@ -343,8 +343,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * Whether this is a WP Cloud site (the credentials the mu-plugin requires).
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @return  bool
 	 */
@@ -356,8 +356,8 @@ class BotProtection extends AbstractModule {
 	/**
 	 * Whether the WP Cloud bot protection mu-plugin is present on this site.
 	 *
-	 * @since   1.4.0
-	 * @version 1.4.0
+	 * @since   1.3.0
+	 * @version 1.3.0
 	 *
 	 * @return  bool
 	 */

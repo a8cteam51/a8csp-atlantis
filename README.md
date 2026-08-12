@@ -11,7 +11,7 @@ Plugin metadata from `a8csp-atlantis.php`:
 
 - Plugin name: `A8CSP Atlantis`
 - Text domain: `a8csp-atlantis`
-- Version: `1.4.0`
+- Version: `1.3.0`
 - Requires WordPress: `6.8+`
 - Tested up to WordPress: `7.0`
 - Requires PHP: `8.2+`

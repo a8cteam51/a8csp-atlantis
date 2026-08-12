@@ -21,8 +21,8 @@ defined( 'ABSPATH' ) || exit;
  *     $ wp atlantis module bot-protection set off
  *     $ wp atlantis module bot-protection set inherit
  *
- * @since   1.4.0
- * @version 1.4.0
+ * @since   1.3.0
+ * @version 1.3.0
  */
 class BotProtection_Command {
 	/**
