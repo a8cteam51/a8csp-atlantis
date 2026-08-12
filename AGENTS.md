@@ -11,6 +11,7 @@ This file provides AI coding assistants with the context they need to work effec
 - Auto-update control (timing windows, rollout delays, centralized settings, per-plugin filter toggles).
 - Tracking integrations (WooCommerce, Sensei, Bilmur).
 - Colophon utilities (credits action + shortcodes).
+- WP Cloud Bot Protection control (per-site enforcement of the `wpcloud_bot_protection_enable` filter).
 
 **Text domain:** `a8csp-atlantis`  
 **Namespace:** `A8C\SpecialProjects\Atlantis\`  
@@ -55,6 +56,7 @@ a8csp-atlantis/
 │       ├── AbstractModule.php    ← Module lifecycle/settings base class
 │       ├── Messages/
 │       ├── Autoupdates/
+│       ├── BotProtection/
 │       ├── Tracking/
 │       └── Colophon/
 │

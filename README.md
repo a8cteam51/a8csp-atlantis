@@ -11,7 +11,7 @@ Plugin metadata from `a8csp-atlantis.php`:
 
 - Plugin name: `A8CSP Atlantis`
 - Text domain: `a8csp-atlantis`
-- Version: `1.2.4`
+- Version: `1.3.0`
 - Requires WordPress: `6.8+`
 - Tested up to WordPress: `7.0`
 - Requires PHP: `8.2+`
@@ -28,8 +28,9 @@ Plugin metadata from `a8csp-atlantis.php`:
 - `functions.php` loads global helper wrappers from `includes/`.
 - `src/` contains the PSR-4 plugin classes, module registry, settings UI,
   encryption component, REST controller, and WP-CLI commands.
-- `src/Modules/` contains the Messages, Autoupdates, Tracking, and Colophon
-  modules. Each module has a nested README with more detailed behavior notes.
+- `src/Modules/` contains the Messages, Autoupdates, Tracking, Colophon, and Bot
+  Protection modules. Each module has a nested README with more detailed
+  behavior notes.
 - `models/` contains the DB-backed message model and query/list-table support.
 - `templates/` contains admin templates, including the message form.
 - `assets/js/src/` and `assets/css/src/` are the editable JS and SCSS sources.
@@ -96,6 +97,32 @@ standard footer credits. Output links can be adjusted with the
 
 More detail: `src/Modules/Colophon/README.md`.
 
+### Bot Protection
+
+The Bot Protection module is the control plane for WP Cloud Bot Protection (the
+external name for "blackbox") — login and password-reset gating shipped as the
+`wpcloud-bot-protection` mu-plugin on WP Cloud sites. The module drives the
+mu-plugin's `wpcloud_bot_protection_enable` filter from a single mandatory
+`state` setting:
+
+- `inherit` (default) registers nothing and leaves WP Cloud's own tiers to
+  decide, so shipping the module changes no behavior.
+- `off` forces protection disabled — a hard override even against a client-level
+  rollout.
+
+There is deliberately no `on`: in the currently deployed WP Cloud loader the
+filter reliably *disables* but does not *enable*, so an `on` would be
+indistinguishable from `inherit`. To enable a site, arm a tier — set
+`WPC_BOT_PROTECTION_ENABLED = true` or have the client enabled via the platform
+percentage rollout. The `off` setting is a no-op on non-WP-Cloud sites and where
+the mu-plugin is absent.
+
+The `state` applies uniformly across environments — staging/dev sites `inherit`
+by default like production. A non-production site that runs login automation and
+must stay clear is set to `off` explicitly.
+
+More detail: `src/Modules/BotProtection/README.md`.
+
 ## Runtime Interfaces
 
 Atlantis registers an `Atlantis` wp-admin menu for users who pass
@@ -120,6 +147,8 @@ wp atlantis module activate <key>...
 wp atlantis module deactivate <key>...
 wp atlantis message list
 wp atlantis message get <id>
+wp atlantis module bot-protection status
+wp atlantis module bot-protection set <inherit|off>
 ```
 
 ## Development Requirements
