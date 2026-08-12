@@ -1,8 +1,11 @@
 name: Build and Release
 
 on:
+  # `published` fires once for every release publish — full releases AND
+  # pre-releases (e.g. `v1.3.0-rc1`). The previous `released` filter skipped
+  # pre-releases, so RC tags never produced a build/zip.
   release:
-    types: [ released ]
+    types: [ published ]
 
 jobs:
   build:
@@ -37,6 +40,29 @@ jobs:
           mkdir a8csp-atlantis
           cp -r a8csp-atlantis.php functions.php functions-bootstrap.php index.php LICENSE src includes assets languages models templates vendor a8csp-atlantis/
 
+      # Pre-release zips ship a plain `1.3.0` header (version-consistency.yml
+      # forbids a suffix in-repo), so a site that installs an RC would report
+      # the same version as the final release and the self-updater's
+      # `version_compare( Version, latest, '<' )` in a8csp-atlantis.php would
+      # never fire — stranding it on the RC. Stamp the tag (e.g. `1.3.0-rc1`)
+      # into the STAGED header only for pre-releases, so those sites upgrade to
+      # the final build. Full releases are untouched.
+      - name: Stamp pre-release version into staged header
+        if: ${{ github.event.release.prerelease }}
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${TAG_NAME#v}"
+          export VERSION
+          perl -i -pe 's|^(\s*\* Version:\s+).*|${1}$ENV{VERSION}|' a8csp-atlantis/a8csp-atlantis.php
+          stamped="$(grep -m1 -E '^\s*\* Version:' a8csp-atlantis/a8csp-atlantis.php)"
+          echo "Header now: ${stamped}"
+          # Fail loudly if the substitution matched nothing (e.g. the header line
+          # was reformatted) — perl -pe exits 0 on no match, which would ship an
+          # unstamped RC zip silently.
+          printf '%s' "$stamped" | grep -qF -- "$VERSION" \
+            || { echo "::error::Failed to stamp pre-release version '${VERSION}' into the plugin header."; exit 1; }
+
       - name: Zip Release
         run: |
           zip -r ${{ github.event.repository.name }}.zip ./a8csp-atlantis
@@ -45,3 +71,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: ${{ github.event.repository.name }}.zip
+          # Preserve the triggering release's pre-release flag. Without this the
+          # action could un-mark a pre-release when attaching the asset, which
+          # would expose an RC through `/releases/latest` and auto-update sites
+          # onto it — exactly what the pre-release label is meant to prevent.
+          prerelease: ${{ github.event.release.prerelease }}
