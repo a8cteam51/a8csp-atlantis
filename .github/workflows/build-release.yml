@@ -55,8 +55,13 @@ jobs:
           VERSION="${TAG_NAME#v}"
           export VERSION
           perl -i -pe 's|^(\s*\* Version:\s+).*|${1}$ENV{VERSION}|' a8csp-atlantis/a8csp-atlantis.php
-          echo "Stamped pre-release version into staged header: ${VERSION}"
-          grep -m1 -E '^\s*\* Version:' a8csp-atlantis/a8csp-atlantis.php
+          stamped="$(grep -m1 -E '^\s*\* Version:' a8csp-atlantis/a8csp-atlantis.php)"
+          echo "Header now: ${stamped}"
+          # Fail loudly if the substitution matched nothing (e.g. the header line
+          # was reformatted) — perl -pe exits 0 on no match, which would ship an
+          # unstamped RC zip silently.
+          printf '%s' "$stamped" | grep -qF -- "$VERSION" \
+            || { echo "::error::Failed to stamp pre-release version '${VERSION}' into the plugin header."; exit 1; }
 
       - name: Zip Release
         run: |
@@ -66,3 +71,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: ${{ github.event.repository.name }}.zip
+          # Preserve the triggering release's pre-release flag. Without this the
+          # action could un-mark a pre-release when attaching the asset, which
+          # would expose an RC through `/releases/latest` and auto-update sites
+          # onto it — exactly what the pre-release label is meant to prevent.
+          prerelease: ${{ github.event.release.prerelease }}
