@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
  * Bilmur RUM Integration class.
  *
  * @since   1.0.0
- * @version 1.2.0
+ * @version 1.3.0
  */
 class Bilmur extends AbstractIntegration {
 	/**
@@ -53,7 +53,7 @@ class Bilmur extends AbstractIntegration {
 	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
-	 * @version 1.2.0
+	 * @version 1.3.0
 	 */
 	protected function initialize(): void {
 		// Always register the wpcomsh filters for Atomic compatibility (harmless on non-Atomic sites).
