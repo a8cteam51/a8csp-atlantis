@@ -1,8 +1,11 @@
 name: Build and Release
 
 on:
+  # `published` fires once for every release publish — full releases AND
+  # pre-releases (e.g. `v1.3.0-rc1`). The previous `released` filter skipped
+  # pre-releases, so RC tags never produced a build/zip.
   release:
-    types: [ released ]
+    types: [ published ]
 
 jobs:
   build:
