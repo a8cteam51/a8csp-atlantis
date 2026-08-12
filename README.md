@@ -11,7 +11,7 @@ Plugin metadata from `a8csp-atlantis.php`:
 
 - Plugin name: `A8CSP Atlantis`
 - Text domain: `a8csp-atlantis`
-- Version: `1.2.0`
+- Version: `1.3.0`
 - Requires WordPress: `6.8+`
 - Tested up to WordPress: `7.0`
 - Requires PHP: `8.2+`
@@ -223,10 +223,13 @@ validates Composer files, installs production PHP dependencies, runs `npm ci`
 and `npm run build`, copies the plugin runtime files into an
 `a8csp-atlantis/` release directory, and uploads a zip asset to the release.
 
-Before publishing a release, update the version in:
+Before publishing a release, update the version in (all must match — CI's
+`check-versions` job enforces it):
 
-- `a8csp-atlantis.php`
+- `a8csp-atlantis.php` (the plugin header `Version:` and the bootstrap `@version`)
 - `package.json`
+- `package-lock.json` (both the root `version` and the `packages[""].version`)
+- this README's `- Version:` line above
 
 Run `composer generate-autoloader` if local development reports missing
 classmap-backed classes after changing generated/autoloaded PHP symbols.
