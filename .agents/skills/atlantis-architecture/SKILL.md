@@ -19,7 +19,7 @@ Use this skill when:
 2. Activation hook is registered for activation-time compatibility checks.
 3. `functions.php` loads `includes/*.php` helper files.
 4. `plugins_loaded` triggers `a8csp_atlantis_get_plugin_instance()->maybe_initialize()`.
-5. `Plugin::initialize()` wires `Encryption`, `Modules`, and `Settings`.
+5. `Plugin::initialize()` wires `Encryption`, `Modules`, `Settings`, and the REST controllers (`Status_Controller`, `Force_Update_Check_Controller`).
 
 ## Module Pattern
 
