@@ -127,12 +127,12 @@ abstract class AbstractModule {
 			return;
 		}
 
-		if ( false !== $this->is_disabled() ) {
+		$is_disabled = $this->is_disabled();
+		if ( false !== $is_disabled ) {
 			add_action(
 				'admin_notices',
-				function () {
-					$error = $this->is_disabled();
-					if ( ! is_wp_error( $error ) ) {
+				function () use ( $is_disabled ) {
+					if ( ! is_wp_error( $is_disabled ) ) {
 						return;
 					}
 
@@ -141,7 +141,7 @@ abstract class AbstractModule {
 						__( '<strong>%1$s %2$s Module:</strong> %3$s', 'a8csp-atlantis' ),
 						a8csp_atlantis_get_plugin_metadata( 'Name' ),
 						esc_html( $this->get_name() ),
-						esc_html( $error->get_error_message() )
+						esc_html( $is_disabled->get_error_message() )
 					);
 
 					wp_admin_notice( $environment_error, array( 'type' => 'error' ) );
