@@ -139,7 +139,12 @@ if ( ! function_exists( 'team51_current_year_shortcode' ) ) :
 			'team51-current-year'
 		);
 
-		$current_year = gmdate( $atts['format'] );
+		$format = $atts['format'];
+		if ( 1 !== preg_match( '/^[YymndjDlFMGgHhisAaeIOPTZcUrWS]+$/', $format ) ) {
+			$format = 'Y';
+		}
+
+		$current_year = gmdate( $format );
 		return esc_html( $current_year );
 	}
 
