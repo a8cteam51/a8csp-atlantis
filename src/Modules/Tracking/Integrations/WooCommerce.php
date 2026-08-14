@@ -20,7 +20,7 @@ class WooCommerce extends AbstractIntegration {
 	 * @version 1.0.0
 	 */
 	public function is_active(): bool {
-		return ! defined( 'WPCOMSP_WC_TRACKING' ) || WPCOMSP_WC_TRACKING;
+		return defined( 'WPCOMSP_WC_TRACKING' ) && WPCOMSP_WC_TRACKING;
 	}
 
 	/**

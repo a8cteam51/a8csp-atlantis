@@ -20,7 +20,7 @@ class Sensei extends AbstractIntegration {
 	 * @version 1.0.0
 	 */
 	public function is_active(): bool {
-		return ! defined( 'WPCOMSP_SENSEI_TRACKING' ) || WPCOMSP_SENSEI_TRACKING;
+		return defined( 'WPCOMSP_SENSEI_TRACKING' ) && WPCOMSP_SENSEI_TRACKING;
 	}
 
 	/**
