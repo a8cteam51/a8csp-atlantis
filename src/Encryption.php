@@ -98,8 +98,17 @@ class Encryption {
 			// line ever ends up in the file (e.g. a platform-managed config
 			// re-merge), PHP won't emit an "already defined" warning.
 			$to_insert = "if ( ! defined( 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) { define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . \addcslashes( $encryption_key, "\\'" ) . "' ); }\r\n";
-			if ( \str_contains( $wp_config_contents, "/* That's all, stop editing!" ) ) {
-				$wp_config_contents = \str_replace( "/* That's all, stop editing!", $to_insert . "/* That's all, stop editing!", $wp_config_contents );
+
+			// Insert before the FIRST "stop editing" marker only. Some configs
+			// (notably multisite installs) carry more than one such marker; a
+			// naive str_replace() would write the define before every marker and
+			// create the exact duplicate-define warnings this method guards
+			// against. substr_replace() with a zero-length span inserts at the
+			// first match without touching the rest.
+			$marker    = "/* That's all, stop editing!";
+			$marker_at = \strpos( $wp_config_contents, $marker );
+			if ( false !== $marker_at ) {
+				$wp_config_contents = \substr_replace( $wp_config_contents, $to_insert, $marker_at, 0 );
 			} else {
 				$wp_config_contents = \preg_replace( '/<\?php/', "<?php\r\n" . $to_insert, $wp_config_contents, 1 );
 			}
