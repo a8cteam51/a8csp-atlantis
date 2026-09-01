@@ -44,7 +44,15 @@ class Encryption {
 	 * @return  void
 	 */
 	public function maybe_auto_insert_encryption_key(): void {
-		if ( a8csp_atlantis_has_encryption_key() || 'yes' === get_option( 'a8csp_atlantis_inserted_encryption_key', 'no' ) ) {
+		if ( a8csp_atlantis_has_encryption_key() ) {
+			return;
+		}
+
+		// A key was inserted previously but the constant is gone, so wp-config.php was most
+		// likely regenerated. A new key cannot recover content encrypted under the old one,
+		// so alert an operator rather than silently latching.
+		if ( 'yes' === get_option( 'a8csp_atlantis_inserted_encryption_key', 'no' ) ) {
+			$this->add_missing_key_notice();
 			return;
 		}
 
@@ -119,6 +127,42 @@ class Encryption {
 	// endregion
 
 	// region HELPERS
+
+	/**
+	 * Warns that a previously inserted encryption key is no longer defined.
+	 *
+	 * @since   1.4.0
+	 * @version 1.4.0
+	 *
+	 * @return  void
+	 */
+	private function add_missing_key_notice(): void {
+		$notice = \wp_sprintf(
+			/* translators: 1: Plugin name, 2: Plugin version */
+			__( '<strong>%1$s (version %2$s)</strong> inserted an encryption key previously, but it is no longer defined in wp-config.php. Stored message content cannot be read, and new messages cannot be saved, until the original key is restored.', 'a8csp-atlantis' ),
+			a8csp_atlantis_get_plugin_metadata( 'Name' ),
+			a8csp_atlantis_get_plugin_metadata( 'Version' )
+		);
+
+		error_log( wp_strip_all_tags( $notice ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+		add_action(
+			'admin_notices',
+			static function () use ( $notice ) {
+				if ( ! current_user_can( 'manage_options' ) ) {
+					return;
+				}
+
+				wp_admin_notice(
+					'<p>' . $notice . '</p>',
+					array(
+						'type'           => 'error',
+						'paragraph_wrap' => false,
+					)
+				);
+			}
+		);
+	}
 
 	/**
 	 * Returns the path to the wp-config.php file.

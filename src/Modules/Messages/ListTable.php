@@ -132,12 +132,17 @@ class ListTable {
 			wp_die( esc_html__( 'All required fields must be filled out.', 'a8csp-atlantis' ) );
 		}
 
+		$encrypted_content = a8csp_atlantis_encrypt_data( $message_content );
+		if ( is_wp_error( $encrypted_content ) ) {
+			wp_die( esc_html__( 'The message could not be encrypted, so it was not saved. The Atlantis encryption key is missing or invalid.', 'a8csp-atlantis' ) );
+		}
+
 		global $wpdb;
 		$table_name = CustomTable::get_table_name();
 
 		$data = array(
 			'title'      => $message_title,
-			'content'    => a8csp_atlantis_encrypt_data( $message_content ),
+			'content'    => $encrypted_content,
 			'type'       => $message_type,
 			'status'     => $message_status,
 			'locations'  => wp_json_encode( $message_includes ),

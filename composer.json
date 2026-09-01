@@ -79,11 +79,16 @@
     "tests:clean": "@php ./vendor/bin/codecept clean",
     "tests:run": [
       "@tests:run:integration",
+      "@tests:run:encryption-key",
       "@tests:run:end-to-end"
     ],
     "tests:run:integration": [
       "Composer\\Config::disableProcessTimeout",
       "@php ./vendor/bin/codecept run Integration --debug"
+    ],
+    "tests:run:encryption-key": [
+      "Composer\\Config::disableProcessTimeout",
+      "@php ./vendor/bin/codecept run EncryptionKey --debug"
     ],
     "tests:run:end-to-end": [
       "Composer\\Config::disableProcessTimeout",
