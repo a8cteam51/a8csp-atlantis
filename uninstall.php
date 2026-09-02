@@ -68,7 +68,14 @@ function a8csp_atlantis_uninstall_cleanup(): void {
 		return;
 	}
 
-	foreach ( get_sites( array( 'fields' => 'ids', 'number' => 0 ) ) as $site_id ) {
+	$site_ids = get_sites(
+		array(
+			'fields' => 'ids',
+			'number' => 0,
+		)
+	);
+
+	foreach ( $site_ids as $site_id ) {
 		switch_to_blog( (int) $site_id );
 		a8csp_atlantis_uninstall_cleanup_single_site();
 		restore_current_blog();
