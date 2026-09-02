@@ -67,6 +67,21 @@ class EncryptionKeyStateCest {
 			$this->count_admin_notice_callbacks(),
 			'A missing key combined with the inserted-key flag must raise an admin notice, not return silently.'
 		);
+
+		// The load-bearing guarantee: a replacement key cannot recover content encrypted
+		// under the lost one, so generating one would destroy the operator's only signal.
+		Assert::assertFalse(
+			a8csp_atlantis_has_encryption_key(),
+			'A lost key must not be replaced with a freshly generated one.'
+		);
+
+		$wp_config = ABSPATH . 'wp-config.php';
+		Assert::assertFileExists( $wp_config );
+		Assert::assertStringNotContainsString(
+			'A8CSP_ATLANTIS_ENCRYPTION_KEY',
+			(string) file_get_contents( $wp_config ), // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			'No encryption key define may be written to wp-config.php while in the lost-key state.'
+		);
 	}
 
 	/**
