@@ -51,6 +51,43 @@ class StatusControllerTestCest {
 	}
 
 	/**
+	 * A switched-off module vetoes nothing, so it must not answer the "is this site refusing
+	 * updates?" question at all. It never fetches, so it has no successful fetch on record and
+	 * would otherwise report itself as permanently fail-closed.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function status_payload_omits_autoupdate_state_when_the_module_is_off( IntegrationTester $i ): void {
+		$option_key = a8csp_atlantis_generate_module_settings_key( 'Autoupdates' );
+		$previous   = get_option( $option_key, array() );
+
+		delete_option( 'a8csp_atlantis_autoupdate_last_good_settings' );
+
+		try {
+			update_option( $option_key, array( 'enabled' => '0' ) );
+
+			$modules = $this->get_modules_payload();
+
+			Assert::assertFalse( $modules['autoupdates']['enabled'], 'Test precondition: the module is switched off.' );
+			Assert::assertArrayNotHasKey( 'fail_closed', $modules['autoupdates'] );
+			Assert::assertArrayNotHasKey( 'last_success', $modules['autoupdates'] );
+			Assert::assertArrayNotHasKey( 'seconds_since_success', $modules['autoupdates'] );
+
+			update_option( $option_key, array( 'enabled' => '1' ) );
+
+			$modules = $this->get_modules_payload();
+
+			Assert::assertTrue( $modules['autoupdates']['enabled'], 'Test precondition: the module is switched on.' );
+			Assert::assertArrayHasKey( 'fail_closed', $modules['autoupdates'], 'A running module must still report its state.' );
+		} finally {
+			update_option( $option_key, $previous );
+			delete_option( 'a8csp_atlantis_autoupdate_last_good_settings' );
+		}
+	}
+
+	/**
 	 * Returns the `modules` section of the status payload.
 	 *
 	 * @return array

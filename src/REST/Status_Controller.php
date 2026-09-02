@@ -113,10 +113,8 @@ class Status_Controller {
 			$modules['messages']['count'] = $this->count_messages();
 		}
 
-		// `enabled` only says the module is switched on. When the centralized settings cannot be
-		// fetched the module vetoes every plugin, theme and core update while still reporting
-		// enabled, so fleet tooling needs `fail_closed` to spot a prolonged outage.
-		if ( isset( $modules['autoupdates'] ) ) {
+		// A switched-off module never fetches, so it has nothing to report.
+		if ( isset( $modules['autoupdates'] ) && ! empty( $modules['autoupdates']['enabled'] ) ) {
 			$modules['autoupdates'] += AutoUpdatePluginsFilter::get_settings_state();
 		}
 
