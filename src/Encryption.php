@@ -45,10 +45,11 @@ class Encryption {
 
 	/**
 	 * Checks if the Atlantis encryption key is defined.
-	 * If not, it generates a new one and tries to insert it into wp-config.php.
+	 * If not, it generates a new one and tries to insert it into wp-config.php, unless a key
+	 * was inserted before, in which case it warns instead of generating a replacement.
 	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.3.1
 	 *
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)

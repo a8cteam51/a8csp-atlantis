@@ -96,9 +96,10 @@ class ListTable {
 
 	/**
 	 * Handles actions for single messages, such as saving or deleting.
+	 * Refuses to save when the message content cannot be encrypted.
 	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.3.1
 	 *
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
