@@ -344,6 +344,275 @@ class AutoupdatesTestCest {
 	}
 
 	/**
+	 * The settings endpoint must be overridable so a site can be pointed elsewhere.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function settings_endpoint_is_overridable( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+
+		$requested_url = null;
+		$capture       = static function ( $pre, $args, $url ) use ( &$requested_url ) {
+			$requested_url = $url;
+			return new WP_Error( 'http_request_failed', 'Captured.' );
+		};
+		$override = static function () {
+			return 'https://opsoasis.test/wp-json/wpcomsp/autoupdate-plugin/v1/settings/';
+		};
+
+		add_filter( 'a8csp_atlantis_autoupdate_settings_url', $override );
+		add_filter( 'pre_http_request', $capture, 10, 3 );
+
+		try {
+			$this->fetch_settings( new AutoUpdatePluginsFilter() );
+
+			Assert::assertSame(
+				'https://opsoasis.test/wp-json/wpcomsp/autoupdate-plugin/v1/settings/',
+				$requested_url,
+				'The settings request must use the filtered endpoint.'
+			);
+		} finally {
+			remove_filter( 'pre_http_request', $capture, 10 );
+			remove_filter( 'a8csp_atlantis_autoupdate_settings_url', $override );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
+	 * A successful fetch must be recorded so it can be reused while the endpoint is unreachable.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function successful_fetch_records_last_known_good_settings( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+
+		$respond = $this->http_response( array( 'disabled_plugins' => array( 'akismet/akismet.php' ) ) );
+		add_filter( 'pre_http_request', $respond, 10, 3 );
+
+		try {
+			$settings = $this->fetch_settings( new AutoUpdatePluginsFilter() );
+
+			Assert::assertIsObject( $settings );
+			Assert::assertSame( array( 'akismet/akismet.php' ), (array) $settings->disabled_plugins );
+
+			$last_good = get_option( 'a8csp_atlantis_autoupdate_last_good_settings' );
+			Assert::assertIsArray( $last_good, 'A successful fetch must be recorded as the last known good settings.' );
+			Assert::assertArrayHasKey( 'settings', $last_good );
+			Assert::assertArrayHasKey( 'timestamp', $last_good );
+			Assert::assertGreaterThan( 0, $last_good['timestamp'] );
+		} finally {
+			remove_filter( 'pre_http_request', $respond, 10 );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
+	 * A brief outage must reuse the last known good payload rather than stopping every update.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function failed_fetch_falls_back_to_last_known_good_within_grace( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+		$this->store_last_known_good(
+			array( 'disabled_plugins' => array( 'akismet/akismet.php' ) ),
+			time() - HOUR_IN_SECONDS
+		);
+
+		$fail = static function () {
+			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+		};
+		add_filter( 'pre_http_request', $fail, 10, 3 );
+
+		try {
+			$settings = $this->fetch_settings( new AutoUpdatePluginsFilter() );
+
+			Assert::assertIsObject( $settings, 'A recent last known good payload must be used instead of failing closed.' );
+			Assert::assertTrue( empty( $settings->disable_all ), 'A brief outage must not disable every autoupdate.' );
+			Assert::assertSame(
+				array( 'akismet/akismet.php' ),
+				(array) $settings->disabled_plugins,
+				'Deliberate blocks must still be honoured while serving stale settings.'
+			);
+		} finally {
+			remove_filter( 'pre_http_request', $fail, 10 );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
+	 * A prolonged outage must still end in the conservative state.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function failed_fetch_falls_closed_once_the_grace_period_expires( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+		$this->store_last_known_good(
+			array( 'disabled_plugins' => array() ),
+			time() - ( 25 * HOUR_IN_SECONDS )
+		);
+
+		$fail = static function () {
+			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+		};
+		add_filter( 'pre_http_request', $fail, 10, 3 );
+
+		try {
+			$settings = $this->fetch_settings( new AutoUpdatePluginsFilter() );
+
+			Assert::assertNull( $settings, 'An expired last known good payload must surface an exception to the caller.' );
+
+			$cached = get_transient( 'wpcpmsp_auto_update_settings' );
+			Assert::assertIsObject( $cached );
+			Assert::assertTrue( ! empty( $cached->disable_all ), 'The fail-safe must still be negative-cached.' );
+		} finally {
+			remove_filter( 'pre_http_request', $fail, 10 );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
+	 * The grace window must be adjustable without a code change.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function grace_period_is_filterable( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+		$this->store_last_known_good( array( 'disabled_plugins' => array() ), time() );
+
+		$no_grace = static function () {
+			return 0;
+		};
+		$fail = static function () {
+			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+		};
+
+		add_filter( 'a8csp_atlantis_autoupdate_settings_grace', $no_grace );
+		add_filter( 'pre_http_request', $fail, 10, 3 );
+
+		try {
+			$settings = $this->fetch_settings( new AutoUpdatePluginsFilter() );
+
+			Assert::assertNull( $settings, 'A zero grace window must fail closed immediately.' );
+		} finally {
+			remove_filter( 'pre_http_request', $fail, 10 );
+			remove_filter( 'a8csp_atlantis_autoupdate_settings_grace', $no_grace );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
+	 * The fail-closed state must be readable from storage, because the REST status request
+	 * is not an autoupdate context and so never populates the module's settings property.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function settings_state_is_readable_without_initializing_the_module( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+
+		$state = AutoUpdatePluginsFilter::get_settings_state();
+
+		Assert::assertTrue( $state['fail_closed'], 'With nothing stored, the site is fail-closed.' );
+		Assert::assertNull( $state['last_success'] );
+		Assert::assertNull( $state['seconds_since_success'] );
+
+		$this->store_last_known_good( array( 'disabled_plugins' => array() ), time() - HOUR_IN_SECONDS );
+
+		$state = AutoUpdatePluginsFilter::get_settings_state();
+
+		Assert::assertFalse( $state['fail_closed'], 'A last known good payload inside the grace window is not fail-closed.' );
+		Assert::assertIsInt( $state['last_success'] );
+		Assert::assertGreaterThanOrEqual( HOUR_IN_SECONDS, $state['seconds_since_success'] );
+
+		$this->store_last_known_good( array( 'disabled_plugins' => array() ), time() - ( 25 * HOUR_IN_SECONDS ) );
+
+		$state = AutoUpdatePluginsFilter::get_settings_state();
+
+		Assert::assertTrue( $state['fail_closed'], 'A last known good payload older than the grace window is fail-closed.' );
+
+		$this->reset_settings_storage();
+	}
+
+	/**
+	 * Invokes the private settings fetch, returning null when it throws.
+	 *
+	 * @param AutoUpdatePluginsFilter $module Module instance.
+	 *
+	 * @return \stdClass|null
+	 */
+	private function fetch_settings( AutoUpdatePluginsFilter $module ): ?\stdClass {
+		$method = new ReflectionMethod( $module, 'get_auto_update_settings' );
+		$method->setAccessible( true );
+
+		try {
+			return $method->invoke( $module );
+		} catch ( \Exception $exception ) {
+			return null;
+		}
+	}
+
+	/**
+	 * Builds a `pre_http_request` callback returning a successful JSON response.
+	 *
+	 * @param array $payload Response payload.
+	 *
+	 * @return callable
+	 */
+	private function http_response( array $payload ): callable {
+		return static function () use ( $payload ) {
+			return array(
+				'headers'  => array(),
+				'body'     => (string) wp_json_encode( $payload ),
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+	}
+
+	/**
+	 * Seeds the last known good settings option.
+	 *
+	 * @param array $payload   Settings payload.
+	 * @param int   $timestamp When the payload was last fetched successfully.
+	 *
+	 * @return void
+	 */
+	private function store_last_known_good( array $payload, int $timestamp ): void {
+		update_option(
+			'a8csp_atlantis_autoupdate_last_good_settings',
+			array(
+				'settings'  => (object) $payload,
+				'timestamp' => $timestamp,
+			)
+		);
+	}
+
+	/**
+	 * Clears both the settings transient and the last known good option.
+	 *
+	 * @return void
+	 */
+	private function reset_settings_storage(): void {
+		delete_transient( 'wpcpmsp_auto_update_settings' );
+		delete_option( 'a8csp_atlantis_autoupdate_last_good_settings' );
+	}
+
+	/**
 	 * Set current user as admin to satisfy capability checks.
 	 *
 	 * @return void
