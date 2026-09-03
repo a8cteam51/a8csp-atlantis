@@ -15,7 +15,23 @@ function a8csp_atlantis_is_automattician(): bool {
 		return false;
 	}
 
-	$user = wp_get_current_user();
+	return a8csp_atlantis_user_has_automattic_email( wp_get_current_user() );
+}
+
+/**
+ * Checks whether a user's email address is on an Automattic domain.
+ *
+ * Split out so capability filters can reuse it without calling `current_user_can()`, which
+ * would re-enter `user_has_cap` and recurse.
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @param   WP_User $user The user to check.
+ *
+ * @return  bool
+ */
+function a8csp_atlantis_user_has_automattic_email( WP_User $user ): bool {
 	if ( 0 === $user->ID || false === is_email( $user->user_email ) ) {
 		return false;
 	}

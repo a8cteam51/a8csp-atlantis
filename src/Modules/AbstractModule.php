@@ -2,6 +2,8 @@
 
 namespace A8C\SpecialProjects\Atlantis\Modules;
 
+use A8C\SpecialProjects\Atlantis\Settings;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -198,7 +200,11 @@ abstract class AbstractModule {
 	 */
 	public function register_settings(): void {
 		$option_name = a8csp_atlantis_generate_module_settings_key( $this->get_name() );
-		register_setting( 'a8csp_modules_group', $option_name );
+		register_setting(
+			Settings::MODULES_OPTION_GROUP,
+			$option_name,
+			array( 'capability' => Settings::MANAGE_MODULES_CAP )
+		);
 
 		add_settings_section(
 			"{$option_name}_section",
