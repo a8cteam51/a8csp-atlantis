@@ -15,7 +15,7 @@ use Tests\Support\IntegrationTester;
 /**
  * Automattician boundary tests.
  */
-class AutomatticianBoundaryCest {
+class AutomatticianBoundaryTestCest {
 	/**
 	 * The address a non-Automattic administrator starts with.
 	 *

@@ -15,7 +15,7 @@ use Tests\Support\IntegrationTester;
 /**
  * Module settings authorization tests.
  */
-class ModuleSettingsAuthorizationCest {
+class ModuleSettingsAuthorizationTestCest {
 	/**
 	 * The settings group the modules screen registers into.
 	 *

@@ -16,7 +16,7 @@ use Tests\Support\EndToEndTester;
 /**
  * Automattician boundary end-to-end tests.
  */
-class AutomatticianBoundaryCest {
+class AutomatticianBoundaryTestCest {
 	/**
 	 * Login for the administrator created by each test.
 	 *

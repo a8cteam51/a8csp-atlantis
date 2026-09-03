@@ -54,8 +54,10 @@ class Notifications {
 				wp_add_inline_script(
 					'wp-edit-post',
 					wp_sprintf(
-						'wp.data.dispatch("core/notices").createNotice("%s", %s, { isDismissible: false, __unstableHTML: true });',
-						$message->type,
+						// Both arguments are JSON-encoded, quotes included, so neither can close
+						// its own literal and append statements.
+						'wp.data.dispatch("core/notices").createNotice(%s, %s, { isDismissible: false, __unstableHTML: true });',
+						wp_json_encode( (string) $message->type ),
 						wp_json_encode( wp_kses_post( $message->content ) )
 					)
 				);
