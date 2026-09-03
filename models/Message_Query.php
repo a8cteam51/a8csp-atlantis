@@ -130,9 +130,15 @@ class Message_Query {
 			$where_data['params'][] = $offset;
 		}
 
+		// With no filters and no limit there are no placeholders to bind, and prepare() raises
+		// _doing_it_wrong() for that. The count query above takes the same precaution.
+		if ( 0 < \count( $where_data['params'] ) ) {
+			$sql = $wpdb->prepare( $sql, ...$where_data['params'] ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
 		$this->results = array_map(
 			array( Message::class, 'get_instance' ),
-			$wpdb->get_results( $wpdb->prepare( $sql, ...$where_data['params'] ) ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$wpdb->get_results( $sql ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		);
 	}
 
