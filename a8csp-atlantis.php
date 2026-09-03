@@ -61,11 +61,12 @@ add_action(
 		$latest_release_info = get_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
 		if (
 			is_array( $latest_release_info ) &&
-			isset( $latest_release_info['tag_name'], $latest_release_info['html_url'], $latest_release_info['assets'][0]['browser_download_url'] )
+			isset( $latest_release_info['tag_name'], $latest_release_info['html_url'] ) &&
+			null !== a8csp_atlantis_get_release_package_url( $latest_release_info )
 		) {
 			$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
 		} elseif ( false === $latest_release_info ) {
-			$latest_release_info = wp_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
+			$latest_release_info = wp_safe_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
 			if ( is_wp_error( $latest_release_info ) || 200 !== wp_remote_retrieve_response_code( $latest_release_info ) ) {
 				set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
 				return $update;
@@ -74,7 +75,8 @@ add_action(
 			$latest_release_info = json_decode( wp_remote_retrieve_body( $latest_release_info ), true );
 			if (
 				! is_array( $latest_release_info ) ||
-				! isset( $latest_release_info['tag_name'], $latest_release_info['html_url'], $latest_release_info['assets'][0]['browser_download_url'] )
+				! isset( $latest_release_info['tag_name'], $latest_release_info['html_url'] ) ||
+				null === a8csp_atlantis_get_release_package_url( $latest_release_info )
 			) {
 				set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
 				return $update;
@@ -95,7 +97,7 @@ add_action(
 				'slug'    => $plugin_data['TextDomain'],
 				'version' => $latest_release_version,
 				'url'     => $latest_release_info['html_url'],
-				'package' => $latest_release_info['assets'][0]['browser_download_url'],
+				'package' => a8csp_atlantis_get_release_package_url( $latest_release_info ),
 			);
 		} else {
 			$update = false;
@@ -105,6 +107,44 @@ add_action(
 	},
 	10,
 	3
+);
+
+// Verify the downloaded package against the checksum GitHub publishes for the release. The
+// update check is cached for an hour, so the asset could otherwise be replaced between the
+// check and the install.
+add_filter(
+	'upgrader_pre_download',
+	static function ( $reply, $package, $upgrader, $hook_extra = array() ) {
+		if ( ! is_array( $hook_extra ) || A8CSP_ATLANTIS_BASENAME !== ( $hook_extra['plugin'] ?? '' ) ) {
+			return $reply;
+		}
+
+		$latest_release_info = get_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
+		if ( ! is_array( $latest_release_info ) ) {
+			return $reply;
+		}
+
+		$digest = a8csp_atlantis_get_release_package_digest( $latest_release_info );
+		if ( null === $digest ) {
+			// The release predates GitHub publishing digests, so there is nothing to check.
+			return $reply;
+		}
+
+		$file = download_url( $package );
+		if ( is_wp_error( $file ) ) {
+			return $file;
+		}
+
+		$verified = a8csp_atlantis_verify_package_digest( $file, $digest );
+		if ( is_wp_error( $verified ) ) {
+			wp_delete_file( $file );
+			return $verified;
+		}
+
+		return $file;
+	},
+	10,
+	4
 );
 
 // Load the autoloader.
