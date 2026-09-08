@@ -1,0 +1,22 @@
+# Encryption key suite configuration
+#
+# Runs in its own process so that A8CSP_ATLANTIS_ENCRYPTION_KEY is never defined.
+# The Integration suite defines the key at runtime, which makes the missing-key
+# code paths unreachable there.
+
+actor: IntegrationTester
+bootstrap: _bootstrap.php
+modules:
+    enabled:
+        - lucatume\WPBrowser\Module\WPLoader
+    config:
+        lucatume\WPBrowser\Module\WPLoader:
+           wpRootFolder: "%WORDPRESS_ROOT_DIR%"
+           dbUrl: '%WORDPRESS_DB_URL%'
+           wpDebug: true
+           tablePrefix: '%TEST_TABLE_PREFIX%'
+           domain: '%WORDPRESS_DOMAIN%'
+           adminEmail: 'admin@%WORDPRESS_DOMAIN%'
+           title: 'Encryption Key Tests'
+           plugins: ['./a8csp-atlantis.php']
+           theme: ''
