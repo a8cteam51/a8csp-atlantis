@@ -38,7 +38,7 @@ jobs:
       - name: Prepare Release Directory
         run: |
           mkdir a8csp-atlantis
-          cp -r a8csp-atlantis.php functions.php functions-bootstrap.php index.php LICENSE src includes assets languages models templates vendor a8csp-atlantis/
+          cp -r a8csp-atlantis.php functions.php functions-bootstrap.php index.php uninstall.php LICENSE src includes assets languages models templates vendor a8csp-atlantis/
 
       # Pre-release zips ship a plain `1.3.0` header (version-consistency.yml
       # forbids a suffix in-repo), so a site that installs an RC would report
