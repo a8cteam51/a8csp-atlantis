@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis\REST;
 
 use A8C\SpecialProjects\Atlantis\Message_Query;
+use A8C\SpecialProjects\Atlantis\Modules\Autoupdates\AutoUpdatePluginsFilter;
 use A8C\SpecialProjects\Atlantis\Modules\BotProtection\BotProtection;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\CustomTable;
 use A8C\SpecialProjects\Atlantis\Plugin;
@@ -110,6 +111,11 @@ class Status_Controller {
 
 		if ( isset( $modules['messages'] ) ) {
 			$modules['messages']['count'] = $this->count_messages();
+		}
+
+		// A switched-off module never fetches, so it has nothing to report.
+		if ( isset( $modules['autoupdates'] ) && ! empty( $modules['autoupdates']['enabled'] ) ) {
+			$modules['autoupdates'] += AutoUpdatePluginsFilter::get_settings_state();
 		}
 
 		// Bot Protection is mandatory, so its shared `enabled` flag (from
