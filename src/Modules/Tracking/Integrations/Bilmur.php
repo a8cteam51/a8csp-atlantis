@@ -101,13 +101,13 @@ class Bilmur extends AbstractIntegration {
 	 * @since   1.2.0
 	 * @version 1.3.0
 	 *
-	 * @param array<string, string> $kv      The existing key-value pairs.
-	 * @param string                $service The bilmur service name.
+	 * @param array<string, string> $properties The existing key-value pairs.
+	 * @param string                $service    The bilmur service name.
 	 *
 	 * @return array<string, string> The modified key-value pairs.
 	 */
-	public static function filter_wpcomsh_rum_kv( array $kv, string $service ): array {
-		return array_merge( $kv, self::$wpcomsh_custom_properties );
+	public static function filter_wpcomsh_rum_kv( array $properties, string $service ): array {
+		return array_merge( $properties, self::$wpcomsh_custom_properties );
 	}
 
 	/**

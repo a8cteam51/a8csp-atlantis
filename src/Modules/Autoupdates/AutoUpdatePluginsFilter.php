@@ -27,6 +27,26 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 */
 	private \stdClass $settings;
 
+	/**
+	 * Option holding the last payload successfully fetched from OpsOasis.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @var string
+	 */
+	private const LAST_KNOWN_GOOD_OPTION = 'a8csp_atlantis_autoupdate_last_good_settings';
+
+	/**
+	 * Default centralized settings endpoint.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_SETTINGS_URL = 'https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/';
+
 	// endregion
 
 	// region INHERITED METHODS
@@ -131,7 +151,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * Load settings from the centralized settings page
 	 *
 	 * @throws  \RuntimeException If the settings cannot be loaded.
-	 * @throws  \JsonException    If the settings cannot be decoded.
+	 * @throws  \Exception        Rethrown when there is no usable last known good payload. Includes
+	 *                            the \JsonException raised when the response cannot be decoded.
 	 *
 	 * @return  \stdClass
 	 */
@@ -144,7 +165,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		if ( empty( $settings ) ) {
 			try {
 				$response = wp_safe_remote_get(
-					'https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/',
+					self::get_settings_endpoint(),
 					array(
 						'timeout' => 2,
 						'headers' => array( 'Accept' => 'application/json' ),
@@ -175,9 +196,19 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 				// Save the settings in a transient for 5 minutes
 				set_transient( $transient_key, $decoded_body, 5 * MINUTE_IN_SECONDS );
+				self::store_last_known_good( $decoded_body );
 
 				$settings = $decoded_body;
 			} catch ( \Exception $exception ) {
+				// A short outage must not imitate a deliberate fleet-wide stop, so keep serving the last
+				// payload we fetched successfully. A stale `disabled_plugins` list still blocks whatever
+				// somebody deliberately blocked; only a newly added block is missed.
+				$last_known_good = self::get_last_known_good_settings();
+				if ( $last_known_good instanceof \stdClass ) {
+					set_transient( $transient_key, $last_known_good, 5 * MINUTE_IN_SECONDS );
+					return $last_known_good;
+				}
+
 				// Negative-cache the fail-safe so a slow/down OpsOasis cannot block every uncached page load.
 				set_transient( $transient_key, (object) array( 'disable_all' => true ), 5 * MINUTE_IN_SECONDS );
 				throw $exception;
@@ -185,6 +216,124 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		}
 
 		return $settings;
+	}
+
+	/**
+	 * Returns the centralized settings endpoint, overridable by constant or filter.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @return  string
+	 */
+	private static function get_settings_endpoint(): string {
+		$url = \defined( 'A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL' )
+			? (string) \constant( 'A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL' )
+			: self::DEFAULT_SETTINGS_URL;
+
+		/**
+		 * Filters the centralized autoupdate settings endpoint.
+		 *
+		 * @since 1.3.1
+		 *
+		 * @param string $url The settings endpoint URL.
+		 */
+		return (string) apply_filters( 'a8csp_atlantis_autoupdate_settings_url', $url );
+	}
+
+	/**
+	 * Returns how long the last known good settings may be reused while OpsOasis is unreachable.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @return  int
+	 */
+	private static function get_grace_period(): int {
+		/**
+		 * Filters the grace window for reusing the last known good autoupdate settings.
+		 *
+		 * @since 1.3.1
+		 *
+		 * @param int $grace Seconds since the last successful fetch. Default 24 hours.
+		 */
+		return (int) apply_filters( 'a8csp_atlantis_autoupdate_settings_grace', DAY_IN_SECONDS );
+	}
+
+	/**
+	 * Records a successfully fetched payload so it survives object-cache eviction.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @param   \stdClass $settings The payload to record.
+	 *
+	 * @return  void
+	 */
+	private static function store_last_known_good( \stdClass $settings ): void {
+		update_option(
+			self::LAST_KNOWN_GOOD_OPTION,
+			array(
+				'settings'  => $settings,
+				'timestamp' => time(),
+			),
+			false
+		);
+	}
+
+	/**
+	 * Returns the last known good payload, or null when there is none or it is past the grace window.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @return  \stdClass|null
+	 */
+	private static function get_last_known_good_settings(): ?\stdClass {
+		$stored = get_option( self::LAST_KNOWN_GOOD_OPTION );
+
+		if ( ! \is_array( $stored ) || ! isset( $stored['settings'], $stored['timestamp'] ) || ! \is_object( $stored['settings'] ) ) {
+			return null;
+		}
+
+		if ( ( time() - (int) $stored['timestamp'] ) >= self::get_grace_period() ) {
+			return null;
+		}
+
+		return $stored['settings'];
+	}
+
+	/**
+	 * Reports whether the site is currently refusing all autoupdates because the centralized
+	 * settings could not be fetched.
+	 *
+	 * Reads from storage rather than the module's own settings, because the REST status request
+	 * is not an autoupdate context and so never runs `initialize()`.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @return  array{fail_closed: bool, last_success: int|null, seconds_since_success: int|null}
+	 */
+	public static function get_settings_state(): array {
+		$stored = get_option( self::LAST_KNOWN_GOOD_OPTION );
+
+		if ( ! \is_array( $stored ) || ! isset( $stored['timestamp'] ) ) {
+			return array(
+				'fail_closed'           => true,
+				'last_success'          => null,
+				'seconds_since_success' => null,
+			);
+		}
+
+		$timestamp = (int) $stored['timestamp'];
+		$age       = time() - $timestamp;
+
+		return array(
+			'fail_closed'           => $age >= self::get_grace_period(),
+			'last_success'          => $timestamp,
+			'seconds_since_success' => $age,
+		);
 	}
 
 	/**

@@ -3,6 +3,7 @@
 namespace A8C\SpecialProjects\Atlantis\CLI;
 
 use A8C\SpecialProjects\Atlantis\Modules\BotProtection\BotProtection;
+use WP_CLI\Formatter;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -90,7 +91,7 @@ class BotProtection_Command {
 			? \array_map( 'trim', \explode( ',', (string) $assoc_args['fields'] ) )
 			: self::DEFAULT_FIELDS;
 
-		$formatter = new \WP_CLI\Formatter( $assoc_args, $fields );
+		$formatter = new Formatter( $assoc_args, $fields );
 		$formatter->display_items( array( $row ) );
 	}
 

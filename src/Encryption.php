@@ -11,6 +11,20 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  */
 class Encryption {
+	// region FIELDS AND CONSTANTS
+
+	/**
+	 * Transient that throttles the missing-key log entry.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @var string
+	 */
+	private const MISSING_KEY_LOGGED_TRANSIENT = 'a8csp_atlantis_missing_key_logged';
+
+	// endregion
+
 	// region METHODS
 
 	/**
@@ -31,29 +45,35 @@ class Encryption {
 
 	/**
 	 * Checks if the Atlantis encryption key is defined.
-	 * If not, it generates a new one and tries to insert it into wp-config.php.
+	 * If not, it generates a new one and tries to insert it into wp-config.php, unless a key
+	 * was inserted before, in which case it warns instead of generating a replacement.
 	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.3.1
 	 *
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
 	 *
 	 * @return  void
 	 */
 	public function maybe_auto_insert_encryption_key(): void {
-		if ( a8csp_atlantis_has_encryption_key() || 'yes' === $this->get_inserted_encryption_key_flag() ) {
+		if ( a8csp_atlantis_has_encryption_key() ) {
 			return;
 		}
 
-		// On multisite, wp-config.php is a single file shared by the entire
-		// network. Only the main site writes to it, so subsites don't each
-		// append their own define() into the shared file (which produces
-		// "Constant ... already defined" warnings). The flag above is stored
-		// network-wide on multisite, so once the main site inserts the key
-		// every subsite short-circuits at the check above.
+		// A key was inserted previously but the constant is gone, so wp-config.php was most
+		// likely regenerated. A new key cannot recover content encrypted under the old one,
+		// so alert an operator rather than silently latching.
+		if ( 'yes' === $this->get_inserted_encryption_key_flag() ) {
+			$this->add_missing_key_notice();
+			return;
+		}
+
+		// wp-config.php is shared network-wide, so only the main site writes to it.
 		if ( is_multisite() && ! is_main_site() ) {
 			return;
 		}
@@ -153,12 +173,9 @@ class Encryption {
 	// region HELPERS
 
 	/**
-	 * Returns whether the encryption key has already been inserted into
-	 * wp-config.php.
+	 * Returns whether the encryption key has already been inserted into wp-config.php.
 	 *
-	 * On multisite the flag is stored network-wide because wp-config.php is a
-	 * single file shared by every site in the network — tracking it per-site
-	 * would let each subsite conclude it still needs to insert the key.
+	 * On multisite the flag is stored network-wide, since wp-config.php is shared.
 	 *
 	 * @since   1.3.1
 	 * @version 1.3.1
@@ -185,6 +202,58 @@ class Encryption {
 		} else {
 			update_option( 'a8csp_atlantis_inserted_encryption_key', 'yes' );
 		}
+	}
+
+	/**
+	 * Warns that a previously inserted encryption key is no longer defined.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @return  void
+	 */
+	private function add_missing_key_notice(): void {
+		$notice = \wp_sprintf(
+			/* translators: 1: Plugin name, 2: Plugin version */
+			__( '<strong>%1$s (version %2$s)</strong> inserted an encryption key previously, but it is no longer defined in wp-config.php. Stored message content cannot be read, and new messages cannot be saved, until the original key is restored.', 'a8csp-atlantis' ),
+			a8csp_atlantis_get_plugin_metadata( 'Name' ),
+			a8csp_atlantis_get_plugin_metadata( 'Version' )
+		);
+
+		// This runs on `init`, so it fires on every front-end, admin, AJAX, REST and cron
+		// request, and a lost-key site stays lost until an operator acts. Without throttling
+		// the log grows by one identical line per request.
+		if ( false === get_transient( self::MISSING_KEY_LOGGED_TRANSIENT ) ) {
+			error_log( wp_strip_all_tags( $notice ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+
+			/**
+			 * Filters how long to wait before logging the missing encryption key again.
+			 *
+			 * @since 1.3.1
+			 *
+			 * @param int $interval Seconds between log entries. Default 6 hours.
+			 */
+			$interval = (int) apply_filters( 'a8csp_atlantis_missing_key_log_interval', 6 * HOUR_IN_SECONDS );
+
+			set_transient( self::MISSING_KEY_LOGGED_TRANSIENT, 1, $interval );
+		}
+
+		add_action(
+			'admin_notices',
+			static function () use ( $notice ) {
+				if ( ! current_user_can( 'manage_options' ) ) {
+					return;
+				}
+
+				wp_admin_notice(
+					'<p>' . $notice . '</p>',
+					array(
+						'type'           => 'error',
+						'paragraph_wrap' => false,
+					)
+				);
+			}
+		);
 	}
 
 	/**
