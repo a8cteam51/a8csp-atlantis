@@ -72,6 +72,14 @@ class MessageFormLocationTestCest {
 	 * @return void
 	 */
 	public function crafted_menu_slug_does_not_become_markup( EndToEndTester $i ): void {
+		// Drop cookies the previous test left behind; the fixture reload wipes their session.
+		$i->amOnPage( '/' );
+		$i->executeInSelenium(
+			static function ( $webdriver ) {
+				$webdriver->manage()->deleteAllCookies();
+			}
+		);
+
 		$i->loginAs( self::USER_LOGIN, self::USER_PASSWORD );
 		$i->amOnAdminPage( 'admin.php?page=a8csp-atlantis-messages&action=new' );
 

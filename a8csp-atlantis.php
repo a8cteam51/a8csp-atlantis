@@ -58,39 +58,12 @@ add_action(
 			return $update;
 		}
 
-		$latest_release_info = get_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
-		if (
-			is_array( $latest_release_info ) &&
-			isset( $latest_release_info['tag_name'], $latest_release_info['html_url'] ) &&
-			null !== a8csp_atlantis_get_release_package_url( $latest_release_info )
-		) {
-			$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
-		} elseif ( false === $latest_release_info ) {
-			$latest_release_info = wp_safe_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
-			if ( is_wp_error( $latest_release_info ) || 200 !== wp_remote_retrieve_response_code( $latest_release_info ) ) {
-				set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
-				return $update;
-			}
-
-			$latest_release_info = json_decode( wp_remote_retrieve_body( $latest_release_info ), true );
-			if (
-				! is_array( $latest_release_info ) ||
-				! isset( $latest_release_info['tag_name'], $latest_release_info['html_url'] ) ||
-				null === a8csp_atlantis_get_release_package_url( $latest_release_info )
-			) {
-				set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
-				return $update;
-			}
-
-			set_transient(
-				A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY,
-				$latest_release_info,
-				HOUR_IN_SECONDS
-			);
-			$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
-		} else {
+		$latest_release_info = a8csp_atlantis_get_latest_release();
+		if ( null === $latest_release_info ) {
 			return $update;
 		}
+
+		$latest_release_version = ltrim( $latest_release_info['tag_name'], 'v' );
 
 		if ( version_compare( $plugin_data['Version'], $latest_release_version, '<' ) ) {
 			$update = array(
@@ -119,9 +92,12 @@ add_filter(
 			return $reply;
 		}
 
-		$latest_release_info = get_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
-		if ( ! is_array( $latest_release_info ) ) {
-			return $reply;
+		$latest_release_info = a8csp_atlantis_get_latest_release();
+		if ( null === $latest_release_info ) {
+			return new WP_Error(
+				'a8csp_atlantis_release_unavailable',
+				__( 'The release could not be retrieved to verify the update, so it was not installed.', 'a8csp-atlantis' )
+			);
 		}
 
 		$digest = a8csp_atlantis_get_release_package_digest( $latest_release_info );

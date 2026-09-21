@@ -18,7 +18,11 @@ use Tests\Support\EndToEndTester;
  */
 class AutomatticianBoundaryTestCest {
 	/**
-	 * Login for the administrator created by each test.
+	 * Login prefix for the administrator created by each test.
+	 *
+	 * Each test gets its own user. The fixture is reloaded between tests, which wipes session
+	 * tokens while the browser still holds the cookie, so a shared login logs in against a
+	 * session that no longer exists.
 	 *
 	 * @var string
 	 */
@@ -53,9 +57,9 @@ class AutomatticianBoundaryTestCest {
 	 * @return void
 	 */
 	public function own_profile_warns_that_a_new_address_needs_confirming( EndToEndTester $i ): void {
-		$this->create_outsider_admin( $i );
+		$login = $this->create_outsider_admin( $i, 'warns' )['login'];
 
-		$i->loginAs( self::USER_LOGIN, self::USER_PASSWORD );
+		$this->login_cleanly( $i, $login );
 		$i->amOnAdminPage( 'profile.php' );
 
 		$i->see( 'The new address will not become active until confirmed.' );
@@ -71,9 +75,10 @@ class AutomatticianBoundaryTestCest {
 	 * @return void
 	 */
 	public function changing_own_email_does_not_take_effect_until_confirmed( EndToEndTester $i ): void {
-		$user_id = $this->create_outsider_admin( $i );
+		$created = $this->create_outsider_admin( $i, 'change' );
+		$user_id = $created['id'];
 
-		$i->loginAs( self::USER_LOGIN, self::USER_PASSWORD );
+		$this->login_cleanly( $i, $created['login'] );
 		$i->amOnAdminPage( 'profile.php' );
 
 		$i->fillField( '#email', self::TARGET_EMAIL );
@@ -99,20 +104,47 @@ class AutomatticianBoundaryTestCest {
 	}
 
 	/**
+	 * Drops any cookies the previous test left behind, then logs in.
+	 *
+	 * @param EndToEndTester $i     Tester instance.
+	 * @param string         $login The user to log in as.
+	 *
+	 * @return void
+	 */
+	private function login_cleanly( EndToEndTester $i, string $login ): void {
+		$i->amOnPage( '/' );
+		$i->executeInSelenium(
+			static function ( $webdriver ) {
+				$webdriver->manage()->deleteAllCookies();
+			}
+		);
+
+		$i->loginAs( $login, self::USER_PASSWORD );
+	}
+
+	/**
 	 * Creates an administrator with a non-Automattic address.
 	 *
-	 * @param EndToEndTester $i Tester instance.
+	 * @param EndToEndTester $i      Tester instance.
+	 * @param string         $suffix Makes the login unique to the calling test.
 	 *
-	 * @return int
+	 * @return array{id: int, login: string}
 	 */
-	private function create_outsider_admin( EndToEndTester $i ): int {
-		return $i->haveUserInDatabase(
-			self::USER_LOGIN,
+	private function create_outsider_admin( EndToEndTester $i, string $suffix ): array {
+		$login = self::USER_LOGIN . '_' . $suffix;
+
+		$user_id = $i->haveUserInDatabase(
+			$login,
 			'administrator',
 			array(
 				'user_pass'  => self::USER_PASSWORD,
 				'user_email' => self::ORIGINAL_EMAIL,
 			)
+		);
+
+		return array(
+			'id'    => $user_id,
+			'login' => $login,
 		);
 	}
 }

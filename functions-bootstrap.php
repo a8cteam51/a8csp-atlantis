@@ -257,6 +257,62 @@ function a8csp_atlantis_maybe_disable_autoupdates_module_on_activation(): void {
 }
 
 /**
+ * Returns the latest GitHub release, fetching and caching it when the cache is empty.
+ *
+ * The release is cached for an hour while WordPress keeps an update on offer for twelve, so a
+ * cache miss is the normal state at install time rather than an edge case.
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @return  array<string, mixed>|null The decoded release, or null when it cannot be retrieved.
+ */
+function a8csp_atlantis_get_latest_release(): ?array {
+	$cached = get_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
+
+	if ( a8csp_atlantis_is_usable_release( $cached ) ) {
+		return $cached;
+	}
+
+	// An empty array is the negative cache written after a failed fetch.
+	if ( array() === $cached ) {
+		return null;
+	}
+
+	$response = wp_safe_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
+	if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+		set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
+		return null;
+	}
+
+	$release = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( ! a8csp_atlantis_is_usable_release( $release ) ) {
+		set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
+		return null;
+	}
+
+	set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, $release, HOUR_IN_SECONDS );
+
+	return $release;
+}
+
+/**
+ * Returns whether a decoded release carries everything the updater needs.
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @param   mixed $release The value to check.
+ *
+ * @return  bool
+ */
+function a8csp_atlantis_is_usable_release( $release ): bool {
+	return is_array( $release )
+		&& isset( $release['tag_name'], $release['html_url'] )
+		&& null !== a8csp_atlantis_get_release_package_url( $release );
+}
+
+/**
  * Returns the download URL of the zip attached to a GitHub release.
  *
  * Position in the asset list means nothing, so anything else attached to a release — a
