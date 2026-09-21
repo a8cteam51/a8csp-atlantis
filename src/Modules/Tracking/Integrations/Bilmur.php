@@ -42,7 +42,7 @@ class Bilmur extends AbstractIntegration {
 			return false;
 		}
 
-		if ( ! defined( 'WPCOMSP_BILMUR_PROVIDER' ) || ! WPCOMSP_BILMUR_PROVIDER || ! defined( 'WPCOMSP_BILMUR_SERVICE' ) || ! WPCOMSP_BILMUR_SERVICE ) {
+		if ( ! defined( 'WPCOMSP_BILMUR_PROVIDER' ) || ! WPCOMSP_BILMUR_PROVIDER || ! defined( 'WPCOMSP_BILMUR_SERVICE' ) || ! WPCOMSP_BILMUR_SERVICE ) { // @phpstan-ignore booleanNot.alwaysFalse, booleanNot.exprNotBoolean, booleanNot.alwaysFalse, booleanNot.exprNotBoolean
 			return false;
 		}
 
@@ -213,6 +213,9 @@ class Bilmur extends AbstractIntegration {
 	 *
 	 * @since   1.1.0
 	 * @version 1.1.0
+	 *
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 *
 	 * @return string
 	 */

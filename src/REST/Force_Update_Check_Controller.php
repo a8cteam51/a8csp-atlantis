@@ -138,7 +138,7 @@ class Force_Update_Check_Controller {
 		\wp_update_plugins();
 
 		$updates = \get_site_transient( 'update_plugins' );
-		if ( ! \is_object( $updates ) || ! isset( $updates->no_update, $updates->translations ) ) {
+		if ( ! \is_object( $updates ) || ! isset( $updates->no_update, $updates->translations ) ) { // @phpstan-ignore property.notFound, property.notFound
 			// The re-check did not complete. Roll back to the pre-refresh list rather than leave it wiped.
 			if ( false !== $previous ) {
 				\set_site_transient( 'update_plugins', $previous );
@@ -152,8 +152,8 @@ class Force_Update_Check_Controller {
 
 		return array(
 			'refreshed'    => true,
-			'last_checked' => (int) ( $updates->last_checked ?? 0 ),
-			'updates'      => \count( (array) ( $updates->response ?? array() ) ),
+			'last_checked' => (int) ( $updates->last_checked ?? 0 ), // @phpstan-ignore property.notFound
+			'updates'      => \count( (array) ( $updates->response ?? array() ) ), // @phpstan-ignore property.notFound
 			'woocommerce'  => $woocommerce,
 		);
 	}
