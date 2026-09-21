@@ -22,13 +22,39 @@ class MessageFormLocationTestCest {
 	private const CRAFTED_SLUG = 'atlantis-probe"><b id="atlantis-broke-out">x</b><span data-z="';
 
 	/**
-	 * Registers an admin page whose slug contains a quote.
+	 * Login of the Automattician this test drives the form as.
+	 *
+	 * @var string
+	 */
+	private const USER_LOGIN = 'atlantis_probe_admin';
+
+	/**
+	 * Password for that user.
+	 *
+	 * @var string
+	 */
+	private const USER_PASSWORD = 'atlantis_probe_password';
+
+	/**
+	 * Activates the plugin, creates an Automattician, and registers an admin page whose slug
+	 * contains a quote.
 	 *
 	 * @param EndToEndTester $i Tester instance.
 	 *
 	 * @return void
 	 */
 	public function _before( EndToEndTester $i ): void {
+		$i->haveOptionInDatabase( 'active_plugins', array( 'a8csp-plugin-scaffold/a8csp-atlantis.php' ) );
+
+		$i->haveUserInDatabase(
+			self::USER_LOGIN,
+			'administrator',
+			array(
+				'user_pass'  => self::USER_PASSWORD,
+				'user_email' => 'probe@a8c.com',
+			)
+		);
+
 		$i->haveMuPlugin(
 			'atlantis-crafted-location.php',
 			'<?php
@@ -46,7 +72,7 @@ class MessageFormLocationTestCest {
 	 * @return void
 	 */
 	public function crafted_menu_slug_does_not_become_markup( EndToEndTester $i ): void {
-		$i->loginAsAdmin();
+		$i->loginAs( self::USER_LOGIN, self::USER_PASSWORD );
 		$i->amOnAdminPage( 'admin.php?page=a8csp-atlantis-messages&action=new' );
 
 		$i->seeElement( '.atlantis-location-dropdown' );
