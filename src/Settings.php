@@ -128,7 +128,7 @@ class Settings {
 	 * @return  array<string, bool>
 	 */
 	public function filter_grant_manage_modules_capability( array $allcaps, array $caps, array $args, \WP_User $user ): array { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
-		if ( empty( $allcaps['manage_options'] ) ) {
+		if ( true !== ( $allcaps['manage_options'] ?? false ) ) {
 			return $allcaps;
 		}
 

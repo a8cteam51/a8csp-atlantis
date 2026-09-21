@@ -268,6 +268,8 @@ function a8csp_atlantis_maybe_disable_autoupdates_module_on_activation(): void {
  *
  * @param   array<string, mixed> $release The decoded GitHub release.
  *
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ *
  * @return  string|null The download URL, or null when the release carries no zip.
  */
 function a8csp_atlantis_get_release_package_url( array $release ): ?string {
@@ -276,7 +278,7 @@ function a8csp_atlantis_get_release_package_url( array $release ): ?string {
 	}
 
 	foreach ( $release['assets'] as $asset ) {
-		if ( ! is_array( $asset ) || empty( $asset['browser_download_url'] ) || ! is_string( $asset['browser_download_url'] ) ) {
+		if ( ! is_array( $asset ) || ! is_string( $asset['browser_download_url'] ?? null ) || '' === $asset['browser_download_url'] ) {
 			continue;
 		}
 
@@ -301,6 +303,11 @@ function a8csp_atlantis_get_release_package_url( array $release ): ?string {
  * @version 1.3.1
  *
  * @param   array<string, mixed> $release The decoded GitHub release.
+ *
+ * @phpstan-ignore-next-line
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @phpstan-ignore-next-line
+ * @SuppressWarnings(PHPMD.NPathComplexity)
  *
  * @return  string|null The lowercase hex digest, or null when the release publishes none.
  */

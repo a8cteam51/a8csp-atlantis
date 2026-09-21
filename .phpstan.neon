@@ -5,6 +5,8 @@ parameters:
     bootstrapFiles:
         - phpstan-bootstrap.php
     ignoreErrors:
+        # phpmd's @SuppressWarnings tag is not valid PHPDoc, so phpstan flags every use of it.
+        - '#PHPDoc tag @SuppressWarnings has invalid value#'
         - message: '#should be contravariant with parameter.*?#'
           path: models/Messages_List_Table.php
         # WooCommerce is not a dependency; the call is guarded by is_callable().
