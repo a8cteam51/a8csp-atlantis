@@ -74,11 +74,16 @@ class PluginFilterRules {
 	 * @param \stdClass $plugin_obj Plugin-like object containing plugin and/or slug.
 	 * @param \stdClass $settings   Centralized settings.
 	 *
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 *
 	 * @return bool
 	 */
 	public static function is_plugin_disabled_by_centralized_settings( \stdClass $plugin_obj, \stdClass $settings ): bool {
 		$disabled_plugins = self::get_centrally_disabled_plugins( $settings );
-		if ( empty( $disabled_plugins ) ) {
+		if ( 0 === count( $disabled_plugins ) ) {
 			return false;
 		}
 

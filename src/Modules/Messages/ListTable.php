@@ -173,6 +173,8 @@ class ListTable {
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.ExitExpression)
 	 *
 	 * @return  void

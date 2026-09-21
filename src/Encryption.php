@@ -55,6 +55,8 @@ class Encryption {
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
 	 *
 	 * @return  void
 	 */
@@ -66,8 +68,13 @@ class Encryption {
 		// A key was inserted previously but the constant is gone, so wp-config.php was most
 		// likely regenerated. A new key cannot recover content encrypted under the old one,
 		// so alert an operator rather than silently latching.
-		if ( 'yes' === get_option( 'a8csp_atlantis_inserted_encryption_key', 'no' ) ) {
+		if ( 'yes' === $this->get_inserted_encryption_key_flag() ) {
 			$this->add_missing_key_notice();
+			return;
+		}
+
+		// wp-config.php is shared network-wide, so only the main site writes to it.
+		if ( is_multisite() && ! is_main_site() ) {
 			return;
 		}
 
@@ -97,9 +104,31 @@ class Encryption {
 
 		$success = false;
 		if ( \is_string( $wp_config_path ) && \is_string( $wp_config_contents ) ) {
-			$to_insert = "define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . \addcslashes( $encryption_key, "\\'" ) . "' );\r\n";
-			if ( \str_contains( $wp_config_contents, "/* That's all, stop editing!" ) ) {
-				$wp_config_contents = \str_replace( "/* That's all, stop editing!", $to_insert . "/* That's all, stop editing!", $wp_config_contents );
+			// Idempotency guard: if the file already contains our define, don't
+			// append another. This covers the window where a prior request wrote
+			// the line but the constant isn't defined yet in the current runtime
+			// (stale include/opcache), or a race across concurrent requests. Just
+			// record the flag and bail rather than writing a duplicate.
+			if ( \str_contains( $wp_config_contents, 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) {
+				$this->mark_encryption_key_inserted();
+				return;
+			}
+
+			// Wrap the define in a defined() guard so that even if a duplicate
+			// line ever ends up in the file (e.g. a platform-managed config
+			// re-merge), PHP won't emit an "already defined" warning.
+			$to_insert = "if ( ! defined( 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) { define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . \addcslashes( $encryption_key, "\\'" ) . "' ); }\r\n";
+
+			// Insert before the FIRST "stop editing" marker only. Some configs
+			// (notably multisite installs) carry more than one such marker; a
+			// naive str_replace() would write the define before every marker and
+			// create the exact duplicate-define warnings this method guards
+			// against. substr_replace() with a zero-length span inserts at the
+			// first match without touching the rest.
+			$marker    = "/* That's all, stop editing!";
+			$marker_at = \strpos( $wp_config_contents, $marker );
+			if ( false !== $marker_at ) {
+				$wp_config_contents = \substr_replace( $wp_config_contents, $to_insert, $marker_at, 0 );
 			} else {
 				$wp_config_contents = \preg_replace( '/<\?php/', "<?php\r\n" . $to_insert, $wp_config_contents, 1 );
 			}
@@ -107,7 +136,7 @@ class Encryption {
 			if ( \is_string( $wp_config_contents ) && true === $wp_filesystem?->put_contents( $wp_config_path, $wp_config_contents, FS_CHMOD_FILE ) ) {
 				$success = true;
 
-				update_option( 'a8csp_atlantis_inserted_encryption_key', 'yes' );
+				$this->mark_encryption_key_inserted();
 				if ( function_exists( 'opcache_invalidate' ) ) {
 					// Invalidate the opcode cache to ensure the new key is used immediately.
 					opcache_invalidate( $wp_config_path, true );
@@ -125,7 +154,7 @@ class Encryption {
 						a8csp_atlantis_get_plugin_metadata( 'Name' ),
 						a8csp_atlantis_get_plugin_metadata( 'Version' )
 					) . '</p>';
-					$error .= '<p style="overflow: scroll">' . "<code>define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . $encryption_key . "' );</code></p>";
+					$error .= '<p style="overflow: scroll">' . "<code>if ( ! defined( 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) { define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . $encryption_key . "' ); }</code></p>";
 
 					wp_admin_notice(
 						$error,
@@ -142,6 +171,38 @@ class Encryption {
 	// endregion
 
 	// region HELPERS
+
+	/**
+	 * Returns whether the encryption key has already been inserted into wp-config.php.
+	 *
+	 * On multisite the flag is stored network-wide, since wp-config.php is shared.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @return  string
+	 */
+	private function get_inserted_encryption_key_flag(): string {
+		return is_multisite()
+			? (string) get_site_option( 'a8csp_atlantis_inserted_encryption_key', 'no' )
+			: (string) get_option( 'a8csp_atlantis_inserted_encryption_key', 'no' );
+	}
+
+	/**
+	 * Records that the encryption key has been inserted into wp-config.php.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @return  void
+	 */
+	private function mark_encryption_key_inserted(): void {
+		if ( is_multisite() ) {
+			update_site_option( 'a8csp_atlantis_inserted_encryption_key', 'yes' );
+		} else {
+			update_option( 'a8csp_atlantis_inserted_encryption_key', 'yes' );
+		}
+	}
 
 	/**
 	 * Warns that a previously inserted encryption key is no longer defined.

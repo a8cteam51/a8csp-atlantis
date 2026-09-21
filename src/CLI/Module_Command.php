@@ -4,6 +4,7 @@ namespace A8C\SpecialProjects\Atlantis\CLI;
 
 use A8C\SpecialProjects\Atlantis\Modules\AbstractModule;
 use A8C\SpecialProjects\Atlantis\Plugin;
+use WP_CLI\Formatter;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -88,7 +89,7 @@ class Module_Command {
 			? \array_map( 'trim', \explode( ',', (string) $assoc_args['fields'] ) )
 			: self::DEFAULT_FIELDS;
 
-		$formatter = new \WP_CLI\Formatter( $assoc_args, $fields );
+		$formatter = new Formatter( $assoc_args, $fields );
 		$formatter->display_items( $rows );
 	}
 
@@ -132,7 +133,7 @@ class Module_Command {
 			? \array_map( 'trim', \explode( ',', (string) $assoc_args['fields'] ) )
 			: self::DEFAULT_FIELDS;
 
-		$formatter = new \WP_CLI\Formatter( $assoc_args, $fields );
+		$formatter = new Formatter( $assoc_args, $fields );
 		$formatter->display_items( array( $this->module_to_row( $args[0], $module ) ) );
 	}
 

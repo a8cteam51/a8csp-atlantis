@@ -5,6 +5,7 @@ namespace A8C\SpecialProjects\Atlantis\CLI;
 use A8C\SpecialProjects\Atlantis\Message;
 use A8C\SpecialProjects\Atlantis\Message_Query;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\CustomTable;
+use WP_CLI\Formatter;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -162,9 +163,9 @@ class Message_Command {
 		$query = new Message_Query( $query_args );
 
 		$fields = $this->resolve_fields( $assoc_args, $full ? self::AVAILABLE_FIELDS : self::DEFAULT_FIELDS );
-		$rows   = \array_map( fn( Message $m ) => $this->message_to_row( $m, $fields ), $query->get_results() );
+		$rows   = \array_map( fn( Message $message ) => $this->message_to_row( $message, $fields ), $query->get_results() );
 
-		$formatter = new \WP_CLI\Formatter( $assoc_args, $fields );
+		$formatter = new Formatter( $assoc_args, $fields );
 		$formatter->display_items( $rows );
 	}
 
@@ -204,19 +205,19 @@ class Message_Command {
 	public function get( array $args, array $assoc_args ): void {
 		$this->require_messages_table();
 
-		$id = (int) ( $args[0] ?? 0 );
-		if ( 0 >= $id ) {
+		$message_id = (int) ( $args[0] ?? 0 );
+		if ( 0 >= $message_id ) {
 			\WP_CLI::error( 'A positive integer message ID is required.' );
 		}
 
 		try {
-			$message = new Message( $id );
+			$message = new Message( $message_id );
 		} catch ( \InvalidArgumentException $e ) {
-			\WP_CLI::error( \sprintf( 'No message found with ID %d.', $id ) );
+			\WP_CLI::error( \sprintf( 'No message found with ID %d.', $message_id ) );
 		}
 
 		$fields    = $this->resolve_fields( $assoc_args, self::DEFAULT_FIELDS );
-		$formatter = new \WP_CLI\Formatter( $assoc_args, $fields );
+		$formatter = new Formatter( $assoc_args, $fields );
 		$formatter->display_items( array( $this->message_to_row( $message, $fields ) ) );
 	}
 

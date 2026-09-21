@@ -114,7 +114,7 @@ class Status_Controller {
 		}
 
 		// A switched-off module never fetches, so it has nothing to report.
-		if ( isset( $modules['autoupdates'] ) && ! empty( $modules['autoupdates']['enabled'] ) ) {
+		if ( isset( $modules['autoupdates'] ) && true === $modules['autoupdates']['enabled'] ) {
 			$modules['autoupdates'] += AutoUpdatePluginsFilter::get_settings_state();
 		}
 
