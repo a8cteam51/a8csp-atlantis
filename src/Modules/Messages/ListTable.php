@@ -17,6 +17,20 @@ defined( 'ABSPATH' ) || exit;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  */
 class ListTable {
+	// region FIELDS AND CONSTANTS
+
+	/**
+	 * The message types the form offers, and the only ones a save will accept.
+	 *
+	 * @since   1.3.1
+	 * @version 1.3.1
+	 *
+	 * @var string[]
+	 */
+	public const ALLOWED_MESSAGE_TYPES = array( 'info', 'warning', 'error', 'success' );
+
+	// endregion
+
 	// region METHODS
 
 	/**
@@ -131,6 +145,11 @@ class ListTable {
 
 		if ( '' === $message_title || '' === $message_content || '' === $message_type || '' === $message_status || 0 === \count( $message_includes ) ) {
 			wp_die( esc_html__( 'All required fields must be filled out.', 'a8csp-atlantis' ) );
+		}
+
+		// The form offers a dropdown, which constrains nothing about what is posted.
+		if ( ! \in_array( $message_type, self::ALLOWED_MESSAGE_TYPES, true ) ) {
+			wp_die( esc_html__( 'Invalid message type.', 'a8csp-atlantis' ) );
 		}
 
 		$encrypted_content = a8csp_atlantis_encrypt_data( $message_content );

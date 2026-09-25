@@ -255,3 +255,177 @@ function a8csp_atlantis_maybe_disable_autoupdates_module_on_activation(): void {
 	$module_settings['enabled'] = '0';
 	update_option( $option_key, $module_settings );
 }
+
+/**
+ * Returns the latest GitHub release, fetching and caching it when the cache is empty.
+ *
+ * The release is cached for an hour while WordPress keeps an update on offer for twelve, so a
+ * cache miss is the normal state at install time rather than an edge case.
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @return  array<string, mixed>|null The decoded release, or null when it cannot be retrieved.
+ */
+function a8csp_atlantis_get_latest_release(): ?array {
+	$cached = get_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
+
+	if ( a8csp_atlantis_is_usable_release( $cached ) ) {
+		return $cached;
+	}
+
+	// An empty array is the negative cache written after a failed fetch.
+	if ( array() === $cached ) {
+		return null;
+	}
+
+	$response = wp_safe_remote_get( 'https://api.github.com/repos/a8cteam51/a8csp-atlantis/releases/latest' );
+	if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+		set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
+		return null;
+	}
+
+	$release = json_decode( wp_remote_retrieve_body( $response ), true );
+	if ( ! a8csp_atlantis_is_usable_release( $release ) ) {
+		set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, array(), 5 * MINUTE_IN_SECONDS );
+		return null;
+	}
+
+	set_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY, $release, HOUR_IN_SECONDS );
+
+	return $release;
+}
+
+/**
+ * Returns whether a decoded release carries everything the updater needs.
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @param   mixed $release The value to check.
+ *
+ * @return  bool
+ */
+function a8csp_atlantis_is_usable_release( $release ): bool {
+	return is_array( $release )
+		&& isset( $release['tag_name'], $release['html_url'] )
+		&& null !== a8csp_atlantis_get_release_package_url( $release );
+}
+
+/**
+ * Returns the download URL of the zip attached to a GitHub release.
+ *
+ * Position in the asset list means nothing, so anything else attached to a release — a
+ * checksum file, a changelog — could otherwise be installed as the plugin. The zip is
+ * identified by type rather than by name, since the build names it after the repository.
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @param   array<string, mixed> $release The decoded GitHub release.
+ *
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ *
+ * @return  string|null The download URL, or null when the release carries no zip.
+ */
+function a8csp_atlantis_get_release_package_url( array $release ): ?string {
+	if ( ! isset( $release['assets'] ) || ! is_array( $release['assets'] ) ) {
+		return null;
+	}
+
+	foreach ( $release['assets'] as $asset ) {
+		if ( ! is_array( $asset ) || ! is_string( $asset['browser_download_url'] ?? null ) || '' === $asset['browser_download_url'] ) {
+			continue;
+		}
+
+		$name         = is_string( $asset['name'] ?? null ) ? strtolower( $asset['name'] ) : '';
+		$content_type = is_string( $asset['content_type'] ?? null ) ? strtolower( $asset['content_type'] ) : '';
+
+		if ( str_ends_with( $name, '.zip' ) || 'application/zip' === $content_type ) {
+			return $asset['browser_download_url'];
+		}
+	}
+
+	return null;
+}
+
+/**
+ * Returns the SHA-256 GitHub published for the zip attached to a release.
+ *
+ * GitHub reports this as `sha256:<hex>` on the asset. Releases published before that field
+ * existed carry none, so a null result means "nothing to check against", not "invalid".
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @param   array<string, mixed> $release The decoded GitHub release.
+ *
+ * @phpstan-ignore-next-line
+ * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+ * @phpstan-ignore-next-line
+ * @SuppressWarnings(PHPMD.NPathComplexity)
+ *
+ * @return  string|null The lowercase hex digest, or null when the release publishes none.
+ */
+function a8csp_atlantis_get_release_package_digest( array $release ): ?string {
+	if ( ! isset( $release['assets'] ) || ! is_array( $release['assets'] ) ) {
+		return null;
+	}
+
+	foreach ( $release['assets'] as $asset ) {
+		if ( ! is_array( $asset ) ) {
+			continue;
+		}
+
+		$name         = is_string( $asset['name'] ?? null ) ? strtolower( $asset['name'] ) : '';
+		$content_type = is_string( $asset['content_type'] ?? null ) ? strtolower( $asset['content_type'] ) : '';
+
+		if ( ! str_ends_with( $name, '.zip' ) && 'application/zip' !== $content_type ) {
+			continue;
+		}
+
+		$digest = $asset['digest'] ?? null;
+		if ( ! is_string( $digest ) || ! str_starts_with( $digest, 'sha256:' ) ) {
+			return null;
+		}
+
+		return strtolower( substr( $digest, strlen( 'sha256:' ) ) );
+	}
+
+	return null;
+}
+
+/**
+ * Checks a downloaded update package against the digest GitHub published for it.
+ *
+ * @since   1.3.1
+ * @version 1.3.1
+ *
+ * @param   string      $file   Path to the downloaded package.
+ * @param   string|null $digest Expected lowercase hex SHA-256, or null if none was published.
+ *
+ * @return  true|WP_Error True when the package may be installed.
+ */
+function a8csp_atlantis_verify_package_digest( string $file, ?string $digest ) {
+	if ( null === $digest ) {
+		// Nothing published to check against, so this release cannot be verified either way.
+		return true;
+	}
+
+	$actual = is_readable( $file ) ? hash_file( 'sha256', $file ) : false;
+	if ( ! is_string( $actual ) ) {
+		return new WP_Error(
+			'a8csp_atlantis_package_unreadable',
+			__( 'The downloaded update could not be read for verification.', 'a8csp-atlantis' )
+		);
+	}
+
+	if ( ! hash_equals( $digest, $actual ) ) {
+		return new WP_Error(
+			'a8csp_atlantis_package_digest_mismatch',
+			__( 'The downloaded update did not match the checksum published for the release, so it was not installed.', 'a8csp-atlantis' )
+		);
+	}
+
+	return true;
+}

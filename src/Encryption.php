@@ -83,6 +83,10 @@ class Encryption {
 			add_action(
 				'admin_notices',
 				static function () use ( $encryption_key ) {
+					if ( ! current_user_can( 'manage_options' ) ) {
+						return;
+					}
+
 					$error = '<pre style="max-height: 50px; overflow: scroll;">' . $encryption_key->get_error_message() . '</pre>';
 					$error = wp_sprintf(
 						/* translators: 1: Plugin name, 2: Plugin version */
@@ -148,6 +152,10 @@ class Encryption {
 			add_action(
 				'admin_notices',
 				static function () use ( $encryption_key ) {
+					if ( ! current_user_can( 'manage_options' ) ) {
+						return;
+					}
+
 					$error = '<p>' . \wp_sprintf(
 						/* translators: 1: Plugin name, 2: Plugin version */
 						__( '<strong>%1$s (version %2$s)</strong> cannot auto-insert an encryption key. Please add the following line to your wp-config.php file:', 'a8csp-atlantis' ),

@@ -50,17 +50,22 @@ class Notifications {
 		}
 
 		foreach ( $active_messages as $message ) {
+			// Rows saved before the allow-list existed can hold any type; core puts it in a class attribute unescaped.
+			$type = \in_array( (string) $message->type, ListTable::ALLOWED_MESSAGE_TYPES, true ) ? (string) $message->type : 'info';
+
 			if ( $this->is_block_editor() ) {
 				wp_add_inline_script(
 					'wp-edit-post',
 					wp_sprintf(
-						'wp.data.dispatch("core/notices").createNotice("%s", %s, { isDismissible: false, __unstableHTML: true });',
-						$message->type,
-						wp_json_encode( wp_kses_post( $message->content ) )
+						// Both arguments are JSON-encoded, quotes included, so neither can close
+						// its own literal and append statements. JSON_HEX_TAG keeps `</script>` out of the inline script.
+						'wp.data.dispatch("core/notices").createNotice(%s, %s, { isDismissible: false, __unstableHTML: true });',
+						wp_json_encode( $type, JSON_HEX_TAG ),
+						wp_json_encode( wp_kses_post( $message->content ), JSON_HEX_TAG )
 					)
 				);
 			} else {
-				wp_admin_notice( $message->content, array( 'type' => $message->type ) );
+				wp_admin_notice( $message->content, array( 'type' => $type ) );
 			}
 		}
 	}

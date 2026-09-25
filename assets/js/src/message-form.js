@@ -56,20 +56,31 @@ class MessageForm {
 				// Add the new location
 				const item = document.createElement( 'div' );
 				item.className = 'atlantis-location-item';
-				item.innerHTML = `
-                    <span>${ label }</span>
-                    <button type="button" class="button-link delete-location" data-location="${ value }">Remove</button>
-                    <input type="hidden" name="location_${ target }[]" value="${ value }">
-                `;
+
+				const labelEl = document.createElement( 'span' );
+				labelEl.textContent = label;
+
+				const removeButton = document.createElement( 'button' );
+				removeButton.type = 'button';
+				removeButton.className = 'button-link delete-location';
+				removeButton.setAttribute( 'data-location', value );
+				removeButton.textContent = 'Remove';
+
+				const hidden = document.createElement( 'input' );
+				hidden.type = 'hidden';
+				hidden.name = `location_${ target }[]`;
+				hidden.value = value;
+
+				item.append( labelEl, removeButton, hidden );
 				container.appendChild( item );
 
 				// Remove the option from both dropdowns
 				document
 					.querySelectorAll( '.atlantis-location-dropdown' )
 					.forEach( ( dropdownElement ) => {
-						const option = dropdownElement.querySelector(
-							`option[value="${ value }"]`
-						);
+						const option = Array.from(
+							dropdownElement.options
+						).find( ( o ) => o.value === value );
 						option?.remove();
 					} );
 				dropdown.value = '';
