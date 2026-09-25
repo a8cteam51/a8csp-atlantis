@@ -25,10 +25,17 @@ class NotificationsTestDouble extends Notifications {
 	public array $messages = array();
 
 	/**
+	 * Whether to take the block editor branch or the classic notice one.
+	 *
+	 * @var bool
+	 */
+	public bool $block_editor = true;
+
+	/**
 	 * {@inheritDoc}
 	 */
 	protected function is_block_editor(): bool {
-		return true;
+		return $this->block_editor;
 	}
 
 	/**
@@ -49,6 +56,13 @@ class MessageNotificationEscapingTestCest {
 	 * @var string
 	 */
 	private const MALICIOUS_TYPE = 'error", {}); alert("xss"); //';
+
+	/**
+	 * A `type` that closes the notice's class attribute and opens a script tag.
+	 *
+	 * @var string
+	 */
+	private const MALICIOUS_CLASS_TYPE = 'error"><script>alert("xss")</script><div class="';
 
 	/**
 	 * A message `type` must not be able to break out of the string literal it is placed in.
@@ -73,10 +87,71 @@ class MessageNotificationEscapingTestCest {
 			);
 
 			Assert::assertStringContainsString(
-				trim( (string) wp_json_encode( self::MALICIOUS_TYPE ), '"' ),
+				'createNotice("info"',
 				$script,
-				'The type should still be present, encoded rather than raw.'
+				'A type outside the allow-list should be emitted as "info", not passed through.'
 			);
+		} finally {
+			$this->cleanup( $user_id );
+		}
+	}
+
+	/**
+	 * A stored type outside the allow-list must not reach the classic notice's class attribute, which core does not escape.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function crafted_message_type_cannot_break_out_of_the_classic_notice( IntegrationTester $i ): void {
+		$user_id = $this->create_automattician();
+
+		try {
+			wp_set_current_user( $user_id );
+
+			$markup = $this->render_classic_notice( self::MALICIOUS_CLASS_TYPE );
+
+			Assert::assertStringNotContainsString(
+				'<script>',
+				$markup,
+				'The crafted type escaped the class attribute and became markup.'
+			);
+
+			Assert::assertStringContainsString( 'notice-info', $markup, 'A type outside the allow-list should fall back to "info".' );
+		} finally {
+			$this->cleanup( $user_id );
+		}
+	}
+
+	/**
+	 * Allowed markup in the content must be emitted into the inline script with its angle brackets encoded, so the script cannot depend on kses to keep `</script>` out.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function message_content_angle_brackets_are_encoded_in_the_inline_script( IntegrationTester $i ): void {
+		$user_id = $this->create_automattician();
+
+		try {
+			wp_set_current_user( $user_id );
+
+			// The model decrypts content, so the test stores it the way a save would.
+			if ( ! defined( 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) {
+				define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', sodium_bin2hex( sodium_crypto_secretbox_keygen() ) );
+			}
+
+			$encrypted = a8csp_atlantis_encrypt_data( '<strong>Bold</strong>' );
+			Assert::assertIsString( $encrypted, 'Test precondition: the content could not be encrypted.' );
+
+			$script = $this->render_notice( 'info', $encrypted );
+
+			Assert::assertStringContainsString(
+				trim( (string) wp_json_encode( '<strong>Bold', JSON_HEX_TAG ), '"' ),
+				$script,
+				'The content should be present with its tags encoded.'
+			);
+			Assert::assertStringNotContainsString( '<', $script, 'No raw angle bracket may reach the inline script.' );
 		} finally {
 			$this->cleanup( $user_id );
 		}
@@ -110,7 +185,7 @@ class MessageNotificationEscapingTestCest {
 	 *
 	 * @return string
 	 */
-	private function render_notice( string $type ): string {
+	private function render_notice( string $type, string $content = '' ): string {
 		if ( ! wp_script_is( 'wp-edit-post', 'registered' ) ) {
 			wp_register_script( 'wp-edit-post', '', array(), '1.0.0', true );
 		}
@@ -119,7 +194,7 @@ class MessageNotificationEscapingTestCest {
 		wp_scripts()->add_data( 'wp-edit-post', 'after', array() );
 
 		$notifications           = new NotificationsTestDouble();
-		$notifications->messages = array( $this->build_message( $type ) );
+		$notifications->messages = array( $this->build_message( $type, $content ) );
 		$notifications->output_messages();
 
 		$data = wp_scripts()->get_data( 'wp-edit-post', 'after' );
@@ -128,20 +203,39 @@ class MessageNotificationEscapingTestCest {
 	}
 
 	/**
+	 * Emits one message through the classic notice branch and returns the markup it printed.
+	 *
+	 * @param string $type The message type to emit.
+	 *
+	 * @return string
+	 */
+	private function render_classic_notice( string $type ): string {
+		$notifications               = new NotificationsTestDouble();
+		$notifications->block_editor = false;
+		$notifications->messages     = array( $this->build_message( $type ) );
+
+		ob_start();
+		$notifications->output_messages();
+
+		return (string) ob_get_clean();
+	}
+
+	/**
 	 * Builds a message with the given type.
 	 *
-	 * @param string $type The message type.
+	 * @param string $type    The message type.
+	 * @param string $content The message content.
 	 *
 	 * @return Message
 	 */
-	private function build_message( string $type ): Message {
+	private function build_message( string $type, string $content = '' ): Message {
 		return new Message(
 			(object) array(
 				'id'         => 1,
 				'title'      => 'Notice',
 				'type'       => $type,
 				'status'     => 'active',
-				'content'    => '',
+				'content'    => $content,
 				'locations'  => wp_json_encode( array( 'all' ) ),
 				'exclusions' => wp_json_encode( array() ),
 			)
