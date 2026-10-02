@@ -355,6 +355,12 @@ class CrawlerFilesEditorTestCest {
 		);
 
 		$i->loginAs( $login, self::PASSWORD );
+
+		// loginAs() returns once a login cookie exists and does not follow the post-login
+		// redirect; when its first attempt is too fast it retries, leaving the browser on
+		// wp-login.php. Load the dashboard explicitly so each test starts from a settled,
+		// authenticated page.
+		$i->amOnAdminPage( 'index.php' );
 		$i->waitForElement( '#wpadminbar', 10 );
 	}
 
