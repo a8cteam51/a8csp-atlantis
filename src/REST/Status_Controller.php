@@ -5,6 +5,7 @@ namespace A8C\SpecialProjects\Atlantis\REST;
 use A8C\SpecialProjects\Atlantis\Message_Query;
 use A8C\SpecialProjects\Atlantis\Modules\Autoupdates\AutoUpdatePluginsFilter;
 use A8C\SpecialProjects\Atlantis\Modules\BotProtection\BotProtection;
+use A8C\SpecialProjects\Atlantis\Modules\CrawlerFiles\CrawlerFiles;
 use A8C\SpecialProjects\Atlantis\Modules\Messages\CustomTable;
 use A8C\SpecialProjects\Atlantis\Plugin;
 
@@ -127,6 +128,12 @@ class Status_Controller {
 			$modules['bot-protection']['wp_cloud']          = BotProtection::is_wp_cloud();
 			$modules['bot-protection']['mu_plugin_present'] = BotProtection::is_mu_plugin_present();
 			$modules['bot-protection']['environment']       = \wp_get_environment_type();
+		}
+
+		// `serving` is false outside production and while Yoast SEO is active,
+		// even when content is saved; `deferred_to_yoast` says which.
+		if ( isset( $modules['crawler-files'] ) ) {
+			$modules['crawler-files'] += CrawlerFiles::get_status();
 		}
 
 		return \rest_ensure_response(
