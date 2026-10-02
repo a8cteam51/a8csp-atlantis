@@ -35,6 +35,8 @@ Current module registry:
 - `colophon`
 - `tracking`
 - `autoupdates`
+- `bot-protection`
+- `crawler-files`
 
 ## Settings Model
 
