@@ -50,6 +50,13 @@ class AutomatticianBoundaryTestCest {
 	private const TARGET_EMAIL = 'outsider@a8c.com';
 
 	/**
+	 * The notice core shows while the new address is awaiting confirmation.
+	 *
+	 * @var string
+	 */
+	private const PENDING_NOTICE = 'There is a pending change of your email to';
+
+	/**
 	 * An administrator editing their own profile is told the address must be confirmed.
 	 *
 	 * @param EndToEndTester $i Tester instance.
@@ -84,8 +91,16 @@ class AutomatticianBoundaryTestCest {
 		$i->fillField( '#email', self::TARGET_EMAIL );
 		$i->click( '#submit' );
 
+		// Submitting navigates, so settle on the response before asserting against it.
+		// `see()` on its own races the POST: it samples whichever document is current, which is
+		// still the pre-submit profile screen until the response renders. That surfaces either as
+		// the notice simply being absent, or as `StaleElementReferenceException` when the page is
+		// swapped between `see()` locating an element and reading it. Waiting re-queries until the
+		// response is live; the assertions below are unchanged.
+		$i->waitForText( self::PENDING_NOTICE );
+
 		// Core parks the request rather than applying it.
-		$i->see( 'There is a pending change of your email to' );
+		$i->see( self::PENDING_NOTICE );
 		$i->see( self::TARGET_EMAIL );
 
 		// The account itself is untouched, so the Automattician check still sees the old domain.
