@@ -28,9 +28,9 @@ Plugin metadata from `a8csp-atlantis.php`:
 - `functions.php` loads global helper wrappers from `includes/`.
 - `src/` contains the PSR-4 plugin classes, module registry, settings UI,
   encryption component, REST controller, and WP-CLI commands.
-- `src/Modules/` contains the Messages, Autoupdates, Tracking, Colophon, and Bot
-  Protection modules. Each module has a nested README with more detailed
-  behavior notes.
+- `src/Modules/` contains the Messages, Autoupdates, Tracking, Colophon, Bot
+  Protection, and Crawler Files modules. Each module has a nested README with
+  more detailed behavior notes.
 - `models/` contains the DB-backed message model and query/list-table support.
 - `templates/` contains admin templates, including the message form.
 - `assets/js/src/` and `assets/css/src/` are the editable JS and SCSS sources.
@@ -123,6 +123,24 @@ must stay clear is set to `off` explicitly.
 
 More detail: `src/Modules/BotProtection/README.md`.
 
+### Crawler Files
+
+The Crawler Files module appends rules to robots.txt and serves a site-root
+llms.txt, both edited under `Settings > Robots & llms.txt`. Rules are appended
+after everything WordPress, the host and other plugins put in robots.txt; the
+llms.txt editor holds the whole file.
+
+- Only Automatticians can open the editor unless an Automattician ticks
+  `Editor access` under `Atlantis > Modules`, which lets every administrator in.
+- Nothing is served outside production, or while Yoast SEO is active; the
+  editor then links to Yoast's own robots.txt and llms.txt tools.
+- Empty content serves nothing, so shipping the module changes no behavior.
+- Saving checks robots.txt rules: a rule before any `User-agent` line is
+  refused, and rules that stop search engines crawling the whole site need
+  explicit confirmation.
+
+More detail: `src/Modules/CrawlerFiles/README.md`.
+
 ## Runtime Interfaces
 
 Atlantis registers an `Atlantis` wp-admin menu for users who pass
@@ -136,7 +154,8 @@ GET /wp-json/a8csp-atlantis/v1/status
 ```
 
 The payload includes the plugin version, registered module states, and the
-stored message count when the Messages table exists.
+stored message count when the Messages table exists. Bot Protection and Crawler
+Files add module-specific fields; see their READMEs.
 
 A force-update-check REST endpoint, also gated on `manage_options`, lets
 OpsOasis (and the team51 CLI) make the site re-detect a just-published plugin
