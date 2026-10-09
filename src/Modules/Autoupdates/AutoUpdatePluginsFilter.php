@@ -273,7 +273,34 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		 */
 		$url = apply_filters( 'a8csp_atlantis_autoupdate_settings_url', \is_string( $url ) ? $url : '' );
 
-		return \is_string( $url ) ? esc_url_raw( trim( $url ), array( 'http', 'https' ) ) : '';
+		return self::sanitize_settings_endpoint( $url );
+	}
+
+	/**
+	 * Reduces a value to an http(s) URL, or to an empty string when it is not one.
+	 *
+	 * The scheme has to be written out. `esc_url_raw()` puts `http://` in front of a bare word,
+	 * which would turn a typo into an endpoint that never answers — and once an endpoint is
+	 * configured, one that never answers stops every autoupdate.
+	 *
+	 * @since   1.5.0
+	 * @version 1.5.0
+	 *
+	 * @param   mixed $url The value to sanitize.
+	 *
+	 * @return  string
+	 */
+	public static function sanitize_settings_endpoint( $url ): string {
+		if ( ! \is_string( $url ) ) {
+			return '';
+		}
+
+		$url = trim( $url );
+		if ( 1 !== preg_match( '#^https?://[^/\s]#i', $url ) ) {
+			return '';
+		}
+
+		return esc_url_raw( $url, array( 'http', 'https' ) );
 	}
 
 	/**

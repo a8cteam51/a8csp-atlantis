@@ -172,9 +172,12 @@ class Site_Command {
 			\delete_option( A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION );
 			\WP_CLI::success( 'The centralized settings endpoint was cleared.' );
 		} else {
-			$sanitized = \esc_url_raw( \trim( $url ), array( 'http', 'https' ) );
-			if ( '' === $sanitized || false === \wp_http_validate_url( $sanitized ) ) {
-				\WP_CLI::error( 'That is not a valid http or https URL.' );
+			// The shape is all that is checked, by the rule the module reads the option with. Whether
+			// the host resolves and may be requested is decided when the module fetches, and refusing
+			// here on a failed lookup would make saving depend on the network.
+			$sanitized = AutoUpdatePluginsFilter::sanitize_settings_endpoint( $url );
+			if ( '' === $sanitized ) {
+				\WP_CLI::error( 'That is not a valid URL. It must start with http:// or https://.' );
 			}
 
 			\update_option( A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION, $sanitized );
@@ -212,7 +215,7 @@ class Site_Command {
 			$source     = 'option';
 		}
 
-		$configured = \is_string( $configured ) ? \esc_url_raw( \trim( $configured ), array( 'http', 'https' ) ) : '';
+		$configured = AutoUpdatePluginsFilter::sanitize_settings_endpoint( $configured );
 
 		return $effective === $configured ? $source : 'filter';
 	}

@@ -261,7 +261,8 @@ class AutoupdatesTestCest {
 		update_option( 'a8csp_atlantis_autoupdate_settings_url', '  ' . self::SETTINGS_URL . '  ' );
 		Assert::assertSame( self::SETTINGS_URL, AutoUpdatePluginsFilter::get_settings_endpoint(), 'Surrounding whitespace is not part of the URL.' );
 
-		foreach ( array( '', 'javascript:alert(1)', 'ftp://settings.test/settings', array( self::SETTINGS_URL ) ) as $invalid ) {
+		// A bare host is refused too: read as a URL it would be an endpoint that never answers.
+		foreach ( array( '', 'javascript:alert(1)', 'ftp://settings.test/settings', 'settings.test/settings', 'not-a-url', 'https://', array( self::SETTINGS_URL ) ) as $invalid ) {
 			update_option( 'a8csp_atlantis_autoupdate_settings_url', $invalid );
 			Assert::assertSame( '', AutoUpdatePluginsFilter::get_settings_endpoint() );
 		}
