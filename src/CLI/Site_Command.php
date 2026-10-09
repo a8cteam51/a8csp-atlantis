@@ -181,8 +181,8 @@ class Site_Command {
 			\WP_CLI::success( 'The centralized settings endpoint was saved.' );
 		}
 
-		// The settings are cached for five minutes; drop them so the change applies now.
-		AutoUpdatePluginsFilter::flush_settings_cache();
+		// Nothing to flush here: the module drops what it cached from the previous endpoint whenever
+		// the option changes, and keeps it when the same endpoint is saved again.
 
 		if ( \defined( 'A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL' ) ) {
 			\WP_CLI::warning( 'The A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL constant is defined and overrides the stored value.' );

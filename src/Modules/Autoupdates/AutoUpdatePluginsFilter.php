@@ -74,6 +74,25 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * Watches the settings endpoint option before anything else, and whether or not the module
+	 * goes on to initialize: the option can be changed in any request and while the module is
+	 * switched off, and what was cached from the previous endpoint must not be there when the
+	 * module next reads its settings.
+	 *
+	 * @since   1.0.0
+	 * @version 1.5.0
+	 */
+	public function maybe_initialize(): void {
+		add_action( 'add_option_' . A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION, array( self::class, 'flush_settings_cache' ), 10, 0 );
+		add_action( 'delete_option_' . A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION, array( self::class, 'flush_settings_cache' ), 10, 0 );
+		add_action( 'update_option_' . A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION, array( self::class, 'maybe_flush_settings_cache' ), 10, 2 );
+
+		parent::maybe_initialize();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
 	 * @since   1.0.0
 	 * @version 1.0.0
 	 */
@@ -261,7 +280,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * Drops the cached settings and the last known good payload.
 	 *
 	 * For when the endpoint changes: both were fetched from the previous one, and a payload kept
-	 * from an endpoint the site no longer reads should not go on deciding its updates.
+	 * from an endpoint the site no longer reads should not go on deciding its updates. Hooked to
+	 * the endpoint option being added or deleted, so it happens however the option is changed.
 	 *
 	 * @since   1.5.0
 	 * @version 1.5.0
@@ -271,6 +291,29 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	public static function flush_settings_cache(): void {
 		delete_transient( self::SETTINGS_TRANSIENT );
 		delete_option( self::LAST_KNOWN_GOOD_OPTION );
+	}
+
+	/**
+	 * Drops the cached settings when the endpoint option is updated to a different endpoint.
+	 *
+	 * Only then: the last known good payload is what carries a site through an outage, so saving
+	 * the endpoint it already has must not throw that payload away.
+	 *
+	 * @since   1.5.0
+	 * @version 1.5.0
+	 *
+	 * @param   mixed $old_value The endpoint stored before.
+	 * @param   mixed $value     The endpoint stored now.
+	 *
+	 * @return  void
+	 */
+	public static function maybe_flush_settings_cache( $old_value, $value ): void {
+		$old_value = \is_string( $old_value ) ? trim( $old_value ) : '';
+		$value     = \is_string( $value ) ? trim( $value ) : '';
+
+		if ( $old_value !== $value ) {
+			self::flush_settings_cache();
+		}
 	}
 
 	/**

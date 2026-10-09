@@ -268,6 +268,48 @@ class AutoupdatesTestCest {
 	}
 
 	/**
+	 * What was fetched from one endpoint must not go on deciding updates once the site reads
+	 * another, however the option was changed. Saving the endpoint it already has must keep the
+	 * last known good payload, which is what carries the site through an outage.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function cached_settings_are_dropped_only_when_the_endpoint_changes( IntegrationTester $i ): void {
+		$seed = function (): void {
+			set_transient( 'wpcpmsp_auto_update_settings', (object) array( 'disable_all' => true ), 5 * MINUTE_IN_SECONDS );
+			$this->store_last_known_good( array( 'disabled_plugins' => array( 'akismet/akismet.php' ) ), time() );
+		};
+		$is_cached = static fn(): bool => false !== get_transient( 'wpcpmsp_auto_update_settings' ) && false !== get_option( 'a8csp_atlantis_autoupdate_last_good_settings' );
+
+		try {
+			// The same endpoint again, exactly and with stray whitespace: nothing is dropped.
+			$seed();
+			update_option( 'a8csp_atlantis_autoupdate_settings_url', self::SETTINGS_URL );
+			update_option( 'a8csp_atlantis_autoupdate_settings_url', self::SETTINGS_URL . ' ' );
+			Assert::assertTrue( $is_cached(), 'Saving the same endpoint must keep the last known good payload.' );
+
+			// A different endpoint.
+			update_option( 'a8csp_atlantis_autoupdate_settings_url', 'https://other.test/wp-json/example/v1/settings/' );
+			Assert::assertFalse( get_transient( 'wpcpmsp_auto_update_settings' ) );
+			Assert::assertFalse( get_option( 'a8csp_atlantis_autoupdate_last_good_settings' ) );
+
+			// The endpoint removed.
+			$seed();
+			delete_option( 'a8csp_atlantis_autoupdate_settings_url' );
+			Assert::assertFalse( $is_cached(), 'Removing the endpoint must drop what was fetched from it.' );
+
+			// An endpoint given to a site that had none.
+			$seed();
+			add_option( 'a8csp_atlantis_autoupdate_settings_url', self::SETTINGS_URL );
+			Assert::assertFalse( $is_cached(), 'A newly configured endpoint must not inherit an earlier payload.' );
+		} finally {
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
 	 * Who to ask before updating by hand is the team on a managed site, and nobody in particular
 	 * anywhere else.
 	 *
