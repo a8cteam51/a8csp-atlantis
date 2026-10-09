@@ -4,12 +4,18 @@ A module that automatically opts sites into various tracking and analytics syste
 
 ## What's this?
 
-This module helps WordPress Special Projects team monitor and collect usage data from partner sites by automatically enabling tracking features in various systems. It:
+This module helps WordPress Special Projects team monitor and collect usage data from partner sites by automatically enabling tracking features in various systems. On a site the team manages, it:
 
 1. Automatically enables WooCommerce usage tracking
 2. Automatically enables Sensei usage tracking
 3. Integrates Bilmur RUM (Real User Monitoring) data collector
 4. Automatically disables itself in development and staging environments
+
+## Managed sites only
+
+Overriding a site owner's tracking choices is a decision the team makes for its own sites, so the WooCommerce and Sensei integrations only run on a site marked as managed (`wp atlantis site managed on`, see the root README). On any other site they do nothing and both settings stay as the owner set them.
+
+Bilmur follows the same rule on WordPress.com, where the platform already collects RUM data and all this module adds is a tag saying the site is a Special Projects one. Elsewhere Bilmur is opt-in through the constants below, whether or not the site is managed.
 
 ## Usage
 

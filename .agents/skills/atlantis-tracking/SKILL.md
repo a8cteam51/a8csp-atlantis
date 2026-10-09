@@ -26,7 +26,8 @@ Use this skill when:
 
 - Keep non-production environment disable behavior intact unless explicitly changed.
 - Preserve existing constant-based feature toggles.
-- Avoid regressions in default opt-in behavior for integrations.
+- Avoid regressions in default opt-in behavior for integrations on managed sites.
+- Keep forced opt-ins and the wpcomsh RUM tag behind `a8csp_atlantis_is_managed_site()`. An unmanaged site keeps its own tracking settings.
 
 ## Procedure
 

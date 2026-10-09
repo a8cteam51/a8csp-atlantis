@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
 /**
  * REST controller that forces a fresh plugin update-check on demand.
  *
- * OpsOasis (and the team51 CLI) call this over the authenticated Jetpack REST tunnel — the same
+ * Fleet tooling calls this over the authenticated Jetpack REST tunnel — the same
  * WordPress.com -> site path the status controller uses — to make a site re-detect a just-published
  * release without waiting out WordPress core's ~12h check throttle. No WordPress.com / Jetpack API can
  * clear a site's `update_plugins` transient, so only code running on the site can; this route does it

@@ -11,7 +11,7 @@ This file provides AI coding assistants with the context they need to work effec
 - Auto-update control (timing windows, rollout delays, centralized settings, per-plugin filter toggles).
 - Tracking integrations (WooCommerce, Sensei, Bilmur).
 - Colophon utilities (credits action + shortcodes).
-- Force Update Check (on-demand plugin update-check refresh, exposed as a REST endpoint for OpsOasis/the CLI).
+- Force Update Check (on-demand plugin update-check refresh, exposed as a REST endpoint for fleet tooling).
 - WP Cloud Bot Protection control (per-site enforcement of the `wpcloud_bot_protection_enable` filter).
 
 **Text domain:** `a8csp-atlantis`  
@@ -79,6 +79,22 @@ All modules extend `AbstractModule`:
 - settings key generation via `a8csp_atlantis_generate_module_settings_key()`
 - active/disabled checks in `is_active()` and `is_disabled()`
 - runtime hook registration only in `initialize()` after `maybe_initialize()` gates
+
+### Managed Sites
+
+Atlantis is a public plugin, so installing it does not make a site one the team manages. Anything that only makes sense on the team's own sites must be gated on `a8csp_atlantis_is_managed_site()` (`includes/miscellaneous.php`), which reads the `a8csp_atlantis_managed_site` option or the `A8CSP_ATLANTIS_MANAGED_SITE` constant:
+
+- forced WooCommerce/Sensei tracking and the Special Projects RUM tag;
+- admin screens limited to Automatticians — gate screens with `a8csp_atlantis_current_user_can_manage()`, not `a8csp_atlantis_is_automattician()` directly;
+- referral parameters on Colophon links and team-worded admin notices.
+
+A fresh install is unmanaged. `a8csp_atlantis_maybe_record_managed_site()` records existing installs as managed on first load so that updating changes nothing for them.
+
+Guardrails:
+
+- **Never hard-code a team address, endpoint or email** in this repository. The Autoupdates module has no built-in settings endpoint: it reads one from the `a8csp_atlantis_autoupdate_settings_url` option (or constant/filter), and with none it makes no remote request and never fails closed. The update-email recipient comes from that endpoint's payload (`notification_email`).
+- New behaviour that reaches outside the site, overrides an owner's setting, or names the team is unmanaged-off by default.
+- The status REST payload reports `plugin.managed` and `modules.autoupdates.settings_url_configured`; it must never include the endpoint URL.
 
 ### Activation Compatibility
 

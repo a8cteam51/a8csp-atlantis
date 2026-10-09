@@ -87,7 +87,7 @@ class ListTable {
 	 * @return  void
 	 */
 	public function render_admin_page(): void {
-		if ( ! a8csp_atlantis_is_automattician() ) {
+		if ( ! a8csp_atlantis_current_user_can_manage() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'a8csp-atlantis' ) );
 		}
 
@@ -131,7 +131,7 @@ class ListTable {
 		if ( false === check_admin_referer( 'save_message', 'a8csp_atlantis_message_nonce' ) ) {
 			wp_die( esc_html__( 'Security check failed', 'a8csp-atlantis' ) );
 		}
-		if ( ! a8csp_atlantis_is_automattician() ) {
+		if ( ! a8csp_atlantis_current_user_can_manage() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'a8csp-atlantis' ) );
 		}
 
@@ -210,7 +210,7 @@ class ListTable {
 		if ( false === check_admin_referer( 'bulk-messages' ) ) {
 			wp_die( esc_html__( 'Security check failed', 'a8csp-atlantis' ) );
 		}
-		if ( ! a8csp_atlantis_is_automattician() ) {
+		if ( ! a8csp_atlantis_current_user_can_manage() ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to perform this action.', 'a8csp-atlantis' ) );
 		}
 

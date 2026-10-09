@@ -34,6 +34,8 @@ define( 'A8CSP_ATLANTIS_BASENAME', plugin_basename( __FILE__ ) );
 define( 'A8CSP_ATLANTIS_DIR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'A8CSP_ATLANTIS_DIR_URL', plugin_dir_url( __FILE__ ) );
 define( 'A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY', 'a8csp_atlantis_github_latest_release' );
+define( 'A8CSP_ATLANTIS_MANAGED_SITE_OPTION', 'a8csp_atlantis_managed_site' );
+define( 'A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION', 'a8csp_atlantis_autoupdate_settings_url' );
 
 // Load the rest of the bootstrap functions.
 require_once A8CSP_ATLANTIS_DIR_PATH . '/functions-bootstrap.php';

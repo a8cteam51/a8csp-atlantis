@@ -14,8 +14,32 @@ use Tests\Support\IntegrationTester;
  */
 class StatusControllerTestCest {
 	/**
+	 * Configures a centralized settings endpoint: without one the module never fetches and has no
+	 * fail-closed state to report.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _before( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		update_option( 'a8csp_atlantis_autoupdate_settings_url', 'https://settings.test/wp-json/example/v1/settings/' );
+	}
+
+	/**
+	 * Removes what the tests configured.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _after( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		delete_option( 'a8csp_atlantis_autoupdate_settings_url' );
+		delete_option( 'a8csp_atlantis_managed_site' );
+	}
+
+	/**
 	 * The autoupdates entry must report whether the site is currently refusing all updates,
-	 * because `enabled` stays true throughout an OpsOasis outage.
+	 * because `enabled` stays true throughout an outage of the settings endpoint.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -88,17 +112,54 @@ class StatusControllerTestCest {
 	}
 
 	/**
+	 * Fleet tooling finds the managed sites that were never given an endpoint by these two flags,
+	 * so both must be reported and neither may give the endpoint itself away.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function status_payload_reports_whether_the_site_is_managed_and_has_an_endpoint( IntegrationTester $i ): void {
+		update_option( 'a8csp_atlantis_managed_site', '1' );
+
+		$data = $this->get_payload();
+
+		Assert::assertTrue( $data['plugin']['managed'] );
+		Assert::assertTrue( $data['modules']['autoupdates']['settings_url_configured'] );
+		Assert::assertStringNotContainsString( 'settings.test', (string) wp_json_encode( $data ), 'The endpoint is configuration, not status.' );
+
+		update_option( 'a8csp_atlantis_managed_site', '0' );
+		delete_option( 'a8csp_atlantis_autoupdate_settings_url' );
+
+		$data = $this->get_payload();
+
+		Assert::assertFalse( $data['plugin']['managed'] );
+		Assert::assertFalse( $data['modules']['autoupdates']['settings_url_configured'] );
+		Assert::assertFalse( $data['modules']['autoupdates']['fail_closed'], 'A site with no endpoint never fetches, so it is not fail-closed.' );
+	}
+
+	/**
 	 * Returns the `modules` section of the status payload.
 	 *
 	 * @return array
 	 */
 	private function get_modules_payload(): array {
-		$controller = new Status_Controller();
-		$response   = $controller->get_item( new WP_REST_Request( 'GET', '/a8csp-atlantis/v1/status' ) );
-		$data       = $response->get_data();
+		$data = $this->get_payload();
 
 		Assert::assertArrayHasKey( 'modules', $data );
 
 		return $data['modules'];
+	}
+
+	/**
+	 * Returns the whole status payload.
+	 *
+	 * @return array
+	 */
+	private function get_payload(): array {
+		$controller = new Status_Controller();
+		$response   = $controller->get_item( new WP_REST_Request( 'GET', '/a8csp-atlantis/v1/status' ) );
+
+		return $response->get_data();
 	}
 }

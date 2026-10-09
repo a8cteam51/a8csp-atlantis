@@ -15,6 +15,38 @@ use Tests\Support\IntegrationTester;
  */
 class AutoupdatesTestCest {
 	/**
+	 * The centralized settings endpoint these tests configure. Nothing is ever sent to it: every
+	 * request is answered by a `pre_http_request` filter.
+	 *
+	 * @var string
+	 */
+	private const SETTINGS_URL = 'https://settings.test/wp-json/example/v1/settings/';
+
+	/**
+	 * Configures a settings endpoint, since the module ships with none and most of what is
+	 * tested here is what it does with one.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _before( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		update_option( 'a8csp_atlantis_autoupdate_settings_url', self::SETTINGS_URL );
+	}
+
+	/**
+	 * Removes the configured endpoint.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _after( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		delete_option( 'a8csp_atlantis_autoupdate_settings_url' );
+		delete_option( 'a8csp_atlantis_managed_site' );
+	}
+
+	/**
 	 * Basic module metadata should be stable.
 	 *
 	 * @param IntegrationTester $i Tester instance.
@@ -81,9 +113,169 @@ class AutoupdatesTestCest {
 		Assert::assertFalse( $module->filter_maybe_disable_all_autoupdates( true ) );
 		Assert::assertFalse( $module->filter_maybe_disable_all_autoupdates( null ) );
 
-		$email = array( 'to' => 'admin@example.com' );
-		Assert::assertSame( 'concierge@wordpress.com', $module->filter_custom_update_emails( $email, '', array(), array() )['to'] );
-		Assert::assertSame( 'concierge@wordpress.com', $module->filter_custom_debug_email( $email, 0, array() )['to'] );
+	}
+
+	/**
+	 * Update emails go wherever the centralized settings say, and nowhere else: with no recipient
+	 * named, the address core chose is left alone.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function update_emails_follow_the_centrally_configured_recipient( IntegrationTester $i ): void {
+		$module = new AutoUpdatePluginsFilter();
+		$email  = array( 'to' => 'admin@example.com' );
+
+		$this->set_module_settings( $module, (object) array( 'notification_email' => 'updates@example.org' ) );
+		Assert::assertSame( 'updates@example.org', $module->filter_custom_update_emails( $email, '', array(), array() )['to'] );
+		Assert::assertSame( 'updates@example.org', $module->filter_custom_debug_email( $email, 0, array() )['to'] );
+
+		foreach ( array( new \stdClass(), (object) array( 'notification_email' => '' ), (object) array( 'notification_email' => 'not-an-address' ), (object) array( 'notification_email' => array( 'updates@example.org' ) ) ) as $settings ) {
+			$this->set_module_settings( $module, $settings );
+			Assert::assertSame( 'admin@example.com', $module->filter_custom_update_emails( $email, '', array(), array() )['to'] );
+			Assert::assertSame( 'admin@example.com', $module->filter_custom_debug_email( $email, 0, array() )['to'] );
+		}
+	}
+
+	/**
+	 * The module only takes over update emails when a recipient is configured. Without one it
+	 * must not force sends back on either, because whether they are sent is then the host's call.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function update_emails_are_only_forced_on_when_a_recipient_is_configured( IntegrationTester $i ): void {
+		$recipient_hooks = array( 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email' );
+		$send_hooks      = array( 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email' );
+
+		// Everything initialize() hooks into, cloned so that none of it leaks into other tests.
+		$touched  = array_merge( $recipient_hooks, $send_hooks, array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'plugin_auto_update_setting_html', 'admin_init', 'admin_notices', 'upgrader_process_complete', 'wp_doing_cron' ) );
+		$snapshot = array();
+		foreach ( $touched as $hook ) {
+			$snapshot[ $hook ] = isset( $GLOBALS['wp_filter'][ $hook ] ) ? clone $GLOBALS['wp_filter'][ $hook ] : null;
+		}
+
+		try {
+			foreach ( array( false, true ) as $with_recipient ) {
+				foreach ( array_merge( $recipient_hooks, $send_hooks ) as $hook ) {
+					unset( $GLOBALS['wp_filter'][ $hook ] );
+				}
+
+				$payload = $with_recipient ? array( 'notification_email' => 'updates@example.org' ) : array( 'disabled_plugins' => array() );
+				set_transient( 'wpcpmsp_auto_update_settings', (object) $payload, 5 * MINUTE_IN_SECONDS );
+
+				// initialize() only runs in an autoupdate context; cron is the one a test can simulate.
+				add_filter( 'wp_doing_cron', '__return_true' );
+
+				$module = new AutoUpdatePluginsFilter();
+				$method = new ReflectionMethod( $module, 'initialize' );
+				$method->setAccessible( true );
+				$method->invoke( $module );
+
+				foreach ( array_merge( $recipient_hooks, $send_hooks ) as $hook ) {
+					Assert::assertSame(
+						$with_recipient,
+						has_filter( $hook ),
+						$with_recipient ? "$hook should be filtered once a recipient is configured." : "$hook must be left alone without a recipient."
+					);
+				}
+			}
+		} finally {
+			foreach ( $snapshot as $hook => $value ) {
+				if ( null === $value ) {
+					unset( $GLOBALS['wp_filter'][ $hook ] );
+				} else {
+					$GLOBALS['wp_filter'][ $hook ] = $value;
+				}
+			}
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
+	 * With no endpoint configured the module asks nobody: it makes no request, holds nothing
+	 * back, and is not fail-closed. This is what a site nobody set up centrally gets.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function no_configured_endpoint_means_no_request_and_no_fail_closed( IntegrationTester $i ): void {
+		delete_option( 'a8csp_atlantis_autoupdate_settings_url' );
+		$this->reset_settings_storage();
+
+		// A fail-safe cached while an endpoint was configured must not outlive it.
+		set_transient( 'wpcpmsp_auto_update_settings', (object) array( 'disable_all' => true ), 5 * MINUTE_IN_SECONDS );
+
+		$http_calls = 0;
+		$count_http = static function () use ( &$http_calls ) {
+			++$http_calls;
+			return new WP_Error( 'unexpected_http', 'No remote request should be made without a configured endpoint.' );
+		};
+		add_filter( 'pre_http_request', $count_http, 10, 3 );
+
+		try {
+			Assert::assertSame( '', AutoUpdatePluginsFilter::get_settings_endpoint() );
+
+			$module   = new AutoUpdatePluginsFilter();
+			$settings = $this->fetch_settings( $module );
+
+			Assert::assertIsObject( $settings );
+			Assert::assertSame( array(), (array) $settings, 'No endpoint means no centralized settings at all.' );
+			Assert::assertSame( 0, $http_calls );
+
+			$this->set_module_settings( $module, $settings );
+			Assert::assertTrue( $module->filter_maybe_disable_all_autoupdates( true ), 'Nothing is held back without centralized settings.' );
+
+			$state = AutoUpdatePluginsFilter::get_settings_state();
+			Assert::assertFalse( $state['settings_url_configured'] );
+			Assert::assertFalse( $state['fail_closed'], 'A site that never fetches cannot be fail-closed.' );
+			Assert::assertNull( $state['last_success'] );
+		} finally {
+			remove_filter( 'pre_http_request', $count_http, 10 );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
+	 * The stored option is where the endpoint comes from, and only an http(s) URL counts as one.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function settings_endpoint_is_read_from_the_stored_option( IntegrationTester $i ): void {
+		Assert::assertSame( self::SETTINGS_URL, AutoUpdatePluginsFilter::get_settings_endpoint() );
+
+		update_option( 'a8csp_atlantis_autoupdate_settings_url', '  ' . self::SETTINGS_URL . '  ' );
+		Assert::assertSame( self::SETTINGS_URL, AutoUpdatePluginsFilter::get_settings_endpoint(), 'Surrounding whitespace is not part of the URL.' );
+
+		foreach ( array( '', 'javascript:alert(1)', 'ftp://settings.test/settings', array( self::SETTINGS_URL ) ) as $invalid ) {
+			update_option( 'a8csp_atlantis_autoupdate_settings_url', $invalid );
+			Assert::assertSame( '', AutoUpdatePluginsFilter::get_settings_endpoint() );
+		}
+	}
+
+	/**
+	 * Who to ask before updating by hand is the team on a managed site, and nobody in particular
+	 * anywhere else.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function manual_update_caution_only_names_the_team_on_a_managed_site( IntegrationTester $i ): void {
+		$method = new ReflectionMethod( AutoUpdatePluginsFilter::class, 'get_manual_update_caution' );
+		$method->setAccessible( true );
+
+		update_option( 'a8csp_atlantis_managed_site', '1' );
+		Assert::assertSame( 'Please contact the WordPress Special Projects team before manually updating plugins.', $method->invoke( null, ' plugins' ) );
+
+		update_option( 'a8csp_atlantis_managed_site', '0' );
+		Assert::assertStringNotContainsString( 'Special Projects', $method->invoke( null ) );
+		Assert::assertStringEndsWith( 'before manually updating.', $method->invoke( null ) );
 	}
 
 	/**
@@ -137,7 +329,7 @@ class AutoupdatesTestCest {
 		$admin_ui = new PluginFilterAdminUI( $settings );
 		$html     = $admin_ui->filter_custom_setting_html( 'Current setting', 'akismet/akismet.php', array() );
 
-		Assert::assertStringContainsString( 'Autoupdates have been explicitly deactivated for this plugin via global OpsOasis settings.', $html );
+		Assert::assertStringContainsString( 'Autoupdates have been explicitly deactivated for this plugin via centralized settings.', $html );
 		Assert::assertStringNotContainsString( 'Disable PAF updates', $html );
 	}
 
@@ -214,7 +406,7 @@ class AutoupdatesTestCest {
 	}
 
 	/**
-	 * A failed OpsOasis fetch negative-caches the fail-safe default instead of refetching on every request.
+	 * A failed settings fetch negative-caches the fail-safe default instead of refetching on every request.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -224,7 +416,7 @@ class AutoupdatesTestCest {
 		delete_transient( 'wpcpmsp_auto_update_settings' );
 
 		$force_failure = static function () {
-			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+			return new WP_Error( 'http_request_failed', 'Simulated endpoint outage' );
 		};
 		add_filter( 'pre_http_request', $force_failure, 10, 3 );
 
@@ -312,7 +504,7 @@ class AutoupdatesTestCest {
 	}
 
 	/**
-	 * On a front-end request, initialize() short-circuits before fetching OpsOasis settings.
+	 * On a front-end request, initialize() short-circuits before fetching the centralized settings.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -325,7 +517,7 @@ class AutoupdatesTestCest {
 		$http_calls = 0;
 		$count_http = static function ( $pre ) use ( &$http_calls ) {
 			++$http_calls;
-			return new WP_Error( 'unexpected_http', 'initialize() must not call OpsOasis on a front-end request.' );
+			return new WP_Error( 'unexpected_http', 'initialize() must not call the settings endpoint on a front-end request.' );
 		};
 		add_filter( 'pre_http_request', $count_http, 10, 3 );
 
@@ -359,7 +551,7 @@ class AutoupdatesTestCest {
 			return new WP_Error( 'http_request_failed', 'Captured.' );
 		};
 		$override = static function () {
-			return 'https://opsoasis.test/wp-json/wpcomsp/autoupdate-plugin/v1/settings/';
+			return 'https://override.test/wp-json/example/v1/settings/';
 		};
 
 		add_filter( 'a8csp_atlantis_autoupdate_settings_url', $override );
@@ -369,7 +561,7 @@ class AutoupdatesTestCest {
 			$this->fetch_settings( new AutoUpdatePluginsFilter() );
 
 			Assert::assertSame(
-				'https://opsoasis.test/wp-json/wpcomsp/autoupdate-plugin/v1/settings/',
+				'https://override.test/wp-json/example/v1/settings/',
 				$requested_url,
 				'The settings request must use the filtered endpoint.'
 			);
@@ -425,7 +617,7 @@ class AutoupdatesTestCest {
 		);
 
 		$fail = static function () {
-			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+			return new WP_Error( 'http_request_failed', 'Simulated endpoint outage' );
 		};
 		add_filter( 'pre_http_request', $fail, 10, 3 );
 
@@ -460,7 +652,7 @@ class AutoupdatesTestCest {
 		);
 
 		$fail = static function () {
-			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+			return new WP_Error( 'http_request_failed', 'Simulated endpoint outage' );
 		};
 		add_filter( 'pre_http_request', $fail, 10, 3 );
 
@@ -493,7 +685,7 @@ class AutoupdatesTestCest {
 			return 0;
 		};
 		$fail = static function () {
-			return new WP_Error( 'http_request_failed', 'Simulated OpsOasis outage' );
+			return new WP_Error( 'http_request_failed', 'Simulated endpoint outage' );
 		};
 
 		add_filter( 'a8csp_atlantis_autoupdate_settings_grace', $no_grace );
@@ -523,6 +715,7 @@ class AutoupdatesTestCest {
 
 		$state = AutoUpdatePluginsFilter::get_settings_state();
 
+		Assert::assertTrue( $state['settings_url_configured'] );
 		Assert::assertTrue( $state['fail_closed'], 'With nothing stored, the site is fail-closed.' );
 		Assert::assertNull( $state['last_success'] );
 		Assert::assertNull( $state['seconds_since_success'] );

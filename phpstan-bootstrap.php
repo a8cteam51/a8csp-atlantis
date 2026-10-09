@@ -3,6 +3,8 @@
 define( 'A8CSP_ATLANTIS_BASENAME', 'a8csp-atlantis/a8csp-atlantis.php' );
 define( 'A8CSP_ATLANTIS_DIR_PATH', __DIR__ . '/' );
 define( 'A8CSP_ATLANTIS_DIR_URL', '/wp-content/plugins/a8csp-atlantis' );
+define( 'A8CSP_ATLANTIS_MANAGED_SITE_OPTION', 'a8csp_atlantis_managed_site' );
+define( 'A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION', 'a8csp_atlantis_autoupdate_settings_url' );
 define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', 'abcdefghijklmnopqrstuvwxyz0123456789' );
 // phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
 define( 'WPCOMSP_BILMUR_PROVIDER', 'wpcloud' );

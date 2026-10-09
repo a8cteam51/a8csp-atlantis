@@ -17,6 +17,81 @@ use Tests\Support\IntegrationTester;
  */
 class TrackingTestCest {
 	/**
+	 * Marks the site as managed: forcing tracking on is something only a managed site does, and
+	 * it is what most of these tests are about.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _before( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		update_option( 'a8csp_atlantis_managed_site', '1' );
+	}
+
+	/**
+	 * Clears the managed flag.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _after( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		delete_option( 'a8csp_atlantis_managed_site' );
+	}
+
+	/**
+	 * A site that is not managed keeps its own tracking choices: neither integration runs, so
+	 * neither option is overridden, and nothing tags its RUM data as a Special Projects site's.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function unmanaged_site_keeps_its_own_tracking_choices( IntegrationTester $i ): void {
+		update_option( 'a8csp_atlantis_managed_site', '0' );
+
+		$hooks    = array( 'option_woocommerce_allow_tracking', 'option_sensei-settings', 'wpcomsh_bilmur_site_v', 'wpcomsh_rum_kv', 'wp_footer', 'wp_enqueue_scripts', 'wp_script_attributes' );
+		$snapshot = array();
+		foreach ( $hooks as $hook ) {
+			$snapshot[ $hook ] = isset( $GLOBALS['wp_filter'][ $hook ] ) ? clone $GLOBALS['wp_filter'][ $hook ] : null;
+			unset( $GLOBALS['wp_filter'][ $hook ] );
+		}
+
+		try {
+			$woocommerce = new WooCommerce();
+			$sensei      = new Sensei();
+
+			Assert::assertFalse( $woocommerce->is_active() );
+			Assert::assertFalse( $sensei->is_active() );
+
+			$woocommerce->maybe_initialize();
+			$sensei->maybe_initialize();
+
+			Assert::assertSame( 'no', apply_filters( 'option_woocommerce_allow_tracking', 'no' ) );
+			Assert::assertSame(
+				array( 'sensei_usage_tracking_enabled' => false ),
+				apply_filters( 'option_sensei-settings', array( 'sensei_usage_tracking_enabled' => false ) )
+			);
+
+			// Bilmur's own initialization, whichever way it is reached, must not tag the site.
+			$initialize = new \ReflectionMethod( Bilmur::class, 'initialize' );
+			$initialize->setAccessible( true );
+			$initialize->invoke( new Bilmur() );
+
+			Assert::assertFalse( has_filter( 'wpcomsh_rum_kv' ), 'An unmanaged site must not add the Special Projects property.' );
+			Assert::assertFalse( has_filter( 'wpcomsh_bilmur_site_v' ), 'An unmanaged site must not opt into the site hash.' );
+		} finally {
+			foreach ( $snapshot as $hook => $value ) {
+				if ( null === $value ) {
+					unset( $GLOBALS['wp_filter'][ $hook ] );
+				} else {
+					$GLOBALS['wp_filter'][ $hook ] = $value;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Ensure module metadata remains stable.
 	 *
 	 * @param IntegrationTester $i Tester instance.
@@ -85,8 +160,8 @@ class TrackingTestCest {
 
 	/**
 	 * On the non-wpcomsh path Bilmur emits `data-site-v` (the hashed host) on its
-	 * meta tag, and it always opts into wpcomsh's own `site-v` attribute for the
-	 * Atomic path via the `wpcomsh_bilmur_site_v` filter.
+	 * meta tag, and on a managed site it opts into wpcomsh's own `site-v` attribute
+	 * for the Atomic path via the `wpcomsh_bilmur_site_v` filter.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -120,7 +195,7 @@ class TrackingTestCest {
 
 			$bilmur->maybe_initialize();
 
-			// Atomic path: the opt-in filter is registered unconditionally.
+			// Atomic path: on a managed site the opt-in filter is registered whether or not wpcomsh is detected.
 			Assert::assertNotFalse(
 				has_filter( 'wpcomsh_bilmur_site_v', '__return_true' ),
 				'Bilmur should opt into the wpcomsh site-v attribute.'

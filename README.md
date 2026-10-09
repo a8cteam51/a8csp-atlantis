@@ -7,6 +7,33 @@ for operational management of partner sites. It provides a module framework for
 admin messages, automatic update controls, tracking integrations, and footer
 credit utilities.
 
+## Using Atlantis Outside the Special Projects Team
+
+Atlantis is built for the sites the Special Projects team manages, and the
+repository is public so it can be read and forked. It is **unsupported** anywhere
+else: use it at your own discretion.
+
+A site that installs Atlantis is treated as an **unmanaged** site unless it is
+explicitly marked otherwise. On an unmanaged site Atlantis:
+
+- makes no request to any Special Projects service, and has no centralized
+  autoupdate settings unless you configure an endpoint of your own;
+- leaves automatic update emails to WordPress and your host;
+- does not change the usage-tracking settings of WooCommerce or Sensei, and does
+  not tag real-user-monitoring data;
+- shows its admin screens to any administrator;
+- outputs footer credit links with no referral parameters.
+
+What it still does once activated is worth knowing before you install it. The
+Autoupdates module takes over the automatic update schedule of plugins and core:
+updates run inside fixed weekday windows, are held back for a few days after a
+release, and stop over the year-end holidays. The Messages module creates a
+database table and adds an encryption key to `wp-config.php`. Disable any module
+you do not want from `Atlantis > Modules`, or with `wp atlantis module
+deactivate <key>`.
+
+See [Managed Sites](#managed-sites) for what marking a site as managed turns on.
+
 Plugin metadata from `a8csp-atlantis.php`:
 
 - Plugin name: `A8CSP Atlantis`
@@ -58,17 +85,21 @@ updates through WordPress update filters. It applies allowed update windows,
 holiday windows, plugin release delays, per-plugin filter toggles, and global
 disable rules.
 
-Centralized settings are fetched from:
-
-```text
-https://opsoasis.wpspecialprojects.com/wp-json/wpcomsp/autoupdate-plugin/v1/settings/
-```
-
-The payload supports:
+Atlantis ships with no centralized settings endpoint. Without one the module
+makes no remote request and runs on its local rules alone. To have a group of
+sites follow shared settings, give each site the URL of an endpoint you run — see
+[Centralized Autoupdate Settings](#centralized-autoupdate-settings). The payload
+supports:
 
 - `disable_all` to block all automatic updates.
 - `canary_sites` to bypass plugin delay logic for selected hostnames.
 - `disabled_plugins` to block specific plugins across connected sites.
+- `notification_email` to send automatic update emails to one address instead
+  of each site's own, and to force those emails on where a host turned them off.
+
+Once an endpoint is configured the module fails closed: if the endpoint cannot
+be reached it keeps using the last payload it fetched for 24 hours, and after
+that it stops all automatic updates until the endpoint answers again.
 
 On activation, if `plugin-autoupdate-filter/plugin-autoupdate-filter.php` is
 installed but inactive, Atlantis disables the Autoupdates module to avoid
@@ -78,13 +109,18 @@ More detail: `src/Modules/Autoupdates/README.md`.
 
 ### Tracking
 
-The Tracking module only runs in production environments. It automatically opts
-supported integrations into usage or real-user monitoring:
+The Tracking module only runs in production environments. On a
+[managed site](#managed-sites) it automatically opts supported integrations into
+usage or real-user monitoring:
 
 - WooCommerce via `option_woocommerce_allow_tracking`.
 - Sensei via the `sensei-settings` option.
 - Bilmur via `https://s0.wp.com/wp-content/js/bilmur.min.js` and related RUM
   metadata.
+
+On an unmanaged site the WooCommerce and Sensei settings are left as the site
+owner set them, and Bilmur only runs when the site opts in with the
+`WPCOMSP_BILMUR_*` constants.
 
 More detail: `src/Modules/Tracking/README.md`.
 
@@ -93,7 +129,8 @@ More detail: `src/Modules/Tracking/README.md`.
 The Colophon module registers a `team51_credits` action, the
 `[team51-credits]` shortcode, and the `[team51-current-year]` shortcode for
 standard footer credits. Output links can be adjusted with the
-`team51_credit_links` filter.
+`team51_credit_links` filter. The links carry Special Projects referral
+parameters on a [managed site](#managed-sites) only.
 
 More detail: `src/Modules/Colophon/README.md`.
 
@@ -123,11 +160,61 @@ must stay clear is set to `off` explicitly.
 
 More detail: `src/Modules/BotProtection/README.md`.
 
+## Managed Sites
+
+A managed site is one the Special Projects team runs. Atlantis reads that from
+the `a8csp_atlantis_managed_site` option (`1` for managed), which the
+`A8CSP_ATLANTIS_MANAGED_SITE` constant overrides when defined:
+
+```sh
+wp atlantis site status
+wp atlantis site managed on
+wp atlantis site managed off
+```
+
+A fresh install is unmanaged. A site that was already running Atlantis before
+the flag existed is recorded as managed the first time it loads a release that
+has it, so that an update changes nothing there; turn it off with
+`wp atlantis site managed off`. The team's provisioning tools set the option
+before installing the plugin.
+
+Marking a site as managed turns on the behaviour that only makes sense for the
+team's own sites:
+
+- WooCommerce and Sensei usage tracking are forced on in production, and on
+  WordPress.com the site's RUM data is tagged as a Special Projects site's.
+- The `Atlantis` admin menu, the Modules and Messages screens, and message
+  notices are limited to administrators with an Automattic email address.
+- Footer credit links carry Special Projects referral parameters.
+- Admin notices about held-back updates name the Special Projects team as the
+  contact.
+
+It does not, by itself, connect the site to any centralized settings: that is a
+separate setting, below.
+
+## Centralized Autoupdate Settings
+
+The Autoupdates module reads shared settings from an endpoint only when one is
+configured. The URL comes from the `A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL`
+constant when defined, otherwise from the `a8csp_atlantis_autoupdate_settings_url`
+option, and can be changed with the `a8csp_atlantis_autoupdate_settings_url`
+filter:
+
+```sh
+wp atlantis site settings-url https://example.com/wp-json/example/v1/settings/
+wp atlantis site settings-url --clear
+```
+
+The endpoint must answer a `GET` with a JSON object holding any of the keys
+listed under [Autoupdates](#autoupdates). The module asks with a two-second
+timeout, caches the answer for five minutes, and only asks during admin, WP-Cron
+and WP-CLI requests.
+
 ## Runtime Interfaces
 
-Atlantis registers an `Atlantis` wp-admin menu for users who pass
-`a8csp_atlantis_is_automattician()` and have the required capabilities. Module
-enablement is managed from the `Atlantis > Modules` submenu.
+Atlantis registers an `Atlantis` wp-admin menu for administrators — on a
+[managed site](#managed-sites), only those with an Automattic email address.
+Module enablement is managed from the `Atlantis > Modules` submenu.
 
 The status REST endpoint is available to users who can `manage_options`:
 
@@ -135,11 +222,13 @@ The status REST endpoint is available to users who can `manage_options`:
 GET /wp-json/a8csp-atlantis/v1/status
 ```
 
-The payload includes the plugin version, registered module states, and the
-stored message count when the Messages table exists.
+The payload includes the plugin version, whether the site is managed, registered
+module states, and the stored message count when the Messages table exists. The
+Autoupdates entry reports whether a centralized settings endpoint is configured
+(never the URL itself) and whether the site is currently failing closed.
 
-A force-update-check REST endpoint, also gated on `manage_options`, lets
-OpsOasis (and the team51 CLI) make the site re-detect a just-published plugin
+A force-update-check REST endpoint, also gated on `manage_options`, lets fleet
+tooling make the site re-detect a just-published plugin
 release on demand — it clears the throttled `update_plugins` transient, flushes
 WooCommerce.com's separate update cache, and re-runs the update check:
 
@@ -165,6 +254,10 @@ wp atlantis message list
 wp atlantis message get <id>
 wp atlantis module bot-protection status
 wp atlantis module bot-protection set <inherit|off>
+wp atlantis site status
+wp atlantis site managed <on|off>
+wp atlantis site settings-url <url>
+wp atlantis site settings-url --clear
 ```
 
 ## Development Requirements
