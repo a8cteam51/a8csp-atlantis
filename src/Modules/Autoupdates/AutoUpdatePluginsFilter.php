@@ -276,6 +276,10 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	/**
 	 * Returns the address the centralized settings route update emails to, or an empty string.
 	 *
+	 * One address or nothing. The value is deliberately not passed through `sanitize_email()`
+	 * first: that strips the comma and the space out of two addresses and leaves one string
+	 * `is_email()` accepts, naming a mailbox nobody owns.
+	 *
 	 * @since   1.5.0
 	 * @version 1.5.0
 	 *
@@ -287,7 +291,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			return '';
 		}
 
-		$recipient = sanitize_email( $recipient );
+		$recipient = trim( $recipient );
 
 		return false === is_email( $recipient ) ? '' : $recipient;
 	}

@@ -131,7 +131,16 @@ class AutoupdatesTestCest {
 		Assert::assertSame( 'updates@example.org', $module->filter_custom_update_emails( $email, '', array(), array() )['to'] );
 		Assert::assertSame( 'updates@example.org', $module->filter_custom_debug_email( $email, 0, array() )['to'] );
 
-		foreach ( array( new \stdClass(), (object) array( 'notification_email' => '' ), (object) array( 'notification_email' => 'not-an-address' ), (object) array( 'notification_email' => array( 'updates@example.org' ) ) ) as $settings ) {
+		$unusable = array(
+			new \stdClass(),
+			(object) array( 'notification_email' => '' ),
+			(object) array( 'notification_email' => 'not-an-address' ),
+			(object) array( 'notification_email' => array( 'updates@example.org' ) ),
+			// Two addresses must not be run together into one that nobody owns.
+			(object) array( 'notification_email' => 'updates@example.org, other@example.org' ),
+			(object) array( 'notification_email' => 'updates@example.org other@example.org' ),
+		);
+		foreach ( $unusable as $settings ) {
 			$this->set_module_settings( $module, $settings );
 			Assert::assertSame( 'admin@example.com', $module->filter_custom_update_emails( $email, '', array(), array() )['to'] );
 			Assert::assertSame( 'admin@example.com', $module->filter_custom_debug_email( $email, 0, array() )['to'] );
