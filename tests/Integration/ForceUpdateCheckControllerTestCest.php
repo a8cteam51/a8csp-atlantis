@@ -53,7 +53,7 @@ class ForceUpdateCheckControllerTestCest {
 	}
 
 	/**
-	 * The route is allowed for a caller with `manage_options`, so OpsOasis is not locked out of its lever.
+	 * The route is allowed for a caller with `manage_options`, so fleet tooling is not locked out of its lever.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *

@@ -29,19 +29,25 @@ if ( ! function_exists( 'team51_credits' ) ) :
 		$parsed_url     = wp_parse_url( get_site_url(), PHP_URL_HOST );
 		$partner_domain = is_string( $parsed_url ) ? $parsed_url : 'wpspecialprojects.com';
 
+		// The referral attribution credits the Special Projects team, so it only belongs on the
+		// links of a site the team manages.
+		$is_managed_site = a8csp_atlantis_is_managed_site();
+
 		if ( $args['wpcom'] ) {
 			$wpcom_link            = apply_filters(
 				'team51_credits_link_wpcom', // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-				add_query_arg(
-					array(
-						'partner_domain' => $partner_domain,
-						'utm_source'     => 'Automattic',
-						'utm_medium'     => 'colophon',
-						'utm_campaign'   => 'Concierge Referral',
-						'utm_term'       => $partner_domain,
-					),
-					'https://wordpress.com/website-builder/'
-				)
+				$is_managed_site
+					? add_query_arg(
+						array(
+							'partner_domain' => $partner_domain,
+							'utm_source'     => 'Automattic',
+							'utm_medium'     => 'colophon',
+							'utm_campaign'   => 'Concierge Referral',
+							'utm_term'       => $partner_domain,
+						),
+						'https://wordpress.com/website-builder/'
+					)
+					: 'https://wordpress.com/website-builder/'
 			);
 			$credit_links['wpcom'] = sprintf(
 				'<a href="%1$s" class="imprint" target="_blank" rel="nofollow">%2$s</a>',
@@ -53,15 +59,17 @@ if ( ! function_exists( 'team51_credits' ) ) :
 		if ( $args['pressable'] ) {
 			$pressable_link            = apply_filters(
 				'team51_credits_link_pressable', // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
-				add_query_arg(
-					array(
-						'utm_source'   => 'Automattic',
-						'utm_medium'   => 'rpc',
-						'utm_campaign' => 'Concierge Referral',
-						'utm_term'     => $partner_domain,
-					),
-					'https://pressable.com/'
-				)
+				$is_managed_site
+					? add_query_arg(
+						array(
+							'utm_source'   => 'Automattic',
+							'utm_medium'   => 'rpc',
+							'utm_campaign' => 'Concierge Referral',
+							'utm_term'     => $partner_domain,
+						),
+						'https://pressable.com/'
+					)
+					: 'https://pressable.com/'
 			);
 			$credit_links['pressable'] = sprintf(
 				'<a href="%1$s" class="imprint" target="_blank" rel="nofollow">%2$s</a>',

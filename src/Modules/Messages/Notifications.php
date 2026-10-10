@@ -40,7 +40,7 @@ class Notifications {
 	 * @return  void
 	 */
 	public function output_messages(): void {
-		if ( ! a8csp_atlantis_is_automattician() ) {
+		if ( ! a8csp_atlantis_current_user_can_manage() ) {
 			return;
 		}
 

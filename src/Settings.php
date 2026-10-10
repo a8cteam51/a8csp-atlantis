@@ -49,8 +49,8 @@ class Settings {
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 		add_action( 'admin_menu', array( $this, 'remove_default_submenu' ), 999 );
 
-		// The modules screen is gated on being an Automattician, but core's options.php saves the
-		// settings and applies its own gate, which defaults to manage_options.
+		// The modules screen has its own gate (an Automattician on a managed site), but core's
+		// options.php saves the settings and applies its own, which defaults to manage_options.
 		add_filter( 'option_page_capability_' . self::MODULES_OPTION_GROUP, array( $this, 'filter_modules_option_page_capability' ) );
 		add_filter( 'user_has_cap', array( $this, 'filter_grant_manage_modules_capability' ), 10, 4 );
 	}
@@ -68,7 +68,7 @@ class Settings {
 	 * @return  void
 	 */
 	public function register_admin_menu(): void {
-		if ( ! a8csp_atlantis_is_automattician() ) {
+		if ( ! a8csp_atlantis_current_user_can_manage() ) {
 			return;
 		}
 
@@ -112,13 +112,14 @@ class Settings {
 	}
 
 	/**
-	 * Grants the module capability to administrators on an Automattic domain.
+	 * Grants the module capability to administrators on an Automattic domain, or to every
+	 * administrator on a site that is not managed by the team.
 	 *
 	 * Reads `manage_options` out of the capability map rather than calling `current_user_can()`,
 	 * which would re-enter this filter.
 	 *
 	 * @since   1.3.1
-	 * @version 1.3.1
+	 * @version 1.5.0
 	 *
 	 * @param   array<string, bool> $allcaps The user's capabilities.
 	 * @param   string[]            $caps    The capabilities being checked.
@@ -132,7 +133,7 @@ class Settings {
 			return $allcaps;
 		}
 
-		if ( a8csp_atlantis_user_has_automattic_email( $user ) ) {
+		if ( ! a8csp_atlantis_is_managed_site() || a8csp_atlantis_user_has_automattic_email( $user ) ) {
 			$allcaps[ self::MANAGE_MODULES_CAP ] = true;
 		}
 

@@ -1,6 +1,6 @@
 # Messages Module
 
-A powerful admin notification system that allows Automattic team members to create and manage location-based messages throughout the WordPress admin interface.
+A powerful admin notification system that allows Automattic team members to create and manage location-based messages throughout the WordPress admin interface. On a site the Special Projects team does not manage, the same screens and notices are available to every administrator instead.
 
 ## What's this?
 

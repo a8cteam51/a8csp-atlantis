@@ -12,7 +12,7 @@ defined( 'ABSPATH' ) || exit;
 
 /**
  * REST controller that exposes Atlantis plugin and module status for
- * fleet-wide reporting (e.g. via OpsOasis and the team51 CLI).
+ * fleet-wide reporting.
  *
  * @since   1.2.0
  * @version 1.2.0
@@ -113,7 +113,8 @@ class Status_Controller {
 			$modules['messages']['count'] = $this->count_messages();
 		}
 
-		// A switched-off module never fetches, so it has nothing to report.
+		// A switched-off module never fetches, so it has nothing to report. `settings_url_configured`
+		// is what tells a managed site that was never given an endpoint from one that is healthy.
 		if ( isset( $modules['autoupdates'] ) && true === $modules['autoupdates']['enabled'] ) {
 			$modules['autoupdates'] += AutoUpdatePluginsFilter::get_settings_state();
 		}
@@ -133,6 +134,7 @@ class Status_Controller {
 			array(
 				'plugin'  => array(
 					'version' => \a8csp_atlantis_get_plugin_version(),
+					'managed' => \a8csp_atlantis_is_managed_site(),
 				),
 				'modules' => $modules,
 			)

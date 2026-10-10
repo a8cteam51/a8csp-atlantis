@@ -7,7 +7,7 @@ use A8C\SpecialProjects\Atlantis\Modules\Tracking\AbstractIntegration;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * WooCommerce Integration class.
+ * Sensei Integration class.
  *
  * @since   1.0.0
  * @version 1.0.0
@@ -16,10 +16,16 @@ class Sensei extends AbstractIntegration {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * Only on a managed site, for the same reason as the WooCommerce integration.
+	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.5.0
 	 */
 	public function is_active(): bool {
+		if ( ! a8csp_atlantis_is_managed_site() ) {
+			return false;
+		}
+
 		return ! defined( 'WPCOMSP_SENSEI_TRACKING' ) || WPCOMSP_SENSEI_TRACKING;
 	}
 

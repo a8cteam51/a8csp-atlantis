@@ -16,10 +16,17 @@ class WooCommerce extends AbstractIntegration {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * Only on a managed site: overriding the store owner's own tracking choice is a team decision,
+	 * not something a site inherits by installing the plugin.
+	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.5.0
 	 */
 	public function is_active(): bool {
+		if ( ! a8csp_atlantis_is_managed_site() ) {
+			return false;
+		}
+
 		return ! defined( 'WPCOMSP_WC_TRACKING' ) || WPCOMSP_WC_TRACKING;
 	}
 

@@ -16,7 +16,30 @@ By default, the plugin always returns `true` for autoupdates Mon-Thu 6am-7pm Eas
 
 ### Centralized settings
 
-By default, this plugin checks an endpoint set up by the WordPress Special Projects team to get centralized settings. If you use this plugin and aren't part of the team, then we recommend you either set up your own endpoint or remove that portion of the code. 
+The module ships with no centralized settings endpoint. Without one it makes no remote request and runs on its local rules alone: the update windows, the release delay, the holiday windows and the per-plugin toggles.
+
+To have several sites follow shared settings, run an endpoint of your own and give each site its URL:
+
+```
+wp atlantis site settings-url https://example.com/wp-json/example/v1/settings/
+```
+
+The URL is stored in the `a8csp_atlantis_autoupdate_settings_url` option. The `A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL` constant overrides it when defined, and the `a8csp_atlantis_autoupdate_settings_url` filter can change it. There is no need to edit the plugin's code.
+
+The endpoint answers a `GET` with a JSON object. Every key is optional:
+
+| Key | Type | Effect |
+| --- | --- | --- |
+| `disable_all` | `true` | Stops all plugin, theme and core autoupdates. |
+| `disabled_plugins` | list of plugin files or slugs | Stops autoupdates for those plugins. |
+| `canary_sites` | list of hostnames | Those sites skip the release delay. |
+| `notification_email` | email address | Autoupdate emails go to this address instead of the site's own, and are forced on even where the host turned them off. |
+
+**Once an endpoint is configured, the module fails closed.** If the endpoint cannot be reached, the last payload it fetched is reused for 24 hours (filterable with `a8csp_atlantis_autoupdate_settings_grace`). After that, all autoupdates stop until the endpoint answers again. Only configure an endpoint you intend to keep running.
+
+### Update emails
+
+With no `notification_email` in the centralized settings, the module does not touch autoupdate emails: WordPress sends them to the site's admin address, and your host decides whether they are sent at all.
 
 ## Support
 

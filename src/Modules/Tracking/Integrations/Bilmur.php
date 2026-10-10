@@ -29,12 +29,13 @@ class Bilmur extends AbstractIntegration {
 	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
-	 * @version 1.2.0
+	 * @version 1.5.0
 	 */
 	public function is_active(): bool {
-		// On Atomic sites where wpcomsh handles Bilmur, always activate to register the filter.
+		// On Atomic sites wpcomsh handles Bilmur itself, so all there is to do is tag the data as
+		// a Special Projects site's — which is only true of a managed site.
 		if ( self::is_wpcomsh_bilmur_active() ) {
-			return true;
+			return a8csp_atlantis_is_managed_site();
 		}
 
 		// On non-wpcomsh sites (Pressable), require explicit opt-in.
@@ -53,10 +54,30 @@ class Bilmur extends AbstractIntegration {
 	 * {@inheritDoc}
 	 *
 	 * @since   1.0.0
-	 * @version 1.3.0
+	 * @version 1.5.0
 	 */
 	protected function initialize(): void {
-		// Always register the wpcomsh filters for Atomic compatibility (harmless on non-Atomic sites).
+		if ( a8csp_atlantis_is_managed_site() ) {
+			$this->initialize_wpcomsh_filters();
+		}
+
+		if ( ! self::is_wpcomsh_bilmur_active() ) {
+			$this->initialize_bilmur_output();
+		}
+	}
+
+	/**
+	 * Tags wpcomsh's own Bilmur data as a Special Projects site's.
+	 *
+	 * Registered whenever the site is managed rather than only when wpcomsh is detected, for
+	 * Atomic compatibility: the filters are harmless on non-Atomic sites.
+	 *
+	 * @since   1.5.0
+	 * @version 1.5.0
+	 *
+	 * @return  void
+	 */
+	private function initialize_wpcomsh_filters(): void {
 		add_filter( 'wpcomsh_rum_kv', array( self::class, 'filter_wpcomsh_rum_kv' ), 10, 2 );
 
 		// Opt in to the `site-v` (hashed site host) attribute on wpcomsh's meta tag.
@@ -65,10 +86,6 @@ class Bilmur extends AbstractIntegration {
 		// self::get_site_hash() used on the non-wpcomsh code path. This filter is
 		// only defined on Atomic (wpcomsh) sites, so it is a no-op elsewhere.
 		add_filter( 'wpcomsh_bilmur_site_v', '__return_true' );
-
-		if ( ! self::is_wpcomsh_bilmur_active() ) {
-			$this->initialize_bilmur_output();
-		}
 	}
 
 	/**
@@ -96,7 +113,7 @@ class Bilmur extends AbstractIntegration {
 	 * Note: this filter feeds the `data-custom-props` JSON blob only. Values
 	 * that must surface as top-level `data-*` attributes on the meta tag
 	 * (e.g. `site-v`) cannot be injected here; those are handled wpcomsh-side
-	 * via the dedicated `wpcomsh_bilmur_site_v` filter (see initialize()).
+	 * via the dedicated `wpcomsh_bilmur_site_v` filter (see initialize_wpcomsh_filters()).
 	 *
 	 * @since   1.2.0
 	 * @version 1.3.0

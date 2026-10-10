@@ -5,6 +5,7 @@ namespace A8C\SpecialProjects\Atlantis;
 use A8C\SpecialProjects\Atlantis\CLI\BotProtection_Command;
 use A8C\SpecialProjects\Atlantis\CLI\Message_Command;
 use A8C\SpecialProjects\Atlantis\CLI\Module_Command;
+use A8C\SpecialProjects\Atlantis\CLI\Site_Command;
 use A8C\SpecialProjects\Atlantis\REST\Force_Update_Check_Controller;
 use A8C\SpecialProjects\Atlantis\REST\Status_Controller;
 
@@ -155,6 +156,9 @@ class Plugin {
 	protected function initialize(): void {
 		$this->register_core_compat_filters();
 
+		// Before the modules: several of them read the answer while they initialize.
+		a8csp_atlantis_maybe_record_managed_site();
+
 		$this->encryption = new Encryption();
 		$this->encryption->initialize();
 
@@ -178,6 +182,7 @@ class Plugin {
 			// the module registry rather than as a top-level command. Registered
 			// after the parent `atlantis module` so the composite command exists.
 			\WP_CLI::add_command( 'atlantis module bot-protection', BotProtection_Command::class );
+			\WP_CLI::add_command( 'atlantis site', Site_Command::class );
 		}
 	}
 

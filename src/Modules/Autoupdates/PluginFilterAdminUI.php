@@ -54,7 +54,7 @@ class PluginFilterAdminUI {
 		$plugin_obj->plugin = $plugin_file;
 
 		if ( PluginFilterRules::is_plugin_disabled_by_centralized_settings( $plugin_obj, $this->settings ) ) {
-			return esc_html__( 'Autoupdates have been explicitly deactivated for this plugin via global OpsOasis settings.', 'a8csp-atlantis' );
+			return esc_html__( 'Autoupdates have been explicitly deactivated for this plugin via centralized settings.', 'a8csp-atlantis' );
 		}
 
 		if ( PluginFilterRules::is_plugin_blocked_from_autoupdates( $plugin_obj, $this->settings ) ) {

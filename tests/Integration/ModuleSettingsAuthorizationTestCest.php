@@ -2,9 +2,9 @@
 /**
  * Integration tests for who may write module settings.
  *
- * The modules admin screen is gated on `a8csp_atlantis_is_automattician()`, but the settings are
- * saved by core's `options.php`, which applies its own gate. These tests exercise that gate the
- * way core does.
+ * On a managed site the modules admin screen is gated on being an Automattician, but the settings
+ * are saved by core's `options.php`, which applies its own gate. These tests exercise that gate
+ * the way core does.
  */
 
 declare(strict_types=1);
@@ -22,6 +22,57 @@ class ModuleSettingsAuthorizationTestCest {
 	 * @var string
 	 */
 	private const OPTION_GROUP = 'a8csp_modules_group';
+
+	/**
+	 * Marks the site as managed, which is where the Automattician gate applies.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _before( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		update_option( 'a8csp_atlantis_managed_site', '1' );
+	}
+
+	/**
+	 * Clears the managed flag.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function _after( IntegrationTester $i ): void { // phpcs:ignore PSR2.Methods.MethodDeclaration.Underscore
+		delete_option( 'a8csp_atlantis_managed_site' );
+	}
+
+	/**
+	 * A site the team does not manage has nobody but its own administrators to run it, so any of
+	 * them may write module settings — but still nobody below administrator.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function any_administrator_can_write_module_settings_on_an_unmanaged_site( IntegrationTester $i ): void {
+		update_option( 'a8csp_atlantis_managed_site', '0' );
+
+		$admin_id  = $this->create_administrator( 'outsider@example.com' );
+		$editor_id = $this->create_administrator( 'editor@example.com', 'editor' );
+
+		try {
+			wp_set_current_user( $admin_id );
+			Assert::assertFalse( a8csp_atlantis_is_automattician(), 'Test precondition: this administrator is not an Automattician.' );
+			Assert::assertTrue( a8csp_atlantis_current_user_can_manage() );
+			Assert::assertTrue( current_user_can( $this->options_page_capability() ) );
+
+			wp_set_current_user( $editor_id );
+			Assert::assertFalse( a8csp_atlantis_current_user_can_manage() );
+			Assert::assertFalse( current_user_can( $this->options_page_capability() ) );
+		} finally {
+			$this->cleanup( $admin_id );
+			$this->cleanup( $editor_id );
+		}
+	}
 
 	/**
 	 * An administrator who is not an Automattician must not be able to write module settings
@@ -42,6 +93,8 @@ class ModuleSettingsAuthorizationTestCest {
 				a8csp_atlantis_is_automattician(),
 				'Test precondition: this administrator is not an Automattician.'
 			);
+
+			Assert::assertFalse( a8csp_atlantis_current_user_can_manage(), 'The admin screens must refuse them too.' );
 
 			Assert::assertFalse(
 				current_user_can( $this->options_page_capability() ),
