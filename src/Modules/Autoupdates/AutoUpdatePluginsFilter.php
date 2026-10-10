@@ -13,6 +13,7 @@ defined( 'ABSPATH' ) || exit;
  * @version 1.0.0
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  */
 class AutoUpdatePluginsFilter extends AbstractModule {
 	// region FIELDS AND CONSTANTS
