@@ -56,6 +56,10 @@ function a8csp_atlantis_user_has_automattic_email( WP_User $user ): bool {
  *
  * The `A8CSP_ATLANTIS_MANAGED_SITE` constant wins over the stored option when defined.
  *
+ * On a multisite network a site is also managed when the network's main site is. A network is
+ * one install run by one team, and a site added to it later has no history of its own to be
+ * recorded as managed from.
+ *
  * @since   1.5.0
  * @version 1.5.0
  *
@@ -66,7 +70,32 @@ function a8csp_atlantis_is_managed_site(): bool {
 		return (bool) constant( 'A8CSP_ATLANTIS_MANAGED_SITE' );
 	}
 
-	return '1' === (string) get_option( A8CSP_ATLANTIS_MANAGED_SITE_OPTION, '0' );
+	if ( '1' === (string) get_option( A8CSP_ATLANTIS_MANAGED_SITE_OPTION, '0' ) ) {
+		return true;
+	}
+
+	return '1' === (string) a8csp_atlantis_get_main_site_option( A8CSP_ATLANTIS_MANAGED_SITE_OPTION );
+}
+
+/**
+ * Returns an option of the network's main site, for a site that is not the main one.
+ *
+ * Lets the other sites of a multisite network fall back to what was set once on its main site.
+ *
+ * @since   1.5.0
+ * @version 1.5.0
+ *
+ * @param   string $option The option name.
+ *
+ * @return  mixed|null The main site's value, or null when this is not a multisite network, this is
+ *                     its main site, or the main site holds no such option.
+ */
+function a8csp_atlantis_get_main_site_option( string $option ) {
+	if ( ! is_multisite() || is_main_site() ) {
+		return null;
+	}
+
+	return get_blog_option( get_main_site_id(), $option, null );
 }
 
 /**

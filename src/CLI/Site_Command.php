@@ -67,9 +67,9 @@ class Site_Command {
 	 * ## AVAILABLE FIELDS
 	 *
 	 * * managed                 - Whether Atlantis treats this as a site managed by the team.
-	 * * managed_source          - Where that answer comes from: constant or option.
+	 * * managed_source          - Where that answer comes from: constant, option or network (the main site of a multisite network).
 	 * * settings_url_configured - Whether the Autoupdates module has a centralized settings endpoint.
-	 * * settings_url_source     - Where the endpoint comes from: constant, option, filter or none.
+	 * * settings_url_source     - Where the endpoint comes from: constant, option, network, filter or none.
 	 *
 	 * ## EXAMPLES
 	 *
@@ -84,7 +84,7 @@ class Site_Command {
 		// Booleans (not yes/no strings) to match the /status REST payload.
 		$row = array(
 			'managed'                 => \a8csp_atlantis_is_managed_site(),
-			'managed_source'          => \defined( 'A8CSP_ATLANTIS_MANAGED_SITE' ) ? 'constant' : 'option',
+			'managed_source'          => $this->get_managed_source(),
 			'settings_url_configured' => '' !== AutoUpdatePluginsFilter::get_settings_endpoint(),
 			'settings_url_source'     => $this->get_settings_url_source(),
 		);
@@ -133,6 +133,8 @@ class Site_Command {
 
 		if ( \defined( 'A8CSP_ATLANTIS_MANAGED_SITE' ) ) {
 			\WP_CLI::warning( 'The A8CSP_ATLANTIS_MANAGED_SITE constant is defined and overrides the stored value.' );
+		} elseif ( ! $managed && \a8csp_atlantis_is_managed_site() ) {
+			\WP_CLI::warning( 'The main site of this network is managed, so this site still is. Run the command against the main site to change that.' );
 		}
 	}
 
@@ -197,6 +199,21 @@ class Site_Command {
 	// region HELPERS
 
 	/**
+	 * Names where the managed answer comes from.
+	 *
+	 * @return string
+	 */
+	private function get_managed_source(): string {
+		if ( \defined( 'A8CSP_ATLANTIS_MANAGED_SITE' ) ) {
+			return 'constant';
+		}
+
+		$own = '1' === (string) \get_option( A8CSP_ATLANTIS_MANAGED_SITE_OPTION, '0' );
+
+		return ! $own && \a8csp_atlantis_is_managed_site() ? 'network' : 'option';
+	}
+
+	/**
 	 * Names where the effective settings endpoint comes from.
 	 *
 	 * @return string
@@ -213,6 +230,11 @@ class Site_Command {
 		} else {
 			$configured = \get_option( A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION, '' );
 			$source     = 'option';
+
+			if ( ! \is_string( $configured ) || '' === \trim( $configured ) ) {
+				$configured = \a8csp_atlantis_get_main_site_option( A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION ) ?? '';
+				$source     = 'network';
+			}
 		}
 
 		$configured = AutoUpdatePluginsFilter::sanitize_settings_endpoint( $configured );

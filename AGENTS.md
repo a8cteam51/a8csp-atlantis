@@ -90,6 +90,8 @@ Atlantis is a public plugin, so installing it does not make a site one the team 
 
 A fresh install is unmanaged. `a8csp_atlantis_maybe_record_managed_site()` records existing installs as managed on first load so that updating changes nothing for them.
 
+On a multisite network the other sites fall back to the main site's managed flag and settings endpoint (`a8csp_atlantis_get_main_site_option()`), so both are set once, on the main site.
+
 Guardrails:
 
 - **Never hard-code a team address, endpoint or email** in this repository. The Autoupdates module has no built-in settings endpoint: it reads one from the `a8csp_atlantis_autoupdate_settings_url` option (or constant/filter), and with none it makes no remote request and never fails closed. The update-email recipient comes from that endpoint's payload (`notification_email`).
