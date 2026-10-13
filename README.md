@@ -178,6 +178,9 @@ has it, so that an update changes nothing there; turn it off with
 `wp atlantis site managed off`. The team's provisioning tools set the option
 before installing the plugin.
 
+On a multisite network every site is also managed when the network's main site
+is, so the option only has to be set there and a site added later is covered.
+
 Marking a site as managed turns on the behaviour that only makes sense for the
 team's own sites:
 
@@ -198,7 +201,8 @@ The Autoupdates module reads shared settings from an endpoint only when one is
 configured. The URL comes from the `A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL`
 constant when defined, otherwise from the `a8csp_atlantis_autoupdate_settings_url`
 option, and can be changed with the `a8csp_atlantis_autoupdate_settings_url`
-filter:
+filter. On a multisite network a site with no option of its own uses the main
+site's:
 
 ```sh
 wp atlantis site settings-url https://example.com/wp-json/example/v1/settings/

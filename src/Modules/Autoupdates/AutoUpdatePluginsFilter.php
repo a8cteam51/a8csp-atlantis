@@ -265,6 +265,11 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			? \constant( 'A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL' )
 			: get_option( A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION, '' );
 
+		// The other sites of a multisite network follow the endpoint set on its main site.
+		if ( ! \defined( 'A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL' ) && ( ! \is_string( $url ) || '' === trim( $url ) ) ) {
+			$url = a8csp_atlantis_get_main_site_option( A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION );
+		}
+
 		/**
 		 * Filters the centralized autoupdate settings endpoint.
 		 *
