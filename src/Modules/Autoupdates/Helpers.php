@@ -61,7 +61,7 @@ class Helpers {
 		$update_version_parts    = explode( '.', $plugin_new_version );
 
 		// only apply delays to major and minor releases. let point releases (patches) go through.
-		if ( $installed_version_parts[0] !== $update_version_parts[0] || $installed_version_parts[1] !== $update_version_parts[1] ) {
+		if ( ( $installed_version_parts[0] ?? '0' ) !== ( $update_version_parts[0] ?? '0' ) || ( $installed_version_parts[1] ?? '0' ) !== ( $update_version_parts[1] ?? '0' ) ) {
 			$update_allowed_after = $this->get_delay_date( $plugin_slug, $plugin_new_version, $delay_days, $plugin_file );
 
 			if ( time() >= $update_allowed_after ) {
