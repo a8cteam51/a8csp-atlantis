@@ -123,6 +123,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		// setup plugins and core to autoupdate _unless_ it's during specific day/time
 		add_filter( 'auto_update_plugin', array( $this, 'filter_auto_update_specific_times' ), 10, 2 );
 		add_filter( 'auto_update_core', array( $this, 'filter_auto_update_core' ), 10, 2 );
+		add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 1 );
 
 		// enforce a delay on all plugin autoupdates, based on release date
 		add_filter( 'auto_update_plugin', array( $this, 'filter_enforce_delay' ), 11, 2 );
@@ -621,6 +622,24 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	}
 
 	/**
+	 * Skip the "core update available" email where core files are read-only.
+	 *
+	 * Turning a core update down makes WordPress offer it by email instead. Where the host updates
+	 * core itself, that email would arrive for every release the host applies anyway.
+	 *
+	 * @param bool $notify Whether the site administrator is notified.
+	 *
+	 * @return bool
+	 */
+	public function filter_core_update_notification_email( $notify ): bool {
+		if ( ! self::core_files_are_writable() ) {
+			return false;
+		}
+
+		return (bool) $notify;
+	}
+
+	/**
 	 * Whether WordPress can overwrite its own core files.
 	 *
 	 * @return bool
@@ -632,7 +651,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		}
 
 		// Without direct file access core updates over FTP or SSH, where local permissions say nothing.
-		if ( 'direct' !== get_filesystem_method() ) {
+		// Probe ABSPATH, as the core updater does, not the default WP_CONTENT_DIR.
+		if ( 'direct' !== get_filesystem_method( array(), ABSPATH ) ) {
 			return true;
 		}
 

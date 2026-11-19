@@ -87,7 +87,10 @@ disable rules.
 
 Core updates are only held back, never turned on: Atlantis keeps them inside the
 update windows when WordPress or the host already allows them, and skips them
-where core files are read-only, as on hosts that update core themselves.
+where core files are read-only, as on hosts that update core themselves. Major
+core versions follow the site's own major-update setting
+(`auto_update_core_major` or `allow_major_auto_core_updates`) instead of being
+forced on inside the window.
 
 Atlantis ships with no centralized settings endpoint. Without one the module
 makes no remote request and runs on its local rules alone. To have a group of

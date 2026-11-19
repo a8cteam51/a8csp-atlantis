@@ -160,7 +160,7 @@ class AutoupdatesTestCest {
 		$send_hooks      = array( 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email' );
 
 		// Everything initialize() hooks into, cloned so that none of it leaks into other tests.
-		$touched  = array_merge( $recipient_hooks, $send_hooks, array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'plugin_auto_update_setting_html', 'admin_init', 'admin_notices', 'upgrader_process_complete', 'wp_doing_cron' ) );
+		$touched  = array_merge( $recipient_hooks, $send_hooks, array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'send_core_update_notification_email', 'plugin_auto_update_setting_html', 'admin_init', 'admin_notices', 'upgrader_process_complete', 'wp_doing_cron' ) );
 		$snapshot = array();
 		foreach ( $touched as $hook ) {
 			$snapshot[ $hook ] = isset( $GLOBALS['wp_filter'][ $hook ] ) ? clone $GLOBALS['wp_filter'][ $hook ] : null;
@@ -469,8 +469,10 @@ class AutoupdatesTestCest {
 		Assert::assertFalse( $module->filter_auto_update_core( null, $item ) );
 
 		require_once ABSPATH . 'wp-admin/includes/file.php';
-		$writable = 'direct' !== get_filesystem_method() || wp_is_writable( ABSPATH . 'wp-admin/includes/update-core.php' );
+		$writable = 'direct' !== get_filesystem_method( array(), ABSPATH ) || wp_is_writable( ABSPATH . 'wp-admin/includes/update-core.php' );
 		Assert::assertSame( $writable, $module->filter_auto_update_core( true, $item ) );
+		Assert::assertSame( $writable, $module->filter_core_update_notification_email( true ) );
+		Assert::assertFalse( $module->filter_core_update_notification_email( false ) );
 		remove_filter( 'plugin_autoupdate_filter_hours', $always_open );
 
 		add_filter( 'plugin_autoupdate_filter_hours', $never_open );
