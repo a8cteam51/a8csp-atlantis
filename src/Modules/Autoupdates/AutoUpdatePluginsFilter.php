@@ -123,7 +123,6 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		// setup plugins and core to autoupdate _unless_ it's during specific day/time
 		add_filter( 'auto_update_plugin', array( $this, 'filter_auto_update_specific_times' ), 10, 2 );
 		add_filter( 'auto_update_core', array( $this, 'filter_auto_update_core' ), 10, 2 );
-		add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 1 );
 
 		// enforce a delay on all plugin autoupdates, based on release date
 		add_filter( 'auto_update_plugin', array( $this, 'filter_enforce_delay' ), 11, 2 );
@@ -142,6 +141,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			add_filter( 'auto_plugin_theme_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
 			add_filter( 'auto_core_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
 			add_filter( 'automatic_updates_debug_email', array( $this, 'filter_custom_debug_email' ), 10, 3 );
+			add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 1 );
 
 			// re-enable core update emails which are disabled in an mu-plugin at the Atomic platform level
 			add_filter( 'automatic_updates_send_debug_email', '__return_true', 11 );
@@ -625,7 +625,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * Skip the "core update available" email where core files are read-only.
 	 *
 	 * Turning a core update down makes WordPress offer it by email instead. Where the host updates
-	 * core itself, that email would arrive for every release the host applies anyway.
+	 * core itself, that email would arrive for every release the host applies anyway. Only hooked
+	 * when a recipient is configured, so other sites keep core's email to their own administrator.
 	 *
 	 * @param bool $notify Whether the site administrator is notified.
 	 *
@@ -651,8 +652,10 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		}
 
 		// Without direct file access core updates over FTP or SSH, where local permissions say nothing.
-		// Probe ABSPATH, as the core updater does, not the default WP_CONTENT_DIR.
-		if ( 'direct' !== get_filesystem_method( array(), ABSPATH ) ) {
+		// Probe ABSPATH, as the core updater does, not the default WP_CONTENT_DIR. Allow relaxed
+		// ownership, as core does for updates that only replace files: what matters is whether PHP
+		// can overwrite core's files, not who owns them.
+		if ( 'direct' !== get_filesystem_method( array(), ABSPATH, true ) ) {
 			return true;
 		}
 

@@ -103,6 +103,8 @@ supports:
 - `disabled_plugins` to block specific plugins across connected sites.
 - `notification_email` to send automatic update emails to one address instead
   of each site's own, and to force those emails on where a host turned them off.
+  Where core files are read-only it also skips core's "update available" email,
+  which would otherwise arrive for every release the host applies itself.
 
 Once an endpoint is configured the module fails closed: if the endpoint cannot
 be reached it keeps using the last payload it fetched for 24 hours, and after
