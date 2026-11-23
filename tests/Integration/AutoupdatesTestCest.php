@@ -436,8 +436,9 @@ class AutoupdatesTestCest {
 	public function core_autoupdates_are_held_back_but_never_turned_on( IntegrationTester $i ): void {
 		$module = new AutoUpdatePluginsFilter();
 		$item   = (object) array(
-			'response' => 'autoupdate',
-			'current'  => '7.1.5',
+			'response'  => 'autoupdate',
+			'current'   => '7.1.5',
+			'new_files' => '',
 		);
 
 		$always_open = function () {
@@ -471,8 +472,8 @@ class AutoupdatesTestCest {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		$writable = 'direct' !== get_filesystem_method( array(), ABSPATH, true ) || wp_is_writable( ABSPATH . 'wp-admin/includes/update-core.php' );
 		Assert::assertSame( $writable, $module->filter_auto_update_core( true, $item ) );
-		Assert::assertSame( $writable, $module->filter_core_update_notification_email( true ) );
-		Assert::assertFalse( $module->filter_core_update_notification_email( false ) );
+		Assert::assertSame( $writable, $module->filter_core_update_notification_email( true, $item ) );
+		Assert::assertFalse( $module->filter_core_update_notification_email( false, $item ) );
 		remove_filter( 'plugin_autoupdate_filter_hours', $always_open );
 
 		add_filter( 'plugin_autoupdate_filter_hours', $never_open );

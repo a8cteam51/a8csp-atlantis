@@ -141,7 +141,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			add_filter( 'auto_plugin_theme_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
 			add_filter( 'auto_core_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
 			add_filter( 'automatic_updates_debug_email', array( $this, 'filter_custom_debug_email' ), 10, 3 );
-			add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 1 );
+			add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 2 );
 
 			// re-enable core update emails which are disabled in an mu-plugin at the Atomic platform level
 			add_filter( 'automatic_updates_send_debug_email', '__return_true', 11 );
@@ -614,7 +614,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_auto_update_core( $update, $item ): bool {
-		if ( ! $update || ! self::core_files_are_writable() ) {
+		if ( ! $update || ! self::core_files_are_writable( $item ) ) {
 			return false;
 		}
 
@@ -628,12 +628,13 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * core itself, that email would arrive for every release the host applies anyway. Only hooked
 	 * when a recipient is configured, so other sites keep core's email to their own administrator.
 	 *
-	 * @param bool $notify Whether the site administrator is notified.
+	 * @param bool        $notify Whether the site administrator is notified.
+	 * @param object|null $item   The core update offer.
 	 *
 	 * @return bool
 	 */
-	public function filter_core_update_notification_email( $notify ): bool {
-		if ( ! self::core_files_are_writable() ) {
+	public function filter_core_update_notification_email( $notify, $item = null ): bool {
+		if ( ! self::core_files_are_writable( $item ) ) {
 			return false;
 		}
 
@@ -641,21 +642,23 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	}
 
 	/**
-	 * Whether WordPress can overwrite its own core files.
+	 * Whether WordPress can overwrite its own core files to apply an update.
+	 *
+	 * @param object|null $item The core update offer.
 	 *
 	 * @return bool
 	 */
-	private static function core_files_are_writable(): bool {
+	private static function core_files_are_writable( $item = null ): bool {
 		if ( ! function_exists( 'get_filesystem_method' ) ) {
 			/* @phpstan-ignore requireOnce.fileNotFound */
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
 		// Without direct file access core updates over FTP or SSH, where local permissions say nothing.
-		// Probe ABSPATH, as the core updater does, not the default WP_CONTENT_DIR. Allow relaxed
-		// ownership, as core does for updates that only replace files: what matters is whether PHP
-		// can overwrite core's files, not who owns them.
-		if ( 'direct' !== get_filesystem_method( array(), ABSPATH, true ) ) {
+		// Probe ABSPATH, as the core updater does, not the default WP_CONTENT_DIR, and relax file
+		// ownership only when core does: for updates that add no new files.
+		$relaxed_ownership = \is_object( $item ) && isset( $item->new_files ) && ! $item->new_files;
+		if ( 'direct' !== get_filesystem_method( array(), ABSPATH, $relaxed_ownership ) ) {
 			return true;
 		}
 
