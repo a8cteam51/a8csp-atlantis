@@ -122,7 +122,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		// setup plugins and core to autoupdate _unless_ it's during specific day/time
 		add_filter( 'auto_update_plugin', array( $this, 'filter_auto_update_specific_times' ), 10, 2 );
-		add_filter( 'auto_update_core', array( $this, 'filter_auto_update_specific_times' ), 10, 2 );
+		add_filter( 'auto_update_core', array( $this, 'filter_auto_update_core' ), 10, 2 );
 
 		// enforce a delay on all plugin autoupdates, based on release date
 		add_filter( 'auto_update_plugin', array( $this, 'filter_enforce_delay' ), 11, 2 );
@@ -141,6 +141,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			add_filter( 'auto_plugin_theme_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
 			add_filter( 'auto_core_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
 			add_filter( 'automatic_updates_debug_email', array( $this, 'filter_custom_debug_email' ), 10, 3 );
+			add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 2 );
 
 			// re-enable core update emails which are disabled in an mu-plugin at the Atomic platform level
 			add_filter( 'automatic_updates_send_debug_email', '__return_true', 11 );
@@ -599,6 +600,70 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		}
 
 		return $this->is_within_allowed_update_window();
+	}
+
+	/**
+	 * Hold core auto-updates to the update window, without ever turning them on.
+	 *
+	 * Where core files are read-only, as on hosts that update core themselves, every attempt fails
+	 * with `copy_failed_for_update_core_file` and sends a failure email, so none is made.
+	 *
+	 * @param bool|null $update Whether to update core or not.
+	 * @param object    $item   The core update offer.
+	 *
+	 * @return bool True to update, false to not update.
+	 */
+	public function filter_auto_update_core( $update, $item ): bool {
+		if ( ! $update || ! self::core_files_are_writable( $item ) ) {
+			return false;
+		}
+
+		return $this->filter_auto_update_specific_times( $update, $item );
+	}
+
+	/**
+	 * Skip the "core update available" email where core files are read-only.
+	 *
+	 * Turning a core update down makes WordPress offer it by email instead. Where the host updates
+	 * core itself, that email would arrive for every release the host applies anyway. Only hooked
+	 * when a recipient is configured, so other sites keep core's email to their own administrator.
+	 *
+	 * @param bool        $notify Whether the site administrator is notified.
+	 * @param object|null $item   The core update offer.
+	 *
+	 * @return bool
+	 */
+	public function filter_core_update_notification_email( $notify, $item = null ): bool {
+		if ( ! self::core_files_are_writable( $item ) ) {
+			return false;
+		}
+
+		return (bool) $notify;
+	}
+
+	/**
+	 * Whether WordPress can overwrite its own core files to apply an update.
+	 *
+	 * @param object|null $item The core update offer.
+	 *
+	 * @return bool
+	 */
+	private static function core_files_are_writable( $item = null ): bool {
+		if ( ! function_exists( 'get_filesystem_method' ) ) {
+			/* @phpstan-ignore requireOnce.fileNotFound */
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		// Without direct file access core updates over FTP or SSH, where local permissions say nothing.
+		// Probe ABSPATH, as the core updater does, not the default WP_CONTENT_DIR, and relax file
+		// ownership only when core does: for updates that add no new files.
+		$relaxed_ownership = \is_object( $item ) && isset( $item->new_files ) && ! $item->new_files;
+		if ( 'direct' !== get_filesystem_method( array(), ABSPATH, $relaxed_ownership ) ) {
+			return true;
+		}
+
+		// The first file a core update copies; its failure is `copy_failed_for_update_core_file`.
+		return wp_is_writable( ABSPATH . 'wp-admin/includes/update-core.php' );
 	}
 
 	/**

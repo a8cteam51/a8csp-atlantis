@@ -156,7 +156,7 @@ class AutoupdatesTestCest {
 	 * @return void
 	 */
 	public function update_emails_are_only_forced_on_when_a_recipient_is_configured( IntegrationTester $i ): void {
-		$recipient_hooks = array( 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email' );
+		$recipient_hooks = array( 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email', 'send_core_update_notification_email' );
 		$send_hooks      = array( 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email' );
 
 		// Everything initialize() hooks into, cloned so that none of it leaks into other tests.
@@ -423,6 +423,65 @@ class AutoupdatesTestCest {
 		remove_filter( 'plugin_autoupdate_filter_holidays', $holidays_filter );
 		remove_filter( 'plugin_autoupdate_filter_hours', $hours_filter );
 		remove_filter( 'plugin_autoupdate_filter_days_off', $days_filter );
+	}
+
+	/**
+	 * Core auto-updates are only ever held back: never turned on, never outside the window, and
+	 * never attempted where core files cannot be overwritten.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function core_autoupdates_are_held_back_but_never_turned_on( IntegrationTester $i ): void {
+		$module = new AutoUpdatePluginsFilter();
+		$item   = (object) array(
+			'response'  => 'autoupdate',
+			'current'   => '7.1.5',
+			'new_files' => '',
+		);
+
+		$always_open = function () {
+			return array(
+				'start'      => '00',
+				'end'        => '23',
+				'friday_end' => '23',
+			);
+		};
+		$never_open  = function () {
+			return array(
+				'start'      => '24',
+				'end'        => '24',
+				'friday_end' => '24',
+			);
+		};
+		$no_days_off = function () {
+			return array();
+		};
+		$no_holidays = function () {
+			return array();
+		};
+
+		add_filter( 'plugin_autoupdate_filter_holidays', $no_holidays );
+		add_filter( 'plugin_autoupdate_filter_days_off', $no_days_off );
+
+		add_filter( 'plugin_autoupdate_filter_hours', $always_open );
+		Assert::assertFalse( $module->filter_auto_update_core( false, $item ) );
+		Assert::assertFalse( $module->filter_auto_update_core( null, $item ) );
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		$writable = 'direct' !== get_filesystem_method( array(), ABSPATH, true ) || wp_is_writable( ABSPATH . 'wp-admin/includes/update-core.php' );
+		Assert::assertSame( $writable, $module->filter_auto_update_core( true, $item ) );
+		Assert::assertSame( $writable, $module->filter_core_update_notification_email( true, $item ) );
+		Assert::assertFalse( $module->filter_core_update_notification_email( false, $item ) );
+		remove_filter( 'plugin_autoupdate_filter_hours', $always_open );
+
+		add_filter( 'plugin_autoupdate_filter_hours', $never_open );
+		Assert::assertFalse( $module->filter_auto_update_core( true, $item ) );
+		remove_filter( 'plugin_autoupdate_filter_hours', $never_open );
+
+		remove_filter( 'plugin_autoupdate_filter_holidays', $no_holidays );
+		remove_filter( 'plugin_autoupdate_filter_days_off', $no_days_off );
 	}
 
 	/**
