@@ -156,51 +156,61 @@ class AutoupdatesTestCest {
 	 * @return void
 	 */
 	public function update_emails_are_only_forced_on_when_a_recipient_is_configured( IntegrationTester $i ): void {
-		$recipient_hooks = array( 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email', 'send_core_update_notification_email' );
-		$send_hooks      = array( 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email' );
+		$module = new AutoUpdatePluginsFilter();
 
-		// Everything initialize() hooks into, cloned so that none of it leaks into other tests.
-		$touched  = array_merge( $recipient_hooks, $send_hooks, array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'plugin_auto_update_setting_html', 'admin_init', 'admin_notices', 'upgrader_process_complete', 'wp_doing_cron' ) );
-		$snapshot = array();
-		foreach ( $touched as $hook ) {
-			$snapshot[ $hook ] = isset( $GLOBALS['wp_filter'][ $hook ] ) ? clone $GLOBALS['wp_filter'][ $hook ] : null;
-		}
+		$this->set_module_settings( $module, (object) array( 'disabled_plugins' => array() ) );
+		Assert::assertFalse( $module->filter_send_update_email( false ), 'Without a recipient, a send the host turned off must stay off.' );
+		Assert::assertTrue( $module->filter_send_update_email( true ), 'Without a recipient, a send the host left on must stay on.' );
+		Assert::assertFalse( $module->filter_core_update_notification_email( false ), 'Without a recipient, the core update email is left to core.' );
+		Assert::assertTrue( $module->filter_core_update_notification_email( true ), 'Without a recipient, the core update email is left to core.' );
 
-		try {
-			foreach ( array( false, true ) as $with_recipient ) {
-				foreach ( array_merge( $recipient_hooks, $send_hooks ) as $hook ) {
-					unset( $GLOBALS['wp_filter'][ $hook ] );
-				}
+		$this->set_module_settings( $module, (object) array( 'notification_email' => 'updates@example.org' ) );
+		Assert::assertTrue( $module->filter_send_update_email( false ), 'With a recipient, update emails are sent even where the host turned them off.' );
+	}
 
-				$payload = $with_recipient ? array( 'notification_email' => 'updates@example.org' ) : array( 'disabled_plugins' => array() );
-				set_transient( 'wpcpmsp_auto_update_settings', (object) $payload, 5 * MINUTE_IN_SECONDS );
+	/**
+	 * With `ALTERNATE_WP_CRON`, cron runs inside an ordinary page view, after the module loaded
+	 * in what looked like a front-end request. The centralized policy must still apply to the
+	 * updates that cron run makes.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function policy_applies_when_cron_runs_inside_a_front_end_request( IntegrationTester $i ): void {
+		Assert::assertFalse( is_admin(), 'Test precondition: not an admin request.' );
+		Assert::assertFalse( wp_doing_cron(), 'Test precondition: not a cron request.' );
 
-				// initialize() only runs in an autoupdate context; cron is the one a test can simulate.
-				add_filter( 'wp_doing_cron', '__return_true' );
+		$hooks = array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'upgrader_process_complete', 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email', 'send_core_update_notification_email', 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email' );
+
+		$this->with_isolated_hooks(
+			$hooks,
+			function (): void {
+				set_transient(
+					'wpcpmsp_auto_update_settings',
+					(object) array(
+						'disabled_plugins' => array( 'akismet/akismet.php' ),
+					),
+					5 * MINUTE_IN_SECONDS
+				);
 
 				$module = new AutoUpdatePluginsFilter();
 				$method = new ReflectionMethod( $module, 'initialize' );
 				$method->setAccessible( true );
 				$method->invoke( $module );
 
-				foreach ( array_merge( $recipient_hooks, $send_hooks ) as $hook ) {
-					Assert::assertSame(
-						$with_recipient,
-						has_filter( $hook ),
-						$with_recipient ? "$hook should be filtered once a recipient is configured." : "$hook must be left alone without a recipient."
-					);
-				}
+				$blocked = (object) array(
+					'plugin' => 'akismet/akismet.php',
+					'slug'   => 'akismet',
+				);
+				Assert::assertFalse( apply_filters( 'auto_update_plugin', true, $blocked ), 'A centrally blocked plugin must not update when cron runs inside a page view.' );
+
+				set_transient( 'wpcpmsp_auto_update_settings', (object) array( 'disable_all' => true ), 5 * MINUTE_IN_SECONDS );
+				$module = new AutoUpdatePluginsFilter();
+				$method->invoke( $module );
+				Assert::assertFalse( apply_filters( 'auto_update_theme', true, (object) array( 'theme' => 'twentytwentyfive' ) ), 'The kill switch must hold when cron runs inside a page view.' );
 			}
-		} finally {
-			foreach ( $snapshot as $hook => $value ) {
-				if ( null === $value ) {
-					unset( $GLOBALS['wp_filter'][ $hook ] );
-				} else {
-					$GLOBALS['wp_filter'][ $hook ] = $value;
-				}
-			}
-			$this->reset_settings_storage();
-		}
+		);
 	}
 
 	/**
@@ -588,34 +598,8 @@ class AutoupdatesTestCest {
 	}
 
 	/**
-	 * Auto-update context gating returns false on a front-end request and true during cron.
-	 *
-	 * @param IntegrationTester $i Tester instance.
-	 *
-	 * @return void
-	 */
-	public function autoupdate_context_gating_distinguishes_request_types( IntegrationTester $i ): void {
-		$module = new AutoUpdatePluginsFilter();
-		$method = new ReflectionMethod( $module, 'is_autoupdate_context' );
-		$method->setAccessible( true );
-
-		// Front-end request: none of the three contexts apply.
-		Assert::assertFalse( is_admin(), 'Test precondition: not an admin request.' );
-		Assert::assertFalse( wp_doing_cron(), 'Test precondition: not a cron request.' );
-		Assert::assertFalse( defined( 'WP_CLI' ) && WP_CLI, 'Test precondition: not a WP-CLI request.' );
-		Assert::assertFalse( $method->invoke( $module ), 'A front-end request is not an autoupdate context.' );
-
-		// Cron request: wp_doing_cron() is filterable, so simulate it without loading admin includes.
-		add_filter( 'wp_doing_cron', '__return_true' );
-		try {
-			Assert::assertTrue( $method->invoke( $module ), 'A cron request is an autoupdate context.' );
-		} finally {
-			remove_filter( 'wp_doing_cron', '__return_true' );
-		}
-	}
-
-	/**
-	 * On a front-end request, initialize() short-circuits before fetching the centralized settings.
+	 * On a front-end request, initialize() registers the filters without fetching the centralized
+	 * settings: they are only fetched once an update needs them.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
@@ -633,10 +617,15 @@ class AutoupdatesTestCest {
 		add_filter( 'pre_http_request', $count_http, 10, 3 );
 
 		try {
-			$module = new AutoUpdatePluginsFilter();
-			$method = new ReflectionMethod( $module, 'initialize' );
-			$method->setAccessible( true );
-			$method->invoke( $module );
+			$this->with_isolated_hooks(
+				array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'upgrader_process_complete', 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email', 'send_core_update_notification_email', 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email' ),
+				function (): void {
+					$module = new AutoUpdatePluginsFilter();
+					$method = new ReflectionMethod( $module, 'initialize' );
+					$method->setAccessible( true );
+					$method->invoke( $module );
+				}
+			);
 
 			Assert::assertSame( 0, $http_calls, 'No remote request should be made on a front-end request.' );
 			Assert::assertFalse( get_transient( 'wpcpmsp_auto_update_settings' ), 'No settings transient should be written on a front-end request.' );
@@ -952,5 +941,38 @@ class AutoupdatesTestCest {
 		$property   = $reflection->getProperty( 'settings' );
 		$property->setAccessible( true );
 		$property->setValue( $module, $settings );
+	}
+
+	/**
+	 * Runs a callback with the given hooks emptied, restoring them afterwards.
+	 *
+	 * initialize() hooks into the global filters, and so does the module instance the plugin
+	 * itself loaded. Emptying them keeps that instance out of the test and the test's out of
+	 * every other test.
+	 *
+	 * @param string[] $hooks    The hooks to isolate.
+	 * @param callable $callback The test body.
+	 *
+	 * @return void
+	 */
+	private function with_isolated_hooks( array $hooks, callable $callback ): void {
+		$snapshot = array();
+		foreach ( $hooks as $hook ) {
+			$snapshot[ $hook ] = isset( $GLOBALS['wp_filter'][ $hook ] ) ? clone $GLOBALS['wp_filter'][ $hook ] : null;
+			unset( $GLOBALS['wp_filter'][ $hook ] );
+		}
+
+		try {
+			$callback();
+		} finally {
+			foreach ( $snapshot as $hook => $value ) {
+				if ( null === $value ) {
+					unset( $GLOBALS['wp_filter'][ $hook ] );
+				} else {
+					$GLOBALS['wp_filter'][ $hook ] = $value;
+				}
+			}
+			$this->reset_settings_storage();
+		}
 	}
 }

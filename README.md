@@ -216,8 +216,8 @@ wp atlantis site settings-url --clear
 
 The endpoint must answer a `GET` with a JSON object holding any of the keys
 listed under [Autoupdates](#autoupdates). The module asks with a two-second
-timeout, caches the answer for five minutes, and only asks during admin, WP-Cron
-and WP-CLI requests.
+timeout, caches the answer for five minutes, and only asks in wp-admin or when an
+update is being decided, so a front-end request that runs no update never does.
 
 ## Runtime Interfaces
 

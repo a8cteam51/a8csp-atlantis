@@ -20,13 +20,14 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 	/**
 	 * Settings fetched from the centralized endpoint, or default ones when none is configured or the fetch fails.
+	 * Null until something first needs them; see {@see self::get_settings()}.
 	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.5.2
 	 *
-	 * @var \stdClass
+	 * @var \stdClass|null
 	 */
-	private \stdClass $settings;
+	private ?\stdClass $settings = null;
 
 	/**
 	 * Option holding the last payload successfully fetched from the centralized endpoint.
@@ -94,16 +95,79 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	/**
 	 * {@inheritDoc}
 	 *
+	 * The update filters are registered on every request, not only in admin, WP-Cron and WP-CLI
+	 * ones. Core consults them wherever an auto-update runs, and that is not always a request
+	 * that looked like one when the module loaded: with `ALTERNATE_WP_CRON`, cron runs inside an
+	 * ordinary page view, after `plugins_loaded`. The centralized settings are fetched the first
+	 * time a filter needs them, so a front-end request that runs no update never fetches them.
+	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.5.2
 	 */
 	protected function initialize(): void {
-		// Autoupdate hooks only fire in admin or during cron/CLI update runs — skip front-end requests entirely.
-		if ( ! $this->is_autoupdate_context() ) {
+		// setup plugins and core to autoupdate _unless_ it's during specific day/time
+		add_filter( 'auto_update_plugin', array( $this, 'filter_auto_update_specific_times' ), 10, 2 );
+		add_filter( 'auto_update_core', array( $this, 'filter_auto_update_core' ), 10, 2 );
+
+		// enforce a delay on all plugin autoupdates, based on release date
+		add_filter( 'auto_update_plugin', array( $this, 'filter_enforce_delay' ), 11, 2 );
+
+		// Route update emails to the recipient the centralized settings name. Each callback leaves
+		// the email alone when they name none: who receives update emails and whether they are sent
+		// at all is then left to core and the host.
+		add_filter( 'auto_plugin_theme_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
+		add_filter( 'auto_core_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
+		add_filter( 'automatic_updates_debug_email', array( $this, 'filter_custom_debug_email' ), 10, 3 );
+		add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 2 );
+
+		// re-enable core update emails which are disabled in an mu-plugin at the Atomic platform level
+		add_filter( 'automatic_updates_send_debug_email', array( $this, 'filter_send_update_email' ), 11 );
+		add_filter( 'auto_core_update_send_email', array( $this, 'filter_send_update_email' ), 11 );
+		add_filter( 'auto_plugin_update_send_email', array( $this, 'filter_send_update_email' ), 11 );
+		add_filter( 'auto_theme_update_send_email', array( $this, 'filter_send_update_email' ), 11 );
+
+		// "Disable all autoupdates" toggle
+		add_filter( 'auto_update_plugin', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
+		add_filter( 'auto_update_core', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
+		add_filter( 'auto_update_theme', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
+
+		// Clean-up delay data after a plugin is updated
+		add_action( 'upgrader_process_complete', array( $this, 'cleanup_plugin_delay_after_update_complete' ), 10, 2 );
+
+		if ( ! is_admin() ) {
 			return;
 		}
 
-		// get the centralized settings, when an endpoint is configured
+		$plugin_filter_admin_ui = new PluginFilterAdminUI( $this->get_settings() );
+
+		// Replace automatic update wording on plugin management page in admin
+		add_filter( 'plugin_auto_update_setting_html', array( $plugin_filter_admin_ui, 'filter_custom_setting_html' ), 11, 3 );
+
+		// Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
+		add_action( 'admin_init', array( $this, 'output_upgrade_message_for_specific_plugins' ) );
+		add_action( 'admin_init', array( $plugin_filter_admin_ui, 'maybe_handle_plugin_filter_toggle_request' ) );
+		add_action( 'admin_notices', array( $plugin_filter_admin_ui, 'output_plugin_filter_toggle_admin_notice' ) );
+		add_action( 'admin_init', array( $this, 'output_auto_updates_disabled_admin_notice' ) );
+	}
+
+	// endregion
+
+	/**
+	 * Returns the centralized settings, fetching them the first time they are needed.
+	 *
+	 * When they cannot be fetched and there is no last known good payload, every autoupdate is
+	 * refused.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @return  \stdClass
+	 */
+	private function get_settings(): \stdClass {
+		if ( null !== $this->settings ) {
+			return $this->settings;
+		}
+
 		try {
 			$this->settings = $this->get_auto_update_settings();
 		} catch ( \Exception $exception ) {
@@ -118,57 +182,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			);
 		}
 
-		$plugin_filter_admin_ui = new PluginFilterAdminUI( $this->settings );
-
-		// setup plugins and core to autoupdate _unless_ it's during specific day/time
-		add_filter( 'auto_update_plugin', array( $this, 'filter_auto_update_specific_times' ), 10, 2 );
-		add_filter( 'auto_update_core', array( $this, 'filter_auto_update_core' ), 10, 2 );
-
-		// enforce a delay on all plugin autoupdates, based on release date
-		add_filter( 'auto_update_plugin', array( $this, 'filter_enforce_delay' ), 11, 2 );
-
-		// Replace automatic update wording on plugin management page in admin
-		add_filter( 'plugin_auto_update_setting_html', array( $plugin_filter_admin_ui, 'filter_custom_setting_html' ), 11, 3 );
-
-		// Append text to upgrade text on plugins page for plugins explicitly set to not autoupdate
-		add_action( 'admin_init', array( $this, 'output_upgrade_message_for_specific_plugins' ) );
-		add_action( 'admin_init', array( $plugin_filter_admin_ui, 'maybe_handle_plugin_filter_toggle_request' ) );
-		add_action( 'admin_notices', array( $plugin_filter_admin_ui, 'output_plugin_filter_toggle_admin_notice' ) );
-
-		// Only when the centralized settings name a recipient: without one, who receives update
-		// emails and whether they are sent at all is left to core and the host.
-		if ( '' !== $this->get_notification_recipient() ) {
-			add_filter( 'auto_plugin_theme_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
-			add_filter( 'auto_core_update_email', array( $this, 'filter_custom_update_emails' ), 10, 4 );
-			add_filter( 'automatic_updates_debug_email', array( $this, 'filter_custom_debug_email' ), 10, 3 );
-			add_filter( 'send_core_update_notification_email', array( $this, 'filter_core_update_notification_email' ), 10, 2 );
-
-			// re-enable core update emails which are disabled in an mu-plugin at the Atomic platform level
-			add_filter( 'automatic_updates_send_debug_email', '__return_true', 11 );
-			add_filter( 'auto_core_update_send_email', '__return_true', 11 );
-			add_filter( 'auto_plugin_update_send_email', '__return_true', 11 );
-			add_filter( 'auto_theme_update_send_email', '__return_true', 11 );
-		}
-
-		// "Disable all autoupdates" toggle
-		add_filter( 'auto_update_plugin', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
-		add_filter( 'auto_update_core', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
-		add_filter( 'auto_update_theme', array( $this, 'filter_maybe_disable_all_autoupdates' ), PHP_INT_MAX, 2 );
-		add_action( 'admin_init', array( $this, 'output_auto_updates_disabled_admin_notice' ) );
-
-		// Clean-up delay data after a plugin is updated
-		add_action( 'upgrader_process_complete', array( $this, 'cleanup_plugin_delay_after_update_complete' ), 10, 2 );
-	}
-
-	// endregion
-
-	/**
-	 * Whether WordPress evaluates auto-update decisions in the current request (admin, WP-Cron, or WP-CLI).
-	 *
-	 * @return  bool
-	 */
-	private function is_autoupdate_context(): bool {
-		return is_admin() || wp_doing_cron() || ( defined( 'WP_CLI' ) && WP_CLI );
+		return $this->settings;
 	}
 
 	/**
@@ -358,7 +372,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return  string
 	 */
 	private function get_notification_recipient(): string {
-		$recipient = $this->settings->notification_email ?? '';
+		$recipient = $this->get_settings()->notification_email ?? '';
 		if ( ! \is_string( $recipient ) ) {
 			return '';
 		}
@@ -450,8 +464,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * Reports whether the site is currently refusing all autoupdates because the centralized
 	 * settings could not be fetched.
 	 *
-	 * Reads from storage rather than the module's own settings, because the REST status request
-	 * is not an autoupdate context and so never runs `initialize()`.
+	 * Reads from storage rather than the module's own settings, because the module only fetches
+	 * them once an update needs them, which the REST status request never does.
 	 *
 	 * A site with no endpoint configured never fetches, so it cannot fail closed.
 	 *
@@ -501,7 +515,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return bool True to update, false to not update.
 	 */
 	public function filter_maybe_disable_all_autoupdates( $update, $item = null ): bool {
-		if ( isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
+		$settings = $this->get_settings();
+		if ( isset( $settings->disable_all ) && true === $settings->disable_all ) {
 			return false;
 		}
 
@@ -539,7 +554,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		// no delay if site is a canary site
 		$site_url = wp_parse_url( home_url(), PHP_URL_HOST );
-		if ( isset( $this->settings->canary_sites ) && in_array( $site_url, $this->settings->canary_sites, true ) ) {
+		$settings = $this->get_settings();
+		if ( isset( $settings->canary_sites ) && in_array( $site_url, $settings->canary_sites, true ) ) {
 			return $update;
 		}
 
@@ -625,8 +641,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * Skip the "core update available" email where core files are read-only.
 	 *
 	 * Turning a core update down makes WordPress offer it by email instead. Where the host updates
-	 * core itself, that email would arrive for every release the host applies anyway. Only hooked
-	 * when a recipient is configured, so other sites keep core's email to their own administrator.
+	 * core itself, that email would arrive for every release the host applies anyway. Only when a
+	 * recipient is configured, so other sites keep core's email to their own administrator.
 	 *
 	 * @param bool        $notify Whether the site administrator is notified.
 	 * @param object|null $item   The core update offer.
@@ -634,7 +650,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 * @return bool
 	 */
 	public function filter_core_update_notification_email( $notify, $item = null ): bool {
-		if ( ! self::core_files_are_writable( $item ) ) {
+		if ( '' !== $this->get_notification_recipient() && ! self::core_files_are_writable( $item ) ) {
 			return false;
 		}
 
@@ -664,6 +680,22 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 
 		// The first file a core update copies; its failure is `copy_failed_for_update_core_file`.
 		return wp_is_writable( ABSPATH . 'wp-admin/includes/update-core.php' );
+	}
+
+	/**
+	 * Sends auto-update emails when the centralized settings name a recipient for them.
+	 *
+	 * Without one, whether they are sent is left to core and the host.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @param   bool $send Whether to send the email.
+	 *
+	 * @return  bool
+	 */
+	public function filter_send_update_email( $send ): bool {
+		return '' !== $this->get_notification_recipient() ? true : (bool) $send;
 	}
 
 	/**
@@ -816,7 +848,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	 */
 	public function output_upgrade_message_for_specific_plugins(): void {
 		// don't show if we are already disabling all updates
-		if ( isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
+		$settings = $this->get_settings();
+		if ( isset( $settings->disable_all ) && true === $settings->disable_all ) {
 			return;
 		}
 
@@ -828,7 +861,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			$slug               = dirname( $plugin_file );
 			$plugin_obj->slug   = $slug;
 			$plugin_obj->plugin = $plugin_file;
-			$plugin_can_update  = ! PluginFilterRules::is_plugin_blocked_from_autoupdates( $plugin_obj, $this->settings );
+			$plugin_can_update  = ! PluginFilterRules::is_plugin_blocked_from_autoupdates( $plugin_obj, $settings );
 			if ( false === $plugin_can_update ) {
 				// add notice next to the "update now" link
 				add_filter(
@@ -879,7 +912,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			return false;
 		}
 
-		return PluginFilterRules::is_plugin_disabled_by_centralized_settings( $plugin_obj, $this->settings );
+		return PluginFilterRules::is_plugin_disabled_by_centralized_settings( $plugin_obj, $this->get_settings() );
 	}
 
 	/**
@@ -888,7 +921,8 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	public function output_auto_updates_disabled_admin_notice(): void {
 		// add notice to the top of the screen
 		global $pagenow;
-		if ( 'plugins.php' === $pagenow && isset( $this->settings->disable_all ) && true === $this->settings->disable_all ) {
+		$settings = $this->get_settings();
+		if ( 'plugins.php' === $pagenow && isset( $settings->disable_all ) && true === $settings->disable_all ) {
 			add_action(
 				'admin_notices',
 				function () {
