@@ -216,14 +216,7 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 					throw new \RuntimeException( wp_kses_post( $response_message ), absint( $response_code ) );
 				}
 
-				$decoded_body = json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR );
-
-				// if the settings are empty, we still need to return an object
-				if ( ! is_object( $decoded_body ) ) {
-					$object              = new \stdClass();
-					$object->placeholder = $decoded_body;
-					$decoded_body        = $object;
-				}
+				$decoded_body = self::validate_settings( json_decode( $response_body, false, 512, JSON_THROW_ON_ERROR ) );
 
 				// Save the settings in a transient for 5 minutes
 				set_transient( $transient_key, $decoded_body, 5 * MINUTE_IN_SECONDS );
@@ -243,6 +236,45 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 				// Negative-cache the fail-safe so a slow/down endpoint cannot block every uncached page load.
 				set_transient( $transient_key, (object) array( 'disable_all' => true ), 5 * MINUTE_IN_SECONDS );
 				throw $exception;
+			}
+		}
+
+		return $settings;
+	}
+
+	/**
+	 * Checks a decoded settings payload, and returns it with `disable_all` as a boolean.
+	 *
+	 * A payload the module cannot read is a failed fetch, not settings. Read as settings, it
+	 * would replace the last known good payload, and a `[]`, or a `"disable_all": "true"` that a
+	 * strict comparison never matches, would lift every block and the kill switch with it.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @param   mixed $settings The decoded response body.
+	 *
+	 * @throws  \RuntimeException When the payload is not a settings object the module can read.
+	 *
+	 * @return  \stdClass
+	 */
+	private static function validate_settings( $settings ): \stdClass {
+		if ( ! $settings instanceof \stdClass ) {
+			throw new \RuntimeException( 'The settings endpoint did not return a JSON object.' );
+		}
+
+		if ( \property_exists( $settings, 'disable_all' ) && ! \is_bool( $settings->disable_all ) ) {
+			$disable_all = \is_scalar( $settings->disable_all ) ? filter_var( $settings->disable_all, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) : null;
+			if ( null === $disable_all ) {
+				throw new \RuntimeException( 'The settings endpoint returned a disable_all that is not a boolean.' );
+			}
+
+			$settings->disable_all = $disable_all;
+		}
+
+		foreach ( array( 'disabled_plugins', 'canary_sites' ) as $key ) {
+			if ( \property_exists( $settings, $key ) && ! \is_array( $settings->$key ) ) {
+				throw new \RuntimeException( 'The settings endpoint returned a ' . esc_html( $key ) . ' that is not a list.' );
 			}
 		}
 
@@ -279,14 +311,16 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 	}
 
 	/**
-	 * Reduces a value to an http(s) URL, or to an empty string when it is not one.
+	 * Reduces a value to an https URL, or to an empty string when it is not one.
 	 *
 	 * The scheme has to be written out. `esc_url_raw()` puts `http://` in front of a bare word,
 	 * which would turn a typo into an endpoint that never answers — and once an endpoint is
-	 * configured, one that never answers stops every autoupdate.
+	 * configured, one that never answers stops every autoupdate. Plain http is refused: whoever
+	 * can answer for the endpoint can lift the kill switch and every block, and choose where
+	 * update emails go.
 	 *
 	 * @since   1.5.0
-	 * @version 1.5.0
+	 * @version 1.5.2
 	 *
 	 * @param   mixed $url The value to sanitize.
 	 *
@@ -298,11 +332,11 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 		}
 
 		$url = trim( $url );
-		if ( 1 !== preg_match( '#^https?://[^/\s]#i', $url ) ) {
+		if ( 1 !== preg_match( '#^https://[^/\s]#i', $url ) ) {
 			return '';
 		}
 
-		return esc_url_raw( $url, array( 'http', 'https' ) );
+		return esc_url_raw( $url, array( 'https' ) );
 	}
 
 	/**

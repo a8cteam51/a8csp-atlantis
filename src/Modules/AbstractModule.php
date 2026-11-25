@@ -200,11 +200,9 @@ abstract class AbstractModule {
 	 */
 	public function register_settings(): void {
 		$option_name = a8csp_atlantis_generate_module_settings_key( $this->get_name() );
-		register_setting(
-			Settings::MODULES_OPTION_GROUP,
-			$option_name,
-			array( 'capability' => Settings::MANAGE_MODULES_CAP )
-		);
+		// Who may save is decided by the group's option_page_capability filter in Settings, not here:
+		// register_setting() takes no capability.
+		register_setting( Settings::MODULES_OPTION_GROUP, $option_name );
 
 		add_settings_section(
 			"{$option_name}_section",

@@ -94,6 +94,15 @@ add_filter(
 			return $reply;
 		}
 
+		// The package comes from the stored update offer, which anything that can write the
+		// update transient can change, so where it points is checked again here.
+		if ( ! is_string( $package ) || ! a8csp_atlantis_is_release_package_url( $package ) ) {
+			return new WP_Error(
+				'a8csp_atlantis_package_not_from_release',
+				__( 'The update does not come from an Atlantis release on GitHub, so it was not installed.', 'a8csp-atlantis' )
+			);
+		}
+
 		$latest_release_info = a8csp_atlantis_get_latest_release();
 		if ( null === $latest_release_info ) {
 			return new WP_Error(
@@ -103,10 +112,6 @@ add_filter(
 		}
 
 		$digest = a8csp_atlantis_get_release_package_digest( $latest_release_info );
-		if ( null === $digest ) {
-			// The release predates GitHub publishing digests, so there is nothing to check.
-			return $reply;
-		}
 
 		$file = download_url( $package );
 		if ( is_wp_error( $file ) ) {

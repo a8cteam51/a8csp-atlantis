@@ -26,14 +26,18 @@ wp atlantis site settings-url https://example.com/wp-json/example/v1/settings/
 
 The URL is stored in the `a8csp_atlantis_autoupdate_settings_url` option. The `A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL` constant overrides it when defined, and the `a8csp_atlantis_autoupdate_settings_url` filter can change it. There is no need to edit the plugin's code.
 
+The URL must be `https://`: whoever can answer for the endpoint decides the site's updates, so plain `http://` is refused.
+
 The endpoint answers a `GET` with a JSON object. Every key is optional:
 
 | Key | Type | Effect |
 | --- | --- | --- |
-| `disable_all` | `true` | Stops all plugin, theme and core autoupdates. |
+| `disable_all` | `true` (`"true"` and `1` are read the same way) | Stops all plugin, theme and core autoupdates. |
 | `disabled_plugins` | list of plugin files or slugs | Stops autoupdates for those plugins. |
 | `canary_sites` | list of hostnames | Those sites skip the release delay. |
 | `notification_email` | email address | Autoupdate emails go to this address instead of the site's own, and are forced on even where the host turned them off. |
+
+An answer that is not a JSON object, or that holds `disable_all`, `disabled_plugins` or `canary_sites` in a form the module cannot read, counts as a failed fetch, not as settings.
 
 **Once an endpoint is configured, the module fails closed.** If the endpoint cannot be reached, the last payload it fetched is reused for 24 hours (filterable with `a8csp_atlantis_autoupdate_settings_grace`). After that, all autoupdates stop until the endpoint answers again. Only configure an endpoint you intend to keep running.
 

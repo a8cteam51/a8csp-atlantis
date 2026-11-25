@@ -106,17 +106,20 @@ class UpdaterPackageVerificationTestCest {
 	}
 
 	/**
-	 * With no digest published there is nothing to check, and the update must still proceed.
+	 * With no digest published the package cannot be verified, so it must not be installed.
 	 *
 	 * @param IntegrationTester $i Tester instance.
 	 *
 	 * @return void
 	 */
-	public function package_is_accepted_when_no_digest_was_published( IntegrationTester $i ): void {
+	public function package_is_refused_when_no_digest_was_published( IntegrationTester $i ): void {
 		$file = $this->write_temp_file( 'plugin zip contents' );
 
 		try {
-			Assert::assertTrue( a8csp_atlantis_verify_package_digest( $file, null ) );
+			$result = a8csp_atlantis_verify_package_digest( $file, null );
+
+			Assert::assertInstanceOf( WP_Error::class, $result );
+			Assert::assertSame( 'a8csp_atlantis_package_digest_missing', $result->get_error_code() );
 		} finally {
 			wp_delete_file( $file );
 		}
