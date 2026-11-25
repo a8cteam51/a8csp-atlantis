@@ -15,6 +15,8 @@ This module helps WordPress Special Projects team monitor and collect usage data
 
 Overriding a site owner's tracking choices is a decision the team makes for its own sites, so the WooCommerce and Sensei integrations only run on a site marked as managed (`wp atlantis site managed on`, see the root README). On any other site they do nothing and both settings stay as the owner set them.
 
+Where WooCommerce tracking is forced on, its checkbox under WooCommerce > Settings > Advanced > WooCommerce.com is shown ticked and locked, with a note that Atlantis turned it on because the team manages the site. The choice the store saved is never overwritten, and applies again once the override stops.
+
 Bilmur follows the same rule on WordPress.com, where the platform already collects RUM data and all this module adds is a tag saying the site is a Special Projects one. Elsewhere Bilmur is opt-in through the constants below, whether or not the site is managed.
 
 ## Usage

@@ -122,7 +122,9 @@ The Tracking module only runs in production environments. On a
 [managed site](#managed-sites) it automatically opts supported integrations into
 usage or real-user monitoring:
 
-- WooCommerce via `option_woocommerce_allow_tracking`.
+- WooCommerce via `option_woocommerce_allow_tracking`. Its tracking checkbox under
+  WooCommerce > Settings > Advanced > WooCommerce.com is shown ticked and locked,
+  with a note saying Atlantis turned it on, and the store's saved choice is kept.
 - Sensei via the `sensei-settings` option.
 - Bilmur via `https://s0.wp.com/wp-content/js/bilmur.min.js` and related RUM
   metadata.
