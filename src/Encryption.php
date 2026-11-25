@@ -364,11 +364,11 @@ class Encryption {
 	 * Returns the WP_Filesystem instance.
 	 *
 	 * @since   1.0.0
-	 * @version 1.0.0
+	 * @version 1.5.2
 	 *
 	 * @return  \WP_Filesystem_Base|null
 	 */
-	private function get_wp_filesystem(): ?\WP_Filesystem_Base {
+	protected function get_wp_filesystem(): ?\WP_Filesystem_Base {
 		global $wp_filesystem;
 
 		if ( ! \function_exists( 'WP_Filesystem' ) ) {

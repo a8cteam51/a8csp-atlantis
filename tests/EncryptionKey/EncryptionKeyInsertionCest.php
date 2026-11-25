@@ -139,6 +139,47 @@ class EncryptionKeyInsertionCest {
 	}
 
 	/**
+	 * A write the filesystem reports as done but that never reached the file must not be
+	 * recorded: the flag stops any retry and turns the missing key into the lost-key notice.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function lost_write_is_not_recorded_as_inserted( IntegrationTester $i ): void {
+		$this->log_in_administrator();
+
+		if ( ! class_exists( 'WP_Filesystem_Direct' ) ) {
+			/* @phpstan-ignore requireOnce.fileNotFound */
+			require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+			/* @phpstan-ignore requireOnce.fileNotFound */
+			require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+		}
+		$filesystem = new class( null ) extends WP_Filesystem_Direct {
+			/**
+			 * Reports success without writing anything.
+			 *
+			 * @param string    $file     Path to the file.
+			 * @param string    $contents Contents to write.
+			 * @param int|false $mode     File permissions.
+			 *
+			 * @return bool
+			 */
+			public function put_contents( $file, $contents, $mode = false ) {
+				return true;
+			}
+		};
+
+		$this->encryption( $filesystem )->maybe_auto_insert_encryption_key();
+
+		Assert::assertSame( self::CONFIG, $this->read_config() );
+		Assert::assertFalse(
+			get_option( 'a8csp_atlantis_inserted_encryption_key' ),
+			'The key never reached the file, so it must not be recorded as inserted.'
+		);
+	}
+
+	/**
 	 * While another request holds the lock, this one must leave the file to it.
 	 *
 	 * @param IntegrationTester $i Tester instance.
@@ -182,22 +223,32 @@ class EncryptionKeyInsertionCest {
 	/**
 	 * Returns an Encryption instance that writes to the throwaway config file.
 	 *
+	 * @param WP_Filesystem_Base|null $filesystem The filesystem to write with, or null for the real one.
+	 *
 	 * @return Encryption
 	 */
-	private function encryption(): Encryption {
-		return new class( $this->config_path ) extends Encryption {
+	private function encryption( ?WP_Filesystem_Base $filesystem = null ): Encryption {
+		return new class( $this->config_path, $filesystem ) extends Encryption {
 			/**
 			 * Constructor.
 			 *
-			 * @param string $path Path of the config file to write.
+			 * @param string                  $path       Path of the config file to write.
+			 * @param WP_Filesystem_Base|null $filesystem The filesystem to write with, or null for the real one.
 			 */
-			public function __construct( private string $path ) {}
+			public function __construct( private string $path, private ?WP_Filesystem_Base $filesystem ) {}
 
 			/**
 			 * {@inheritDoc}
 			 */
 			protected function get_wp_config_path(): ?string {
 				return $this->path;
+			}
+
+			/**
+			 * {@inheritDoc}
+			 */
+			protected function get_wp_filesystem(): ?WP_Filesystem_Base {
+				return $this->filesystem ?? parent::get_wp_filesystem();
 			}
 		};
 	}
