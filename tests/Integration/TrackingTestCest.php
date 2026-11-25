@@ -237,6 +237,51 @@ class TrackingTestCest {
 	}
 
 	/**
+	 * A store that never saved WooCommerce's tracking setting has no row for it. Tracking must be
+	 * forced on there too, or the forced field would claim something that is not so.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function woocommerce_tracking_is_forced_when_the_option_was_never_saved( IntegrationTester $i ): void {
+		$hooks    = array( 'option_woocommerce_allow_tracking', 'default_option_woocommerce_allow_tracking', 'woocommerce_com_integration_settings', 'woocommerce_admin_field_' . WooCommerce::FORCED_TRACKING_FIELD_TYPE, 'woocommerce_settings_save_advanced' );
+		$snapshot = array();
+		foreach ( $hooks as $hook ) {
+			$snapshot[ $hook ] = $GLOBALS['wp_filter'][ $hook ] ?? null;
+			unset( $GLOBALS['wp_filter'][ $hook ] );
+		}
+
+		$seen = null;
+		$read = static function () use ( &$seen ) {
+			$seen = get_option( 'woocommerce_allow_tracking', 'no' );
+		};
+
+		try {
+			delete_option( 'woocommerce_allow_tracking' );
+
+			$woocommerce = new WooCommerce();
+			$woocommerce->maybe_initialize();
+
+			Assert::assertSame( 'yes', get_option( 'woocommerce_allow_tracking' ) );
+			Assert::assertSame( 'yes', get_option( 'woocommerce_allow_tracking', 'no' ) );
+			Assert::assertSame( 'no', $woocommerce->get_stored_choice(), 'The store has not chosen anything, so its choice reads as no.' );
+
+			add_action( 'woocommerce_settings_save_advanced', $read );
+			do_action( 'woocommerce_settings_save_advanced' );
+			Assert::assertSame( 'no', $seen, 'The override must step aside while WooCommerce saves, as it does for a saved choice.' );
+		} finally {
+			foreach ( $snapshot as $hook => $value ) {
+				if ( null === $value ) {
+					unset( $GLOBALS['wp_filter'][ $hook ] );
+				} else {
+					$GLOBALS['wp_filter'][ $hook ] = $value;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Ensure integration activation defaults stay enabled when constants are undefined.
 	 *
 	 * @param IntegrationTester $i Tester instance.

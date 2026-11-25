@@ -58,6 +58,8 @@ class WooCommerce extends AbstractIntegration {
 	 */
 	protected function initialize(): void {
 		add_filter( 'option_woocommerce_allow_tracking', array( $this, 'filter_allow_tracking' ), PHP_INT_MAX );
+		// Core skips the filter above when the option was never saved.
+		add_filter( 'default_option_woocommerce_allow_tracking', array( $this, 'filter_allow_tracking' ), PHP_INT_MAX );
 
 		// Say so where the store owner would turn tracking off, instead of showing a checkbox that
 		// does nothing.
