@@ -323,9 +323,22 @@ function a8csp_atlantis_is_usable_release( $release ): bool {
  * @return  bool
  */
 function a8csp_atlantis_is_release_package_url( string $url ): bool {
-	$prefix = 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/';
+	$prefix = '/a8cteam51/a8csp-atlantis/releases/download/';
+	$parts  = wp_parse_url( $url );
 
-	return str_starts_with( $url, $prefix ) && strlen( $url ) > strlen( $prefix ) && ! str_contains( $url, '/../' );
+	if ( ! is_array( $parts ) || 'https' !== ( $parts['scheme'] ?? '' ) || 'github.com' !== ( $parts['host'] ?? '' ) ) {
+		return false;
+	}
+
+	// Nothing but a plain path: no credentials, port, query or fragment, and no way to climb out
+	// of the releases, encoded or not.
+	if ( array() !== array_diff( array_keys( $parts ), array( 'scheme', 'host', 'path' ) ) ) {
+		return false;
+	}
+
+	$path = $parts['path'] ?? '';
+
+	return str_starts_with( $path, $prefix ) && strlen( $path ) > strlen( $prefix ) && ! str_contains( $path, '/../' ) && ! str_contains( $path, '%' );
 }
 
 /**

@@ -37,7 +37,7 @@ The endpoint answers a `GET` with a JSON object. Every key is optional:
 | `canary_sites` | list of hostnames | Those sites skip the release delay. |
 | `notification_email` | email address | Autoupdate emails go to this address instead of the site's own, and are forced on even where the host turned them off. |
 
-An answer that is not a JSON object, or that holds `disable_all`, `disabled_plugins` or `canary_sites` in a form the module cannot read, counts as a failed fetch, not as settings.
+An answer that is not a JSON object, or that holds `disable_all`, `disabled_plugins` or `canary_sites` in a form the module cannot read, counts as a failed fetch, not as settings. A key set to `null` is read as missing.
 
 **Once an endpoint is configured, the module fails closed.** If the endpoint cannot be reached, the last payload it fetched is reused for 24 hours (filterable with `a8csp_atlantis_autoupdate_settings_grace`). After that, all autoupdates stop until the endpoint answers again. Only configure an endpoint you intend to keep running.
 

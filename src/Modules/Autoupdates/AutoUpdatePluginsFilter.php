@@ -263,6 +263,9 @@ class AutoUpdatePluginsFilter extends AbstractModule {
 			throw new \RuntimeException( 'The settings endpoint did not return a JSON object.' );
 		}
 
+		// Every key is optional, and a null one is read as missing, as it always has been.
+		$settings = (object) \array_filter( \get_object_vars( $settings ), static fn( $value ) => null !== $value );
+
 		if ( \property_exists( $settings, 'disable_all' ) && ! \is_bool( $settings->disable_all ) ) {
 			$disable_all = \is_scalar( $settings->disable_all ) ? filter_var( $settings->disable_all, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE ) : null;
 			if ( null === $disable_all ) {

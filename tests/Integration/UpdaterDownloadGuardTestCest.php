@@ -137,7 +137,7 @@ class UpdaterDownloadGuardTestCest {
 		add_filter( 'pre_http_request', $counter, 10, 3 );
 
 		try {
-			foreach ( array( 'https://example.test/build.zip', 'http://github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://github.com/someone-else/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/' ) as $package ) {
+			foreach ( array( 'https://example.test/build.zip', 'http://github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://github.com/someone-else/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/%2e%2e/%2e%2e/%2e%2e/someone-else/build.zip', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip?redirect=https://example.test/', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip#x', 'https://github.com:8443/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://user@github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip' ) as $package ) {
 				$result = apply_filters(
 					'upgrader_pre_download',
 					false,

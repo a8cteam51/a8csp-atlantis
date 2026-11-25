@@ -799,6 +799,35 @@ class AutoupdatesTestCest {
 	}
 
 	/**
+	 * Every key is optional, and an endpoint that writes a missing one as null must not have its
+	 * payload thrown away as malformed.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function null_keys_are_read_as_missing( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+		$this->store_last_known_good( array( 'disabled_plugins' => array( 'akismet/akismet.php' ) ), time() - HOUR_IN_SECONDS );
+
+		$respond = $this->raw_http_response( '{"disable_all":null,"disabled_plugins":null,"canary_sites":null}' );
+		add_filter( 'pre_http_request', $respond, 10, 3 );
+
+		try {
+			$module   = new AutoUpdatePluginsFilter();
+			$settings = $this->fetch_settings( $module );
+
+			Assert::assertEquals( new stdClass(), $settings, 'Null keys must be read as missing, not as a failed fetch.' );
+
+			$this->set_module_settings( $module, $settings );
+			Assert::assertTrue( $module->filter_maybe_disable_all_autoupdates( true ), 'A null kill switch must not stop updates.' );
+		} finally {
+			remove_filter( 'pre_http_request', $respond, 10 );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
 	 * A brief outage must reuse the last known good payload rather than stopping every update.
 	 *
 	 * @param IntegrationTester $i Tester instance.
