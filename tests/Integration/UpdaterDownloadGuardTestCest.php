@@ -121,6 +121,42 @@ class UpdaterDownloadGuardTestCest {
 	}
 
 	/**
+	 * A package that does not come from this plugin's GitHub releases is refused before anything
+	 * is downloaded, whatever the stored update offer says.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function package_from_elsewhere_is_refused( IntegrationTester $i ): void {
+		$calls   = 0;
+		$counter = static function ( $pre ) use ( &$calls ) {
+			++$calls;
+			return new WP_Error( 'unexpected', 'Nothing may be fetched for a package from elsewhere.' );
+		};
+		add_filter( 'pre_http_request', $counter, 10, 3 );
+
+		try {
+			foreach ( array( 'https://example.test/build.zip', 'http://github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://github.com/someone-else/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/%2e%2e/%2e%2e/%2e%2e/someone-else/build.zip', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip?redirect=https://example.test/', 'https://github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip#x', 'https://github.com:8443/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip', 'https://user@github.com/a8cteam51/a8csp-atlantis/releases/download/v9.9.9/build.zip' ) as $package ) {
+				$result = apply_filters(
+					'upgrader_pre_download',
+					false,
+					$package,
+					null,
+					array( 'plugin' => A8CSP_ATLANTIS_BASENAME )
+				);
+
+				Assert::assertInstanceOf( WP_Error::class, $result, "$package must be refused." );
+				Assert::assertSame( 'a8csp_atlantis_package_not_from_release', $result->get_error_code() );
+			}
+
+			Assert::assertSame( 0, $calls );
+		} finally {
+			remove_filter( 'pre_http_request', $counter, 10 );
+		}
+	}
+
+	/**
 	 * Returns a `pre_http_request` callback serving a release with a digest.
 	 *
 	 * @return callable

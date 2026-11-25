@@ -95,6 +95,7 @@ Guardrails:
 - **Never hard-code a team address, endpoint or email** in this repository. The Autoupdates module has no built-in settings endpoint: it reads one from the `a8csp_atlantis_autoupdate_settings_url` option (or constant/filter), and with none it makes no remote request and never fails closed. The update-email recipient comes from that endpoint's payload (`notification_email`).
 - New behaviour that reaches outside the site, overrides an owner's setting, or names the team is unmanaged-off by default.
 - The status REST payload reports `plugin.managed` and `modules.autoupdates.settings_url_configured`; it must never include the endpoint URL.
+- Name new options and transients with the `a8csp_atlantis_` prefix. `Settings::is_protected_option()` keeps options it recognises out of `options.php` saves by anyone who can't manage Atlantis; an option under another name needs adding there.
 
 ### Activation Compatibility
 

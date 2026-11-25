@@ -313,6 +313,35 @@ function a8csp_atlantis_is_usable_release( $release ): bool {
 }
 
 /**
+ * Returns whether a URL is a download from this plugin's own GitHub releases.
+ *
+ * @since   1.5.2
+ * @version 1.5.2
+ *
+ * @param   string $url The URL to check.
+ *
+ * @return  bool
+ */
+function a8csp_atlantis_is_release_package_url( string $url ): bool {
+	$prefix = '/a8cteam51/a8csp-atlantis/releases/download/';
+	$parts  = wp_parse_url( $url );
+
+	if ( ! is_array( $parts ) || 'https' !== ( $parts['scheme'] ?? '' ) || 'github.com' !== ( $parts['host'] ?? '' ) ) {
+		return false;
+	}
+
+	// Nothing but a plain path: no credentials, port, query or fragment, and no way to climb out
+	// of the releases, encoded or not.
+	if ( array() !== array_diff( array_keys( $parts ), array( 'scheme', 'host', 'path' ) ) ) {
+		return false;
+	}
+
+	$path = $parts['path'] ?? '';
+
+	return str_starts_with( $path, $prefix ) && strlen( $path ) > strlen( $prefix ) && ! str_contains( $path, '/../' ) && ! str_contains( $path, '%' );
+}
+
+/**
  * Returns the download URL of the zip attached to a GitHub release.
  *
  * Position in the asset list means nothing, so anything else attached to a release — a
@@ -342,7 +371,8 @@ function a8csp_atlantis_get_release_package_url( array $release ): ?string {
 		$content_type = is_string( $asset['content_type'] ?? null ) ? strtolower( $asset['content_type'] ) : '';
 
 		if ( str_ends_with( $name, '.zip' ) || 'application/zip' === $content_type ) {
-			return $asset['browser_download_url'];
+			// The same zip the digest is read from, or nothing: never the next one in the list.
+			return a8csp_atlantis_is_release_package_url( $asset['browser_download_url'] ) ? $asset['browser_download_url'] : null;
 		}
 	}
 
@@ -398,8 +428,12 @@ function a8csp_atlantis_get_release_package_digest( array $release ): ?string {
 /**
  * Checks a downloaded update package against the digest GitHub published for it.
  *
+ * A release with no digest is refused. GitHub publishes one for every asset uploaded since it
+ * started doing so, so only a release older than that, or one served by something other than
+ * GitHub, lacks it.
+ *
  * @since   1.3.1
- * @version 1.3.1
+ * @version 1.5.2
  *
  * @param   string      $file   Path to the downloaded package.
  * @param   string|null $digest Expected lowercase hex SHA-256, or null if none was published.
@@ -408,8 +442,10 @@ function a8csp_atlantis_get_release_package_digest( array $release ): ?string {
  */
 function a8csp_atlantis_verify_package_digest( string $file, ?string $digest ) {
 	if ( null === $digest ) {
-		// Nothing published to check against, so this release cannot be verified either way.
-		return true;
+		return new WP_Error(
+			'a8csp_atlantis_package_digest_missing',
+			__( 'The release publishes no checksum for the update, so it could not be verified and was not installed.', 'a8csp-atlantis' )
+		);
 	}
 
 	$actual = is_readable( $file ) ? hash_file( 'sha256', $file ) : false;

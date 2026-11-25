@@ -214,6 +214,8 @@ wp atlantis site settings-url https://example.com/wp-json/example/v1/settings/
 wp atlantis site settings-url --clear
 ```
 
+The URL must be `https://`; plain `http://` is refused.
+
 The endpoint must answer a `GET` with a JSON object holding any of the keys
 listed under [Autoupdates](#autoupdates). The module asks with a two-second
 timeout, caches the answer for five minutes, and only asks during admin, WP-Cron

@@ -33,6 +33,34 @@ class Settings {
 	 */
 	public const MANAGE_MODULES_CAP = 'a8csp_atlantis_manage_modules';
 
+	/**
+	 * Prefixes of the options, and the transients stored as options, that Atlantis keeps.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @var string[]
+	 */
+	private const PROTECTED_OPTION_PREFIXES = array(
+		'a8csp_atlantis_',
+		'a8csp_module_',
+		'plugin_autoupdate_filter_',
+		'_transient_a8csp_atlantis_',
+		'_transient_timeout_a8csp_atlantis_',
+		'_transient_wpcpmsp_',
+		'_transient_timeout_wpcpmsp_',
+	);
+
+	/**
+	 * Options Atlantis keeps under a name no prefix above covers.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @var string[]
+	 */
+	private const PROTECTED_OPTIONS = array( 'plugin_update_delays' );
+
 	// endregion
 
 	// region METHODS
@@ -53,6 +81,10 @@ class Settings {
 		// options.php saves the settings and applies its own, which defaults to manage_options.
 		add_filter( 'option_page_capability_' . self::MODULES_OPTION_GROUP, array( $this, 'filter_modules_option_page_capability' ) );
 		add_filter( 'user_has_cap', array( $this, 'filter_grant_manage_modules_capability' ), 10, 4 );
+
+		// That only covers this group. options.php saves other groups too, and its All Settings
+		// screen writes whatever option names the request lists, checking only manage_options.
+		add_action( 'load-options.php', array( $this, 'maybe_protect_options' ) );
 	}
 
 	// endregion
@@ -138,6 +170,84 @@ class Settings {
 		}
 
 		return $allcaps;
+	}
+
+	/**
+	 * Keeps Atlantis's own options out of an options.php save by anyone who may not manage Atlantis.
+	 *
+	 * On a managed site, that stops an administrator who is not an Automattician from changing
+	 * through core's screens what the Atlantis screens refuse to let them change, including whether
+	 * the site counts as managed at all. It makes the admin screens' gate consistent; it is not a
+	 * security boundary, since an administrator who can install plugins can change any option.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @return  void
+	 */
+	public function maybe_protect_options(): void {
+		// Only a save posts an option page; options.php verifies its nonce itself.
+		if ( ! isset( $_POST['option_page'] ) || current_user_can( self::MANAGE_MODULES_CAP ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			return;
+		}
+
+		add_filter( 'pre_update_option', array( $this, 'filter_keep_protected_option' ), PHP_INT_MAX, 3 );
+	}
+
+	/**
+	 * Hands back the stored value of an Atlantis option, so that saving it changes nothing.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @param   mixed  $value     The value being saved.
+	 * @param   string $option    The option name.
+	 * @param   mixed  $old_value The stored value.
+	 *
+	 * @return  mixed
+	 */
+	public function filter_keep_protected_option( $value, string $option, $old_value ) {
+		if ( ! self::is_protected_option( $option ) ) {
+			return $value;
+		}
+
+		if ( $value !== $old_value ) {
+			add_settings_error(
+				'general',
+				'a8csp_atlantis_protected_option',
+				__( 'Atlantis settings can only be changed by someone who can manage Atlantis, so they were left as they were.', 'a8csp-atlantis' )
+			);
+		}
+
+		return $old_value;
+	}
+
+	// endregion
+
+	// region HELPERS
+
+	/**
+	 * Returns whether an option is one Atlantis keeps.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @param   string $option The option name.
+	 *
+	 * @return  bool
+	 */
+	public static function is_protected_option( string $option ): bool {
+		if ( \in_array( $option, self::PROTECTED_OPTIONS, true ) ) {
+			return true;
+		}
+
+		foreach ( self::PROTECTED_OPTION_PREFIXES as $prefix ) {
+			if ( \str_starts_with( $option, $prefix ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	// endregion

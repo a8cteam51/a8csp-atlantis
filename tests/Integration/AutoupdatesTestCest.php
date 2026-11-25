@@ -262,7 +262,8 @@ class AutoupdatesTestCest {
 		Assert::assertSame( self::SETTINGS_URL, AutoUpdatePluginsFilter::get_settings_endpoint(), 'Surrounding whitespace is not part of the URL.' );
 
 		// A bare host is refused too: read as a URL it would be an endpoint that never answers.
-		foreach ( array( '', 'javascript:alert(1)', 'ftp://settings.test/settings', 'settings.test/settings', 'not-a-url', 'https://', array( self::SETTINGS_URL ) ) as $invalid ) {
+		// So is plain http: whoever can answer for the endpoint decides the site's updates.
+		foreach ( array( '', 'javascript:alert(1)', 'ftp://settings.test/settings', 'settings.test/settings', 'not-a-url', 'https://', 'http://settings.test/settings', array( self::SETTINGS_URL ) ) as $invalid ) {
 			update_option( 'a8csp_atlantis_autoupdate_settings_url', $invalid );
 			Assert::assertSame( '', AutoUpdatePluginsFilter::get_settings_endpoint() );
 		}
@@ -714,6 +715,119 @@ class AutoupdatesTestCest {
 	}
 
 	/**
+	 * A payload the module cannot read is a failed fetch: the last known good settings stay in
+	 * force and stay stored, instead of being replaced by something read as "no restrictions".
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function malformed_payload_is_a_failed_fetch_not_settings( IntegrationTester $i ): void {
+		$malformed = array(
+			'an empty list'              => '[]',
+			'null'                       => 'null',
+			'a string'                   => '"ok"',
+			'an unreadable disable_all'  => '{"disable_all":"maybe","disabled_plugins":[]}',
+			'a disable_all list'         => '{"disable_all":[true],"disabled_plugins":[]}',
+			'a disabled_plugins string'  => '{"disabled_plugins":"hello-dolly/hello.php"}',
+			'a disabled_plugins object'  => '{"disabled_plugins":{"0":"hello-dolly/hello.php"}}',
+			'a canary_sites string'      => '{"canary_sites":"example.org","disabled_plugins":[]}',
+		);
+
+		foreach ( $malformed as $label => $body ) {
+			$this->reset_settings_storage();
+			$this->store_last_known_good( array( 'disabled_plugins' => array( 'akismet/akismet.php' ) ), time() - HOUR_IN_SECONDS );
+			$stored = get_option( 'a8csp_atlantis_autoupdate_last_good_settings' );
+
+			$respond = $this->raw_http_response( $body );
+			add_filter( 'pre_http_request', $respond, 10, 3 );
+
+			try {
+				$settings = $this->fetch_settings( new AutoUpdatePluginsFilter() );
+
+				Assert::assertIsObject( $settings, "A payload holding $label must fall back to the last known good settings." );
+				Assert::assertSame( array( 'akismet/akismet.php' ), (array) $settings->disabled_plugins, "A payload holding $label must not lift the blocks." );
+				Assert::assertEquals( $stored, get_option( 'a8csp_atlantis_autoupdate_last_good_settings' ), "A payload holding $label must not replace the last known good settings." );
+			} finally {
+				remove_filter( 'pre_http_request', $respond, 10 );
+			}
+		}
+
+		$this->reset_settings_storage();
+	}
+
+	/**
+	 * A kill switch written as a string or a number still stops updates, and one that says
+	 * false in any of those forms does not.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function disable_all_is_read_as_a_boolean( IntegrationTester $i ): void {
+		$cases = array(
+			'{"disable_all":true}'    => true,
+			'{"disable_all":"true"}'  => true,
+			'{"disable_all":1}'       => true,
+			'{"disable_all":"1"}'     => true,
+			'{"disable_all":false}'   => false,
+			'{"disable_all":"false"}' => false,
+			'{"disable_all":0}'       => false,
+		);
+
+		foreach ( $cases as $body => $expected ) {
+			$this->reset_settings_storage();
+
+			$respond = $this->raw_http_response( $body );
+			add_filter( 'pre_http_request', $respond, 10, 3 );
+
+			try {
+				$module   = new AutoUpdatePluginsFilter();
+				$settings = $this->fetch_settings( $module );
+
+				Assert::assertIsObject( $settings, "$body must be read as settings." );
+				Assert::assertSame( $expected, $settings->disable_all, "$body must be read as " . ( $expected ? 'true' : 'false' ) . '.' );
+
+				$this->set_module_settings( $module, $settings );
+				Assert::assertSame( ! $expected, $module->filter_maybe_disable_all_autoupdates( true ), "$body must decide whether updates run." );
+			} finally {
+				remove_filter( 'pre_http_request', $respond, 10 );
+			}
+		}
+
+		$this->reset_settings_storage();
+	}
+
+	/**
+	 * Every key is optional, and an endpoint that writes a missing one as null must not have its
+	 * payload thrown away as malformed.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function null_keys_are_read_as_missing( IntegrationTester $i ): void {
+		$this->reset_settings_storage();
+		$this->store_last_known_good( array( 'disabled_plugins' => array( 'akismet/akismet.php' ) ), time() - HOUR_IN_SECONDS );
+
+		$respond = $this->raw_http_response( '{"disable_all":null,"disabled_plugins":null,"canary_sites":null}' );
+		add_filter( 'pre_http_request', $respond, 10, 3 );
+
+		try {
+			$module   = new AutoUpdatePluginsFilter();
+			$settings = $this->fetch_settings( $module );
+
+			Assert::assertEquals( new stdClass(), $settings, 'Null keys must be read as missing, not as a failed fetch.' );
+
+			$this->set_module_settings( $module, $settings );
+			Assert::assertTrue( $module->filter_maybe_disable_all_autoupdates( true ), 'A null kill switch must not stop updates.' );
+		} finally {
+			remove_filter( 'pre_http_request', $respond, 10 );
+			$this->reset_settings_storage();
+		}
+	}
+
+	/**
 	 * A brief outage must reuse the last known good payload rather than stopping every update.
 	 *
 	 * @param IntegrationTester $i Tester instance.
@@ -864,6 +978,28 @@ class AutoupdatesTestCest {
 		} catch ( \Exception $exception ) {
 			return null;
 		}
+	}
+
+	/**
+	 * Builds a `pre_http_request` callback returning a successful response with the given body.
+	 *
+	 * @param string $body Response body.
+	 *
+	 * @return callable
+	 */
+	private function raw_http_response( string $body ): callable {
+		return static function () use ( $body ) {
+			return array(
+				'headers'  => array(),
+				'body'     => $body,
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
 	}
 
 	/**

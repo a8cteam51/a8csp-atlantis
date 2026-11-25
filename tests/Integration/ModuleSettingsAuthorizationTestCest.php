@@ -9,6 +9,7 @@
 
 declare(strict_types=1);
 
+use A8C\SpecialProjects\Atlantis\Settings;
 use PHPUnit\Framework\Assert;
 use Tests\Support\IntegrationTester;
 
@@ -148,6 +149,107 @@ class ModuleSettingsAuthorizationTestCest {
 			Assert::assertFalse( current_user_can( $this->options_page_capability() ) );
 		} finally {
 			$this->cleanup( $user_id );
+		}
+	}
+
+	/**
+	 * options.php also saves other groups, and its All Settings screen writes any option the
+	 * request names. Someone who may not manage Atlantis must not change Atlantis's options that
+	 * way, while their other settings still save.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function options_php_cannot_change_atlantis_options_without_the_capability( IntegrationTester $i ): void {
+		$user_id = $this->create_administrator( 'outsider@example.com' );
+		$tagline = get_option( 'blogdescription' );
+
+		try {
+			wp_set_current_user( $user_id );
+			$this->save_through_options_php(
+				function (): void {
+					update_option( 'a8csp_atlantis_managed_site', '0' );
+					update_option( 'a8csp_atlantis_autoupdate_settings_url', 'https://elsewhere.test/settings' );
+					update_option( 'a8csp_module_autoupdates', array( 'enabled' => '0' ) );
+					update_option( 'blogdescription', 'Changed through options.php' );
+				}
+			);
+
+			Assert::assertSame( '1', get_option( 'a8csp_atlantis_managed_site' ), 'The site must still count as managed.' );
+			Assert::assertFalse( get_option( 'a8csp_atlantis_autoupdate_settings_url' ), 'No settings endpoint may be set.' );
+			Assert::assertNotSame( array( 'enabled' => '0' ), get_option( 'a8csp_module_autoupdates' ), 'The module may not be switched off.' );
+			Assert::assertSame( 'Changed through options.php', get_option( 'blogdescription' ), 'Settings that are not Atlantis\'s must still save.' );
+			Assert::assertContains( 'a8csp_atlantis_protected_option', wp_list_pluck( get_settings_errors( 'general' ), 'code' ), 'The administrator must be told why.' );
+		} finally {
+			update_option( 'blogdescription', $tagline );
+			delete_option( 'a8csp_atlantis_autoupdate_settings_url' );
+			$this->cleanup( $user_id );
+		}
+	}
+
+	/**
+	 * Someone who may manage Atlantis can still change its options through options.php.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function options_php_still_saves_atlantis_options_with_the_capability( IntegrationTester $i ): void {
+		$user_id = $this->create_administrator( 'insider@a8c.com' );
+
+		try {
+			wp_set_current_user( $user_id );
+			$this->save_through_options_php(
+				function (): void {
+					update_option( 'a8csp_atlantis_autoupdate_settings_url', 'https://elsewhere.test/settings' );
+				}
+			);
+
+			Assert::assertSame( 'https://elsewhere.test/settings', get_option( 'a8csp_atlantis_autoupdate_settings_url' ) );
+		} finally {
+			delete_option( 'a8csp_atlantis_autoupdate_settings_url' );
+			$this->cleanup( $user_id );
+		}
+	}
+
+	/**
+	 * The options covered are Atlantis's own, and nothing else.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function protected_options_are_atlantis_options_only( IntegrationTester $i ): void {
+		foreach ( array( 'a8csp_atlantis_managed_site', 'a8csp_module_autoupdates', 'plugin_autoupdate_filter_disabled_plugins', 'plugin_update_delays', '_transient_wpcpmsp_auto_update_settings', '_transient_timeout_wpcpmsp_auto_update_settings', '_transient_a8csp_atlantis_github_latest_release' ) as $option ) {
+			Assert::assertTrue( Settings::is_protected_option( $option ), "$option is Atlantis's." );
+		}
+
+		foreach ( array( 'blogname', 'active_plugins', 'woocommerce_allow_tracking', 'a8csp_other_plugin' ) as $option ) {
+			Assert::assertFalse( Settings::is_protected_option( $option ), "$option is not Atlantis's." );
+		}
+	}
+
+	/**
+	 * Runs a callback as options.php would save, then undoes what that set up.
+	 *
+	 * @param callable $save The writes the save makes.
+	 *
+	 * @return void
+	 */
+	private function save_through_options_php( callable $save ): void {
+		global $wp_settings_errors;
+
+		$settings              = new Settings();
+		$_POST['option_page']  = 'options';
+		$wp_settings_errors    = array();
+
+		try {
+			$settings->maybe_protect_options();
+			$save();
+		} finally {
+			remove_filter( 'pre_update_option', array( $settings, 'filter_keep_protected_option' ), PHP_INT_MAX );
+			unset( $_POST['option_page'] );
 		}
 	}
 

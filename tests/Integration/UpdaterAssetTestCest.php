@@ -121,6 +121,45 @@ class UpdaterAssetTestCest {
 	}
 
 	/**
+	 * A release whose zip is not downloaded from this plugin's GitHub releases offers nothing,
+	 * and the updater must not fall through to another zip in the list either.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function updater_offers_nothing_when_the_zip_is_not_on_github( IntegrationTester $i ): void {
+		$this->cache_release(
+			array(
+				array(
+					'name'                 => 'build.zip',
+					'content_type'         => 'application/zip',
+					'browser_download_url' => 'https://example.test/build.zip',
+				),
+				array(
+					'name'                 => 'build-20260903.zip',
+					'content_type'         => 'application/zip',
+					'browser_download_url' => self::ZIP_URL,
+				),
+			)
+		);
+
+		// The cached release is unusable, so the updater asks GitHub again. It must not get through.
+		$block = static fn() => new WP_Error( 'http_request_failed', 'Blocked in test.' );
+		add_filter( 'pre_http_request', $block );
+
+		try {
+			Assert::assertFalse(
+				$this->run_update_check(),
+				'A zip from anywhere but the plugin\'s GitHub releases must not be offered.'
+			);
+		} finally {
+			remove_filter( 'pre_http_request', $block );
+			delete_transient( A8CSP_ATLANTIS_GITHUB_RELEASE_TRANSIENT_KEY );
+		}
+	}
+
+	/**
 	 * Stores a fake release so the updater does not make a request.
 	 *
 	 * @param array<int, array<string, string>> $assets The release assets.

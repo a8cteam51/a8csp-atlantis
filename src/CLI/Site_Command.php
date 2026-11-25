@@ -177,7 +177,7 @@ class Site_Command {
 			// here on a failed lookup would make saving depend on the network.
 			$sanitized = AutoUpdatePluginsFilter::sanitize_settings_endpoint( $url );
 			if ( '' === $sanitized ) {
-				\WP_CLI::error( 'That is not a valid URL. It must start with http:// or https://.' );
+				\WP_CLI::error( 'That is not a valid URL. It must start with https://.' );
 			}
 
 			\update_option( A8CSP_ATLANTIS_AUTOUPDATE_SETTINGS_URL_OPTION, $sanitized );
