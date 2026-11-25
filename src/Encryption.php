@@ -23,6 +23,16 @@ class Encryption {
 	 */
 	private const MISSING_KEY_LOGGED_TRANSIENT = 'a8csp_atlantis_missing_key_logged';
 
+	/**
+	 * Name of the lock held while the encryption key is written into wp-config.php.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @var string
+	 */
+	private const INSERT_KEY_LOCK = 'a8csp_atlantis_insert_encryption_key';
+
 	// endregion
 
 	// region METHODS
@@ -48,15 +58,17 @@ class Encryption {
 	 * If not, it generates a new one and tries to insert it into wp-config.php, unless a key
 	 * was inserted before, in which case it warns instead of generating a replacement.
 	 *
+	 * Only an administrator's request or WP-CLI writes the file. Messages are the only thing the
+	 * key protects and only an administrator can save one, so there is no reason to let an
+	 * anonymous request rewrite wp-config.php.
+	 *
 	 * @since   1.0.0
-	 * @version 1.3.1
+	 * @version 1.5.2
 	 *
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 * @phpstan-ignore-next-line
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @phpstan-ignore-next-line
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
 	 *
 	 * @return  void
 	 */
@@ -75,6 +87,10 @@ class Encryption {
 
 		// wp-config.php is shared network-wide, so only the main site writes to it.
 		if ( is_multisite() && ! is_main_site() ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'manage_options' ) && ! ( \defined( 'WP_CLI' ) && WP_CLI ) ) {
 			return;
 		}
 
@@ -101,51 +117,21 @@ class Encryption {
 			return;
 		}
 
-		$wp_filesystem = $this->get_wp_filesystem();
+		// wp-config.php is read, changed and written back, so two requests doing it at once can
+		// interleave: one truncates the file to write it, the other reads it empty in between and
+		// writes that back. Whoever does not get the lock leaves the file to whoever has it.
+		if ( ! \class_exists( 'WP_Upgrader' ) ) {
+			/* @phpstan-ignore requireOnce.fileNotFound */
+			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+		}
+		if ( ! \WP_Upgrader::create_lock( self::INSERT_KEY_LOCK, MINUTE_IN_SECONDS ) ) {
+			return;
+		}
 
-		$wp_config_path     = $this->get_wp_config_path();
-		$wp_config_contents = \is_string( $wp_config_path ) ? $wp_filesystem?->get_contents( $wp_config_path ) : null;
-
-		$success = false;
-		if ( \is_string( $wp_config_path ) && \is_string( $wp_config_contents ) ) {
-			// Idempotency guard: if the file already contains our define, don't
-			// append another. This covers the window where a prior request wrote
-			// the line but the constant isn't defined yet in the current runtime
-			// (stale include/opcache), or a race across concurrent requests. Just
-			// record the flag and bail rather than writing a duplicate.
-			if ( \str_contains( $wp_config_contents, 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) {
-				$this->mark_encryption_key_inserted();
-				return;
-			}
-
-			// Wrap the define in a defined() guard so that even if a duplicate
-			// line ever ends up in the file (e.g. a platform-managed config
-			// re-merge), PHP won't emit an "already defined" warning.
-			$to_insert = "if ( ! defined( 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) { define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . \addcslashes( $encryption_key, "\\'" ) . "' ); }\r\n";
-
-			// Insert before the FIRST "stop editing" marker only. Some configs
-			// (notably multisite installs) carry more than one such marker; a
-			// naive str_replace() would write the define before every marker and
-			// create the exact duplicate-define warnings this method guards
-			// against. substr_replace() with a zero-length span inserts at the
-			// first match without touching the rest.
-			$marker    = "/* That's all, stop editing!";
-			$marker_at = \strpos( $wp_config_contents, $marker );
-			if ( false !== $marker_at ) {
-				$wp_config_contents = \substr_replace( $wp_config_contents, $to_insert, $marker_at, 0 );
-			} else {
-				$wp_config_contents = \preg_replace( '/<\?php/', "<?php\r\n" . $to_insert, $wp_config_contents, 1 );
-			}
-
-			if ( \is_string( $wp_config_contents ) && true === $wp_filesystem?->put_contents( $wp_config_path, $wp_config_contents, FS_CHMOD_FILE ) ) {
-				$success = true;
-
-				$this->mark_encryption_key_inserted();
-				if ( function_exists( 'opcache_invalidate' ) ) {
-					// Invalidate the opcode cache to ensure the new key is used immediately.
-					opcache_invalidate( $wp_config_path, true );
-				}
-			}
+		try {
+			$success = $this->insert_encryption_key( $encryption_key );
+		} finally {
+			\WP_Upgrader::release_lock( self::INSERT_KEY_LOCK );
 		}
 
 		if ( ! $success ) {
@@ -179,6 +165,87 @@ class Encryption {
 	// endregion
 
 	// region HELPERS
+
+	/**
+	 * Writes the encryption key into wp-config.php. The caller holds the insert lock.
+	 *
+	 * @since   1.5.2
+	 * @version 1.5.2
+	 *
+	 * @param   string $encryption_key The key to insert.
+	 *
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+	 * @phpstan-ignore-next-line
+	 * @SuppressWarnings(PHPMD.NPathComplexity)
+	 *
+	 * @return  bool Whether wp-config.php now defines the key.
+	 */
+	private function insert_encryption_key( string $encryption_key ): bool {
+		$wp_filesystem = $this->get_wp_filesystem();
+
+		$wp_config_path     = $this->get_wp_config_path();
+		$wp_config_contents = \is_string( $wp_config_path ) ? $wp_filesystem?->get_contents( $wp_config_path ) : null;
+
+		if ( ! \is_string( $wp_config_path ) || ! \is_string( $wp_config_contents ) ) {
+			return false;
+		}
+
+		// Idempotency guard: if the file already contains our define, don't
+		// append another. This covers the window where a prior request wrote
+		// the line but the constant isn't defined yet in the current runtime
+		// (stale include/opcache). Just record the flag and bail rather than
+		// writing a duplicate.
+		if ( \str_contains( $wp_config_contents, 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) {
+			$this->mark_encryption_key_inserted();
+			return true;
+		}
+
+		// Whatever was read is written back in full, so anything that is not a PHP file — an
+		// empty read caught while something else was rewriting it, say — must not be.
+		if ( ! \str_contains( $wp_config_contents, '<?php' ) ) {
+			return false;
+		}
+
+		// Wrap the define in a defined() guard so that even if a duplicate
+		// line ever ends up in the file (e.g. a platform-managed config
+		// re-merge), PHP won't emit an "already defined" warning.
+		$to_insert = "if ( ! defined( 'A8CSP_ATLANTIS_ENCRYPTION_KEY' ) ) { define( 'A8CSP_ATLANTIS_ENCRYPTION_KEY', '" . \addcslashes( $encryption_key, "\\'" ) . "' ); }\r\n";
+
+		// Insert before the FIRST "stop editing" marker only. Some configs
+		// (notably multisite installs) carry more than one such marker; a
+		// naive str_replace() would write the define before every marker and
+		// create the exact duplicate-define warnings this method guards
+		// against. substr_replace() with a zero-length span inserts at the
+		// first match without touching the rest.
+		$marker    = "/* That's all, stop editing!";
+		$marker_at = \strpos( $wp_config_contents, $marker );
+		if ( false !== $marker_at ) {
+			$wp_config_contents = \substr_replace( $wp_config_contents, $to_insert, $marker_at, 0 );
+		} else {
+			$wp_config_contents = \preg_replace( '/<\?php/', "<?php\r\n" . $to_insert, $wp_config_contents, 1 );
+		}
+
+		if ( ! \is_string( $wp_config_contents ) || true !== $wp_filesystem?->put_contents( $wp_config_path, $wp_config_contents, FS_CHMOD_FILE ) ) {
+			return false;
+		}
+
+		if ( function_exists( 'opcache_invalidate' ) ) {
+			// Invalidate the opcode cache to ensure the new key is used immediately.
+			opcache_invalidate( $wp_config_path, true );
+		}
+
+		// Only record the key as inserted once it can be read back: the flag stops this method
+		// from ever trying again, and turns a missing key into the lost-key notice.
+		$written = $wp_filesystem->get_contents( $wp_config_path );
+		if ( ! \is_string( $written ) || ! \str_contains( $written, $encryption_key ) ) {
+			return false;
+		}
+
+		$this->mark_encryption_key_inserted();
+
+		return true;
+	}
 
 	/**
 	 * Returns whether the encryption key has already been inserted into wp-config.php.
@@ -272,7 +339,7 @@ class Encryption {
 	 *
 	 * @return  string|null
 	 */
-	private function get_wp_config_path(): ?string {
+	protected function get_wp_config_path(): ?string {
 		$wp_filesystem = $this->get_wp_filesystem();
 		if ( \is_null( $wp_filesystem ) ) {
 			return null;
