@@ -125,6 +125,163 @@ class TrackingTestCest {
 	}
 
 	/**
+	 * WooCommerce's tracking checkbox is replaced by one that shows tracking is on and why, and
+	 * that WooCommerce never saves. Everything else in the section is left alone.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function woocommerce_tracking_setting_is_shown_as_forced( IntegrationTester $i ): void {
+		$section = array(
+			array(
+				'title' => 'Usage tracking',
+				'type'  => 'title',
+				'id'    => 'tracking_options',
+			),
+			array(
+				'title'         => 'Enable tracking',
+				'desc'          => 'Allow usage of WooCommerce to be tracked',
+				'desc_tip'      => 'To opt out, leave this box unticked.',
+				'id'            => 'woocommerce_allow_tracking',
+				'type'          => 'checkbox',
+				'checkboxgroup' => 'start',
+				'default'       => 'no',
+			),
+			array(
+				'type' => 'sectionend',
+				'id'   => 'tracking_options',
+			),
+		);
+
+		$filtered = ( new WooCommerce() )->filter_tracking_setting( $section );
+
+		Assert::assertSame( $section[0], $filtered[0] );
+		Assert::assertSame( $section[2], $filtered[2] );
+		Assert::assertSame(
+			array(
+				'type'  => WooCommerce::FORCED_TRACKING_FIELD_TYPE,
+				'title' => 'Enable tracking',
+				'desc'  => 'Allow usage of WooCommerce to be tracked',
+			),
+			$filtered[1],
+			'The field must have no id, so that WooCommerce never saves it over the store\'s choice.'
+		);
+	}
+
+	/**
+	 * The forced field says why tracking is on, cannot be changed, and posts the store's own
+	 * choice back unchanged.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function woocommerce_forced_tracking_field_keeps_the_stored_choice( IntegrationTester $i ): void {
+		$woocommerce = new WooCommerce();
+		update_option( 'woocommerce_allow_tracking', 'no' );
+		add_filter( 'option_woocommerce_allow_tracking', array( $woocommerce, 'filter_allow_tracking' ), PHP_INT_MAX );
+
+		try {
+			Assert::assertSame( 'yes', get_option( 'woocommerce_allow_tracking' ), 'Test precondition: tracking is forced on.' );
+			Assert::assertSame( 'no', $woocommerce->get_stored_choice() );
+
+			ob_start();
+			$woocommerce->output_forced_tracking_field(
+				array(
+					'title' => 'Enable tracking',
+					'desc'  => 'Allow usage of WooCommerce to be tracked',
+				)
+			);
+			$html = (string) ob_get_clean();
+
+			Assert::assertMatchesRegularExpression( '/<input type="checkbox"[^>]*checked="checked"[^>]*disabled="disabled"/', $html );
+			Assert::assertStringContainsString( '<input type="hidden" name="woocommerce_allow_tracking" value="no" />', $html );
+			Assert::assertStringContainsString( 'turned on for this store by the Atlantis plugin', $html );
+			Assert::assertSame( 'yes', get_option( 'woocommerce_allow_tracking' ), 'Reading the stored choice must not lift the override.' );
+		} finally {
+			remove_filter( 'option_woocommerce_allow_tracking', array( $woocommerce, 'filter_allow_tracking' ), PHP_INT_MAX );
+			delete_option( 'woocommerce_allow_tracking' );
+		}
+	}
+
+	/**
+	 * While WooCommerce saves its settings it compares the stored choice with the posted one. The
+	 * override must step aside there, or an unchanged choice would read as the store opting out.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function woocommerce_tracking_override_steps_aside_while_settings_save( IntegrationTester $i ): void {
+		$woocommerce = new WooCommerce();
+		$seen        = null;
+		$read        = static function () use ( &$seen ) {
+			$seen = get_option( 'woocommerce_allow_tracking', 'no' );
+		};
+
+		update_option( 'woocommerce_allow_tracking', 'no' );
+		add_filter( 'option_woocommerce_allow_tracking', array( $woocommerce, 'filter_allow_tracking' ), PHP_INT_MAX );
+		add_action( 'woocommerce_settings_save_advanced', $read );
+
+		try {
+			do_action( 'woocommerce_settings_save_advanced' );
+
+			Assert::assertSame( 'no', $seen );
+			Assert::assertSame( 'yes', get_option( 'woocommerce_allow_tracking' ), 'Outside the save, tracking is still forced on.' );
+		} finally {
+			remove_action( 'woocommerce_settings_save_advanced', $read );
+			remove_filter( 'option_woocommerce_allow_tracking', array( $woocommerce, 'filter_allow_tracking' ), PHP_INT_MAX );
+			delete_option( 'woocommerce_allow_tracking' );
+		}
+	}
+
+	/**
+	 * A store that never saved WooCommerce's tracking setting has no row for it. Tracking must be
+	 * forced on there too, or the forced field would claim something that is not so.
+	 *
+	 * @param IntegrationTester $i Tester instance.
+	 *
+	 * @return void
+	 */
+	public function woocommerce_tracking_is_forced_when_the_option_was_never_saved( IntegrationTester $i ): void {
+		$hooks    = array( 'option_woocommerce_allow_tracking', 'default_option_woocommerce_allow_tracking', 'woocommerce_com_integration_settings', 'woocommerce_admin_field_' . WooCommerce::FORCED_TRACKING_FIELD_TYPE, 'woocommerce_settings_save_advanced' );
+		$snapshot = array();
+		foreach ( $hooks as $hook ) {
+			$snapshot[ $hook ] = $GLOBALS['wp_filter'][ $hook ] ?? null;
+			unset( $GLOBALS['wp_filter'][ $hook ] );
+		}
+
+		$seen = null;
+		$read = static function () use ( &$seen ) {
+			$seen = get_option( 'woocommerce_allow_tracking', 'no' );
+		};
+
+		try {
+			delete_option( 'woocommerce_allow_tracking' );
+
+			$woocommerce = new WooCommerce();
+			$woocommerce->maybe_initialize();
+
+			Assert::assertSame( 'yes', get_option( 'woocommerce_allow_tracking' ) );
+			Assert::assertSame( 'yes', get_option( 'woocommerce_allow_tracking', 'no' ) );
+			Assert::assertSame( 'no', $woocommerce->get_stored_choice(), 'The store has not chosen anything, so its choice reads as no.' );
+
+			add_action( 'woocommerce_settings_save_advanced', $read );
+			do_action( 'woocommerce_settings_save_advanced' );
+			Assert::assertSame( 'no', $seen, 'The override must step aside while WooCommerce saves, as it does for a saved choice.' );
+		} finally {
+			foreach ( $snapshot as $hook => $value ) {
+				if ( null === $value ) {
+					unset( $GLOBALS['wp_filter'][ $hook ] );
+				} else {
+					$GLOBALS['wp_filter'][ $hook ] = $value;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Ensure integration activation defaults stay enabled when constants are undefined.
 	 *
 	 * @param IntegrationTester $i Tester instance.
