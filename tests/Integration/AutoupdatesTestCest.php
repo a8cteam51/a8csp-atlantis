@@ -181,15 +181,28 @@ class AutoupdatesTestCest {
 		Assert::assertFalse( is_admin(), 'Test precondition: not an admin request.' );
 		Assert::assertFalse( wp_doing_cron(), 'Test precondition: not a cron request.' );
 
-		$hooks = array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'upgrader_process_complete', 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email', 'send_core_update_notification_email', 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email' );
+		$hooks = array( 'auto_update_plugin', 'auto_update_core', 'auto_update_theme', 'upgrader_process_complete', 'auto_plugin_theme_update_email', 'auto_core_update_email', 'automatic_updates_debug_email', 'send_core_update_notification_email', 'automatic_updates_send_debug_email', 'auto_core_update_send_email', 'auto_plugin_update_send_email', 'auto_theme_update_send_email', 'plugin_autoupdate_filter_hours', 'plugin_autoupdate_filter_days_off', 'plugin_autoupdate_filter_holidays' );
 
 		$this->with_isolated_hooks(
 			$hooks,
 			function (): void {
+				// Hold the window open and skip the delay, so only the block list can say no.
+				add_filter(
+					'plugin_autoupdate_filter_hours',
+					static fn() => array(
+						'start'      => '00',
+						'end'        => '23',
+						'friday_end' => '23',
+					)
+				);
+				add_filter( 'plugin_autoupdate_filter_days_off', '__return_empty_array' );
+				add_filter( 'plugin_autoupdate_filter_holidays', '__return_empty_array' );
+
 				set_transient(
 					'wpcpmsp_auto_update_settings',
 					(object) array(
 						'disabled_plugins' => array( 'akismet/akismet.php' ),
+						'canary_sites'     => array( wp_parse_url( home_url(), PHP_URL_HOST ) ),
 					),
 					5 * MINUTE_IN_SECONDS
 				);
@@ -198,6 +211,12 @@ class AutoupdatesTestCest {
 				$method = new ReflectionMethod( $module, 'initialize' );
 				$method->setAccessible( true );
 				$method->invoke( $module );
+
+				$allowed = (object) array(
+					'plugin' => 'hello-dolly/hello.php',
+					'slug'   => 'hello-dolly',
+				);
+				Assert::assertTrue( apply_filters( 'auto_update_plugin', true, $allowed ), 'Test precondition: with the window open and no delay, a plugin that is not blocked updates.' );
 
 				$blocked = (object) array(
 					'plugin' => 'akismet/akismet.php',
